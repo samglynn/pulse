@@ -766,8 +766,9 @@ async function loadData() {
     }
 
     // Locations
-    const {data:locs}=await _sb.from('locations').select('*').eq('user_id',S.user.id).order('name');
-    S.locations = (locs&&locs.length) ? locs : CHOMP_DEFAULTS.locations;
+   const {data:locs,error:locErr}=await _sb.from('locations').select('*').eq('user_id',S.user.id).order('name');
+console.log('locations result:', locs, locErr);
+S.locations = (locs&&locs.length) ? locs : CHOMP_DEFAULTS.locations;
 
     // Weeks
     const {data:wks}=await _sb.from('weeks').select('*').eq('user_id',S.user.id).order('date',{ascending:false}).limit(104);
