@@ -912,23 +912,49 @@ function renderHome() {
   },0)/locs.length);
   const g=grade(avgScore), c=sColor(avgScore);
   const circ=2*Math.PI*52, off=circ-(avgScore/100)*circ;
+  // CEO Summary
+  const prevWeeksAll = S.weeks ? [...S.weeks].sort((a,b)=>b.date.localeCompare(a.date)) : [];
+  const latestDate = prevWeeksAll[0]?.date || '';
+  const prevDate = [...new Set(prevWeeksAll.map(w=>w.date))].sort((a,b)=>b.localeCompare(a))[1] || '';
+  const locBriefs = locs.map(l => {
+    const w = getLatestWeek(l.slug); if (!w) return null;
+    const tl = getTargets(l.slug); const sc = computeScore(w, tl); const gl = grade(sc.composite);
+    const prev = prevDate ? S.weeks.find(wk=>wk.date===prevDate&&wk.location===l.slug) : null;
+    const salesChg = prev && prev.net_sales ? (((w.net_sales-prev.net_sales)/prev.net_sales)*100) : null;
+    const gaps = [];
+    if (w.labor_pct > tl.target_labor_pct) gaps.push(`Labor ${(w.labor_pct-tl.target_labor_pct).toFixed(1)}pts over`);
+    if (w.drink_attach < (tl.target_drink_attach||1.8)) gaps.push(`Drinks/chk ${((tl.target_drink_attach||1.8)-w.drink_attach).toFixed(2)} short`);
+    if (w.starter_attach < tl.target_starter_attach) gaps.push(`Starter ${(tl.target_starter_attach-w.starter_attach).toFixed(0)}pts short`);
+    if (w.ppa < tl.target_ppa) gaps.push(`PPA ${(tl.target_ppa-w.ppa).toFixed(2)} short`);
+    if (w.food_cost > tl.target_food_cost) gaps.push(`Food cost ${(w.food_cost-tl.target_food_cost).toFixed(1)}pts over`);
+    return { name: l.name, w, tl, sc, gl, salesChg, gaps };
+  }).filter(Boolean);
+  const locCardsHTML = locBriefs.map(b => {
+    const cl = sColor(b.sc.composite);
+    const chgStr = b.salesChg !== null ? `<span style="font-size:11px;font-weight:600;color:${b.salesChg>=0?'#2dd4a0':'#f06565'}">${b.salesChg>=0?'+':''}${b.salesChg.toFixed(1)}% WoW</span>` : '';
+    const gapHTML = b.gaps.length ? b.gaps.slice(0,3).map(g=>`<div style="font-size:11px;color:var(--text-muted);padding:2px 0;display:flex;gap:6px"><span style="color:#f5c842">›</span>${g}</div>`).join('') : `<div style="font-size:11px;color:#2dd4a0">All metrics on target</div>`;
+    return `<div style="flex:1;min-width:140px;border:0.5px solid ${cl}44;border-radius:8px;padding:12px;background:${cl}08">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:var(--text)">${b.name}</span><span style="font-size:13px;font-weight:700;color:${cl}">${b.gl.letter}</span></div>
+      <div style="font-size:18px;font-weight:700;color:${cl};margin-bottom:2px">${b.sc.composite}</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;display:flex;align-items:center;gap:6px"><span>${(b.w.net_sales||0).toLocaleString()}</span>${chgStr}</div>
+      ${gapHTML}
+    </div>`;
+  }).join('');
   document.getElementById('gauge-wrap').innerHTML=`
-    <div class="gauge-svg-wrap">
-      <svg viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r="52" fill="none" stroke="var(--s3)" stroke-width="8"/>
-        <circle cx="60" cy="60" r="52" fill="none" stroke="${c}" stroke-width="8"
-          stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${off}"
-          style="transform:rotate(0);transition:stroke-dashoffset 1.4s cubic-bezier(.34,1.2,.64,1);filter:drop-shadow(0 0 4px ${c})"/>
-      </svg>
-      <div class="gauge-center">
-        <div class="gauge-num" style="color:${c}">${avgScore}</div>
-        <div class="gauge-lbl">Score</div>
+    <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <div style="flex-shrink:0;text-align:center">
+        <svg viewBox="0 0 120 120" width="100" height="100">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--s3)" stroke-width="8"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${off}" style="transition:stroke-dashoffset 1.4s cubic-bezier(.34,1.2,.64,1);filter:drop-shadow(0 0 4px ${c})"/>
+          <text x="60" y="56" text-anchor="middle" font-size="22" font-weight="700" fill="${c}">${avgScore}</text>
+          <text x="60" y="72" text-anchor="middle" font-size="9" fill="var(--text-muted)" letter-spacing="1">SCORE</text>
+        </svg>
+        <div style="font-size:11px;font-weight:700;color:${c};letter-spacing:.04em">${g.letter} — ${g.label}</div>
       </div>
-    </div>
-    <div class="gauge-info">
-      <h3>Health Score: <span style="color:${c}">${g.letter} — ${g.label}</span></h3>
-      <p>${locs.length>1?'Blended across all locations. ':''} ${g.label==='Healthy'||g.label==='Elite'?'Strong fundamentals. Focus on the gaps below to push higher.':g.label==='Developing'?'Core metrics need attention. One focused move per week compounds fast.':'Multiple critical areas. Prioritize labor and attach rates this week.'}</p>
-      <div class="gauge-grade" style="background:${c}22;color:${c};border:1px solid ${c}44">${g.letter} — ${g.label}</div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">CEO Summary · Week of ${latestDate}</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">${locCardsHTML}</div>
+      </div>
     </div>`;
 
   // Trend
