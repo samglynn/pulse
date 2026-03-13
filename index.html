@@ -401,7 +401,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
       <div class="nav-item" onclick="navTo('coaching',this)"><span class="nav-icon">🎯</span><span class="nav-label">Coaching Guide</span></div>
       <div class="nav-group">Tools</div>
       <div class="nav-item" onclick="navTo('staffing',this)"><span class="nav-icon">👥</span><span class="nav-label">Staffing Tool</span></div>
-      <div class="nav-item" onclick="navTo('lineheat',this)"><span class="nav-icon">🔥</span><span class="nav-label">Kitchen Line</span></div>
+      <div class="nav-item" onclick="navTo('lineheat',this)"><span class="nav-icon">🔥</span><span class="nav-label">Heatmap</span></div>
       <div class="nav-group">Data</div>
       <div class="nav-item" onclick="navTo('kpiref',this)"><span class="nav-icon">📖</span><span class="nav-label">KPI Reference</span></div>
       <div class="nav-item" onclick="navTo('data',this)"><span class="nav-icon">📁</span><span class="nav-label">Data Entry</span></div>
@@ -520,7 +520,14 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
     </div>
 
     <!-- DATA ENTRY PAGE -->
-    <div class="page" id="page-lineheat"><div id="lineheat-root"></div></div>
+    <div class="page" id="page-lineheat">
+      <div id="heatmap-tabs" style="display:flex;gap:0;margin-bottom:1.5rem;border-bottom:0.5px solid var(--border)">
+        <button id="tab-heatmap" onclick="switchHeatmapTab('heatmap')" style="font-size:12px;font-weight:600;padding:8px 16px;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-family:inherit">Station Heatmap</button>
+        <button id="tab-fplh" onclick="switchHeatmapTab('fplh')" style="font-size:12px;font-weight:600;padding:8px 16px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit">FPLH</button>
+      </div>
+      <div id="lineheat-root"></div>
+      <div id="fplh-root" style="display:none"></div>
+    </div>
     <div class="page" id="page-kpiref"><div id="kpiref-root"></div></div>
     <div class="page" id="page-data">
       <div class="page-inner">
@@ -1420,8 +1427,19 @@ function staffCalc(){
 // ══════════════════════════════════════════════════════════════════
 // NAV & UI
 // ══════════════════════════════════════════════════════════════════
-const pageTitles={home:'Dashboard',coaching:'Coaching Guide',staffing:'Staffing Tool',lineheat:'Kitchen Line',data:'Data Entry',settings:'Settings'};
+const pageTitles={home:'Dashboard',coaching:'Coaching Guide',staffing:'Staffing Tool',lineheat:'Heatmap',data:'Data Entry',settings:'Settings'};
 
+
+
+function switchHeatmapTab(tab) {
+  document.getElementById('lineheat-root').style.display = tab === 'heatmap' ? '' : 'none';
+  document.getElementById('fplh-root').style.display   = tab === 'fplh'    ? '' : 'none';
+  document.getElementById('tab-heatmap').style.borderBottomColor = tab === 'heatmap' ? 'var(--accent)' : 'transparent';
+  document.getElementById('tab-heatmap').style.color = tab === 'heatmap' ? 'var(--accent)' : 'var(--text-muted)';
+  document.getElementById('tab-fplh').style.borderBottomColor = tab === 'fplh' ? 'var(--accent)' : 'transparent';
+  document.getElementById('tab-fplh').style.color = tab === 'fplh' ? 'var(--accent)' : 'var(--text-muted)';
+  if (tab === 'fplh') renderFplh();
+}
 
 function renderLineheat() {
   const root = document.getElementById('lineheat-root');
