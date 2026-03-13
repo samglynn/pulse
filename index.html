@@ -757,30 +757,32 @@ async function signOut() {
 // ══════════════════════════════════════════════════════════════════
 async function loadData() {
   try {
+    const uid = S.user.id;
+
     // Profile
-    const {data:profile}=await _sb.from('profiles').select('*').eq('user_id',S.user.id).single();
-    S.profile=profile;
+    const {data:profile} = await _sb.from('profiles').select('*').eq('user_id',uid).maybeSingle();
+    S.profile = profile;
     if(profile) {
-      document.getElementById('s-restname').value=profile.restaurant_name||'';
-      document.getElementById('s-ownername').value=profile.owner_name||'';
+      document.getElementById('s-restname').value = profile.restaurant_name||'';
+      document.getElementById('s-ownername').value = profile.owner_name||'';
     }
 
-    // Locations
-   const {data:locs,error:locErr}=await _sb.from('locations').select('*').eq('user_id',S.user.id).order('name');
-console.log('locations result:', locs, locErr);
-S.locations = (locs&&locs.length) ? locs : CHOMP_DEFAULTS.locations;
+    // Locations — no fallback, show what's in DB
+    const {data:locs, error:locErr} = await _sb.from('locations').select('*').eq('user_id',uid).order('name');
+    if(locErr) { showToast('error','Error loading locations: '+locErr.message); }
+    S.locations = (locs && locs.length) ? locs : [];
 
     // Weeks
-    const {data:wks}=await _sb.from('weeks').select('*').eq('user_id',S.user.id).order('date',{ascending:false}).limit(104);
-    S.weeks = (wks&&wks.length) ? wks : CHOMP_DEFAULTS.weeks;
+    const {data:wks, error:wkErr} = await _sb.from('weeks').select('*').eq('user_id',uid).order('date',{ascending:false}).limit(104);
+    if(wkErr) { showToast('error','Error loading weeks: '+wkErr.message); }
+    S.weeks = (wks && wks.length) ? wks : [];
 
   } catch(e) {
-    // Offline fallback
-    S.locations=CHOMP_DEFAULTS.locations;
-    S.weeks=CHOMP_DEFAULTS.weeks;
+    showToast('error','Load error: '+e.message);
+    S.locations = [];
+    S.weeks = [];
   }
 
-  // Build location dropdown
   buildLocSelect();
   populateManualLoc();
   renderLocSettings();
