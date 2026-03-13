@@ -402,6 +402,8 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
       <div class="nav-group">Tools</div>
       <div class="nav-item" onclick="navTo('staffing',this)"><span class="nav-icon">👥</span><span class="nav-label">Staffing Tool</span></div>
       <div class="nav-item" onclick="navTo('lineheat',this)"><span class="nav-icon">🔥</span><span class="nav-label">Kitchen Line</span></div>
+      <div class="nav-item" onclick="navTo('fplh',this)"><span class="nav-icon">⚡</span><span class="nav-label">FPLH</span></div>
+      <div class="nav-item" onclick="navTo('brief',this)"><span class="nav-icon">📋</span><span class="nav-label">Weekly Brief</span></div>
       <div class="nav-group">Data</div>
       <div class="nav-item" onclick="navTo('data',this)"><span class="nav-icon">📁</span><span class="nav-label">Data Entry</span></div>
       <div class="nav-item" onclick="navTo('settings',this)"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></div>
@@ -519,6 +521,8 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
     </div>
 
     <!-- DATA ENTRY PAGE -->
+    <div class="page" id="page-fplh"><div id="fplh-root"></div></div>
+    <div class="page" id="page-brief"><div id="brief-root"></div></div>
     <div class="page" id="page-lineheat"><div id="lineheat-root"></div></div>
     <div class="page" id="page-data">
       <div class="page-inner">
@@ -560,6 +564,8 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
             <div class="field"><label>Dessert Attach %</label><input type="number" id="m-dessert" placeholder="11"></div>
             <div class="field"><label>Food Cost %</label><input type="number" id="m-fc" step=".1" placeholder="28.5"></div>
             <div class="field"><label>Sched Variance (hrs)</label><input type="number" id="m-svar" step=".1" placeholder="4.2"></div>
+            <div class="field"><label>Kitchen Labor Hrs</label><input type="number" id="m-klhrs" placeholder="220"></div>
+            <div class="field"><label>Food Items Sold</label><input type="number" id="m-fitems" placeholder="1800"></div>
           </div>
           <button class="btn btn-primary" onclick="saveManual()">Save Week</button>
         </div>
@@ -1254,6 +1260,8 @@ async function saveManual() {
     dessert_attach:parseFloat(document.getElementById('m-dessert').value)||null,
     food_cost:parseFloat(document.getElementById('m-fc').value)||null,
     schedule_variance:parseFloat(document.getElementById('m-svar').value)||null,
+    kitchen_labor_hrs:parseFloat(document.getElementById('m-klhrs').value)||null,
+    food_items_sold:parseInt(document.getElementById('m-fitems').value)||null,
   };
   const t=getTargets(loc);
   row.health_score=computeScore(row,t).composite;
@@ -1300,7 +1308,8 @@ function handleFile(files) {
           labor_hrs:parseFloat(row.labor_hrs)||null,splh:parseFloat(row.splh)||null,
           gplh:parseFloat(row.gplh)||null,starter_attach:parseFloat(row.starter_attach)||null,
           drink_attach:parseFloat(row.drink_attach)||null,dessert_attach:parseFloat(row.dessert_attach)||null,
-          food_cost:parseFloat(row.food_cost)||null,schedule_variance:parseFloat(row.schedule_variance)||null};
+          food_cost:parseFloat(row.food_cost)||null,schedule_variance:parseFloat(row.schedule_variance)||null,
+          kitchen_labor_hrs:parseFloat(row.kitchen_labor_hrs)||null,food_items_sold:parseInt(row.food_items_sold)||null};
         const t=getTargets(locSlug);
         week.health_score=computeScore(week,t).composite;
         try {
@@ -1418,7 +1427,7 @@ function staffCalc(){
 // ══════════════════════════════════════════════════════════════════
 // NAV & UI
 // ══════════════════════════════════════════════════════════════════
-const pageTitles={home:'Dashboard',coaching:'Coaching Guide',staffing:'Staffing Tool',lineheat:'Kitchen Line',data:'Data Entry',settings:'Settings'};
+const pageTitles={home:'Dashboard',coaching:'Coaching Guide',staffing:'Staffing Tool',lineheat:'Kitchen Line',fplh:'Food Per Labor Hour',brief:'Weekly CEO Brief',data:'Data Entry',settings:'Settings'};
 
 
 function renderLineheat() {
@@ -1474,6 +1483,564 @@ function renderLineheat() {
   render();
 }
 
+
+function renderFplh() {
+  const root = document.getElementById('fplh-root');
+  if (!root) return;
+  const loc = S.currentLoc === 'all' ? null : S.currentLoc;
+  const allWeeks = S.weeks || [];
+  const weeks = (loc ? allWeeks.filter(w=>w.location===loc) : allWeeks)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  const seen = new Set(); 
+  const uniq = weeks.filter(w=>{ const k=w.date+'|'+(loc||w.location); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,12);
+
+  function fplh(w) {
+    if (!w.food_items_sold || !w.kitchen_labor_hrs) return null;
+    return (w.food_items_sold / w.kitchen_labor_hrs).toFixed(1);
+  }
+  function heatCol(v, tgt) {
+    if (!v) return 'var(--text-muted)';
+    return v >= tgt ? '#2dd4a0' : v >= tgt*0.9 ? '#f5c842' : '#f06565';
+  }
+
+  const TGT = 8.0;
+  const hasAny = uniq.some(w => w.food_items_sold && w.kitchen_labor_hrs);
+
+  const tableRows = uniq.map(w => {
+    const v = fplh(w);
+    const col = heatCol(v ? parseFloat(v) : null, TGT);
+    const locLabel = w.location.charAt(0).toUpperCase() + w.location.slice(1);
+    return `<tr style="border-bottom:0.5px solid var(--border)">
+      <td style="padding:10px 8px;font-size:13px">${w.date}</td>
+      <td style="padding:10px 8px;font-size:13px">${locLabel}</td>
+      <td style="padding:10px 8px;font-size:13px">${w.food_items_sold ? w.food_items_sold.toLocaleString() : '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td style="padding:10px 8px;font-size:13px">${w.kitchen_labor_hrs || '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td style="padding:10px 8px;font-size:14px;font-weight:600;color:${col}">${v || '<span style="color:var(--text-muted);font-weight:400;font-size:13px">No data</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  root.innerHTML = `
+    <div style="margin-bottom:1.5rem">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.75rem">What is FPLH?</div>
+      <div style="background:var(--s2);border-radius:8px;padding:14px 16px;font-size:13px;color:var(--text-muted);line-height:1.6">
+        <strong style="color:var(--text)">Food items sold ÷ kitchen labor hours</strong> — measures output per BOH hour (line cooks + sous + head chefs). Higher is better. Target <strong style="color:var(--text)">${TGT}</strong> items/hr.
+        <br><br>Enter <strong style="color:var(--text)">Kitchen Labor Hrs</strong> and <strong style="color:var(--text)">Food Items Sold</strong> in Data Entry each week to populate this metric.
+      </div>
+    </div>
+    ${!hasAny ? `<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:13px">No FPLH data yet — enter Kitchen Labor Hrs and Food Items Sold in <span onclick="navTo('data',document.querySelector('.nav-item[onclick*=data]'))" style="color:var(--accent);cursor:pointer">Data Entry</span>.</div>` : `
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="border-bottom:0.5px solid var(--border)">
+          <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Week</th>
+          <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Location</th>
+          <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Food Items</th>
+          <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Kitchen Hrs</th>
+          <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">FPLH</th>
+        </tr>
+      </thead>
+      <tbody>${tableRows}</tbody>
+    </table>`}
+  `;
+}
+
+function renderBrief() {
+  const root = document.getElementById('brief-root');
+  if (!root) return;
+  const loc = S.currentLoc === 'all' ? null : S.currentLoc;
+  const locs = loc ? S.locations.filter(l=>l.slug===loc) : S.locations;
+  const now = new Date();
+  const weekStr = now.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+
+  function fmt(v,prefix='',suffix='',dec=1) { return v!=null ? prefix+parseFloat(v).toFixed(dec)+suffix : '—'; }
+  function arrow(actual, target, invert=false) {
+    if (actual==null||target==null) return '';
+    const good = invert ? actual<=target : actual>=target;
+    return good ? '<span style="color:#2dd4a0">↑</span>' : '<span style="color:#f06565">↓</span>';
+  }
+
+  let sectionsHTML = '';
+  locs.forEach(l => {
+    const w = (S.weeks||[]).filter(wk=>wk.location===l.slug).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    const prev = (S.weeks||[]).filter(wk=>wk.location===l.slug).sort((a,b)=>b.date.localeCompare(a.date))[1];
+    if (!w) return;
+    const t = l;
+    const score = computeScore(w, t);
+    const g = grade(score.composite);
+    const salesChg = prev ? (((w.net_sales - prev.net_sales)/prev.net_sales)*100).toFixed(1) : null;
+    const fplhVal = (w.food_items_sold && w.kitchen_labor_hrs) ? (w.food_items_sold/w.kitchen_labor_hrs).toFixed(1) : null;
+
+    const kpiRows = [
+      ['Net Sales', fmt(w.net_sales,'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+  if(page==='fplh') renderFplh();
+  if(page==='brief') renderBrief();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+</body>
+</html>
+,'',0), null, false],
+      ['PPA', fmt(w.ppa,'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+  if(page==='fplh') renderFplh();
+  if(page==='brief') renderBrief();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+</body>
+</html>
+,'',2), fmt(t.target_ppa,'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+  if(page==='fplh') renderFplh();
+  if(page==='brief') renderBrief();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+</body>
+</html>
+,'',2), false],
+      ['Labor %', fmt(w.labor_pct,'','%'), fmt(t.target_labor_pct,'','%'), true],
+      ['SPLH', fmt(w.splh,'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+  if(page==='fplh') renderFplh();
+  if(page==='brief') renderBrief();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+</body>
+</html>
+,'',0), fmt(t.target_splh,'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+  if(page==='fplh') renderFplh();
+  if(page==='brief') renderBrief();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+</body>
+</html>
+,'',0), false],
+      ['GPLH', fmt(w.gplh,'','',2), fmt(t.target_gplh||2,'','',2), false],
+      ['Starter Attach', fmt(w.starter_attach,'','%',0), fmt(t.target_starter_attach,'','%',0), false],
+      ['Drinks/Chk', fmt(w.drink_attach,'','',2), fmt(t.target_drink_attach||1.8,'','',2), false],
+      ['Cocktail Attach', fmt(w.cocktail_attach,'','%',0), fmt(t.target_cocktail_attach||65,'','%',0), false],
+      ['Burger Attach', fmt(w.burger_attach,'','%',0), fmt(t.target_burger_attach||100,'','%',0), false],
+      ['Sandwich Attach', fmt(w.sandwich_attach,'','%',0), fmt(t.target_sandwich_attach||60,'','%',0), false],
+      ['Food Cost', fmt(w.food_cost,'','%'), fmt(t.target_food_cost,'','%'), true],
+      ['FPLH', fplhVal ? fplhVal+' items/hr' : '—', '8.0 items/hr', false],
+    ].map(([label, val, tgt, inv]) => {
+      const actualNum = parseFloat(val);
+      const tgtNum = parseFloat(tgt);
+      const good = !isNaN(actualNum) && !isNaN(tgtNum) ? (inv ? actualNum<=tgtNum : actualNum>=tgtNum) : null;
+      const dot = good===true ? '#2dd4a0' : good===false ? '#f06565' : '#888';
+      return `<tr style="border-bottom:0.5px solid var(--border)">
+        <td style="padding:8px 6px;font-size:12px;color:var(--text-muted)">${label}</td>
+        <td style="padding:8px 6px;font-size:13px;font-weight:600;color:var(--text)">${val}</td>
+        <td style="padding:8px 6px;font-size:12px;color:var(--text-muted)">${tgt||''}</td>
+        <td style="padding:8px 6px;text-align:center"><span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block"></span></td>
+      </tr>`;
+    }).join('');
+
+    // Coaching gaps
+    const gaps = [];
+    if (w.labor_pct > t.target_labor_pct) gaps.push(`Labor ${(w.labor_pct - t.target_labor_pct).toFixed(1)}pts over target — cut before dinner, not during`);
+    if (w.drink_attach < (t.target_drink_attach||1.8)) gaps.push(`Drinks/chk ${((t.target_drink_attach||1.8) - w.drink_attach).toFixed(2)} below target — lock "what are we drinking" language`);
+    if (w.starter_attach < t.target_starter_attach) gaps.push(`Starter attach ${(t.target_starter_attach - w.starter_attach).toFixed(0)}pts below — offer before drink order, every table`);
+    if (w.ppa < t.target_ppa) gaps.push(`PPA ${(t.target_ppa - w.ppa).toFixed(2)} short — add-on offer at 60s after plates clear`);
+    if (w.food_cost > t.target_food_cost) gaps.push(`Food cost ${(w.food_cost - t.target_food_cost).toFixed(1)}pts over — check portion compliance and waste log`);
+
+    sectionsHTML += `
+      <div style="margin-bottom:2rem;padding-bottom:2rem;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+          <div style="font-size:16px;font-weight:600">${l.name}</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            ${salesChg ? `<span style="font-size:12px;color:${parseFloat(salesChg)>=0?'#2dd4a0':'#f06565'}">${parseFloat(salesChg)>=0?'+':''}${salesChg}% vs prior week</span>` : ''}
+            <span style="font-size:13px;font-weight:700;color:${g.color}">${g.letter} — ${g.label} (${score.composite})</span>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:1rem">
+          <thead><tr style="border-bottom:0.5px solid var(--border)">
+            <th style="padding:6px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Metric</th>
+            <th style="padding:6px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Actual</th>
+            <th style="padding:6px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Target</th>
+            <th style="padding:6px;text-align:center;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">↕</th>
+          </tr></thead>
+          <tbody>${kpiRows}</tbody>
+        </table>
+        ${gaps.length ? `<div style="margin-top:.75rem">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">This week's gaps</div>
+          ${gaps.map(g=>`<div style="font-size:12px;color:var(--text);padding:5px 0;border-bottom:0.5px solid var(--border);display:flex;gap:8px"><span style="color:#f5c842;flex-shrink:0">›</span>${g}</div>`).join('')}
+        </div>` : '<div style="font-size:12px;color:#2dd4a0">No gaps — all metrics on target.</div>'}
+      </div>`;
+  });
+
+  const totalSales = locs.reduce((s,l)=>{ const w=(S.weeks||[]).filter(wk=>wk.location===l.slug).sort((a,b)=>b.date.localeCompare(a.date))[0]; return s+(w?.net_sales||0); }, 0);
+
+  root.innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:20px;font-weight:700;margin-bottom:4px">Weekly CEO Brief</div>
+        <div style="font-size:12px;color:var(--text-muted)">Week of ${weekStr} · ${locs.length} location${locs.length!==1?'s':''} · ${totalSales.toLocaleString()} total sales</div>
+      </div>
+      <button onclick="
+        const el=document.getElementById('brief-root');
+        const txt=el.innerText;
+        navigator.clipboard.writeText(txt).then(()=>showToast('success','Brief copied to clipboard'));
+      " style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy brief</button>
+    </div>
+    ${sectionsHTML || '<div style="color:var(--text-muted);font-size:13px">No data loaded yet.</div>'}
+  `;
+}
+
 function navTo(page, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
@@ -1482,6 +2049,8 @@ function navTo(page, el) {
   document.getElementById('page-title').textContent=pageTitles[page]||page;
   if(page==='staffing') staffCalc();
   if(page==='lineheat') renderLineheat();
+  if(page==='fplh') renderFplh();
+  if(page==='brief') renderBrief();
 }
 
 function navToMetric(label) {
