@@ -554,7 +554,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
             <div class="field"><label>Food Cost %</label><input type="number" id="m-fc" step=".1" placeholder="28.5"></div>
             <div class="field"><label>Sched Variance (hrs)</label><input type="number" id="m-svar" step=".1" placeholder="4.2"></div>
           </div>
-          <button class="btn btn-primary" id="save-week-btn" type="button" onclick="saveManual()">Save Week</button>
+          <button class="btn btn-primary" onclick="saveManual()">Save Week</button>
         </div>
 
         <!-- History Table -->
@@ -757,32 +757,29 @@ async function signOut() {
 // ══════════════════════════════════════════════════════════════════
 async function loadData() {
   try {
-    const uid = S.user.id;
-
     // Profile
-    const {data:profile} = await _sb.from('profiles').select('*').eq('user_id',uid).maybeSingle();
-    S.profile = profile;
+    const {data:profile}=await _sb.from('profiles').select('*').eq('user_id',S.user.id).single();
+    S.profile=profile;
     if(profile) {
-      document.getElementById('s-restname').value = profile.restaurant_name||'';
-      document.getElementById('s-ownername').value = profile.owner_name||'';
+      document.getElementById('s-restname').value=profile.restaurant_name||'';
+      document.getElementById('s-ownername').value=profile.owner_name||'';
     }
 
-    // Locations — no fallback, show what's in DB
-    const {data:locs, error:locErr} = await _sb.from('locations').select('*').eq('user_id',uid).order('name');
-    if(locErr) { showToast('error','Error loading locations: '+locErr.message); }
-    S.locations = (locs && locs.length) ? locs : [];
+    // Locations
+    const {data:locs}=await _sb.from('locations').select('*').eq('user_id',S.user.id).order('name');
+    S.locations = (locs&&locs.length) ? locs : CHOMP_DEFAULTS.locations;
 
     // Weeks
-    const {data:wks, error:wkErr} = await _sb.from('weeks').select('*').eq('user_id',uid).order('date',{ascending:false}).limit(104);
-    if(wkErr) { showToast('error','Error loading weeks: '+wkErr.message); }
-    S.weeks = (wks && wks.length) ? wks : [];
+    const {data:wks}=await _sb.from('weeks').select('*').eq('user_id',S.user.id).order('date',{ascending:false}).limit(104);
+    S.weeks = (wks&&wks.length) ? wks : CHOMP_DEFAULTS.weeks;
 
   } catch(e) {
-    showToast('error','Load error: '+e.message);
-    S.locations = [];
-    S.weeks = [];
+    // Offline fallback
+    S.locations=CHOMP_DEFAULTS.locations;
+    S.weeks=CHOMP_DEFAULTS.weeks;
   }
 
+  // Build location dropdown
   buildLocSelect();
   populateManualLoc();
   renderLocSettings();
