@@ -1070,7 +1070,7 @@ function renderCoaching() {
      steps:[{tag:'LANGUAGE',tagColor:'#a78bfa',title:'"What are we drinking tonight?"',desc:'Four words. Not "Can I get you something to drink?" The word "we" assumes. "Tonight" creates occasion. Lock this phrase this week.'},
             {tag:'FEATURE',tagColor:'#f5c842',title:'One Drink Per Shift',desc:'Every pre-shift: one cocktail, one wine, one beer. Every server leads with that item. Specific recommendation beats open question every time.'},
             {tag:'SECOND ROUND',tagColor:'#2dd4a0',title:'Half-Empty = Offer',desc:'When clearing entrées, if a glass is more than half empty, they offer a second. This alone adds 8–12% incremental drink revenue.'}],
-     protip:'Post the specialty cocktail menu behind the server station at eye level. Out of sight = out of mouth.',
+     protip:'Jocko: \"Know what best looks like, and close the gap.\" 65% cocktail attach is a decided standard, not a suggestion. The manager who runs pre-shift with that number in mind and holds it at close is operating at that standard.',
      slack:`Drink attach ${w.drink_attach}% vs ${t.target_drink_attach}%. Tonight: "What are we drinking tonight?" — not "Can I get you something?" Four words. Practice at pre-shift.`},
     {id:'ppa',icon:'💰',label:'PPA',color:'#2dd4a0',invert:false,actual:w.ppa,target:t.target_ppa,fmt:v=>'$'+v?.toFixed(2),
      weeklyImpact:Math.round(Math.abs(w.ppa-t.target_ppa)*(w.guests||0)),
