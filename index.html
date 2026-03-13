@@ -873,7 +873,7 @@ function renderHome() {
 
   // KPI ribbon — use blended or single-loc targets
   const t=S.currentLoc==='all'
-    ? {target_labor_pct:26,target_splh:55,target_ppa:30,target_starter_attach:40,target_drink_attach:85,target_food_cost:28}
+    ? {target_labor_pct:26,target_splh:55,target_ppa:30,target_starter_attach:40,target_drink_attach:1.8,target_cocktail_attach:65,target_burger_attach:100,target_sandwich_attach:60,target_food_cost:28}
     : getTargets(S.currentLoc);
 
   const kpis=[
@@ -881,7 +881,7 @@ function renderHome() {
     {icon:'💵',label:'SPLH',val:'$'+blended.splh?.toFixed(0),tgt:'tgt $'+t.target_splh,on:blended.splh>=t.target_splh,raw:blended.splh,traw:t.target_splh,inv:false},
     {icon:'💰',label:'PPA',val:'$'+blended.ppa?.toFixed(2),tgt:'tgt $'+t.target_ppa,on:blended.ppa>=t.target_ppa,raw:blended.ppa,traw:t.target_ppa,inv:false},
     {icon:'🍽',label:'Starter',val:blended.starter_attach?.toFixed(0)+'%',tgt:'tgt '+t.target_starter_attach+'%',on:blended.starter_attach>=t.target_starter_attach,raw:blended.starter_attach,traw:t.target_starter_attach,inv:false},
-    {icon:'🍹',label:'Drinks',val:blended.drink_attach?.toFixed(0)+'%',tgt:'tgt '+t.target_drink_attach+'%',on:blended.drink_attach>=t.target_drink_attach,raw:blended.drink_attach,traw:t.target_drink_attach,inv:false},
+    {icon:'🍺',label:'Drinks/Chk',val:blended.drink_attach?.toFixed(2),tgt:'tgt '+(t.target_drink_attach||1.8),on:blended.drink_attach>=(t.target_drink_attach||1.8),raw:blended.drink_attach,traw:t.target_drink_attach||1.8,inv:false},
     {icon:'🍳',label:'Food Cost',val:blended.food_cost?.toFixed(1)+'%',tgt:'tgt '+t.target_food_cost+'%',on:blended.food_cost<=t.target_food_cost,raw:blended.food_cost,traw:t.target_food_cost,inv:true},
   ];
   document.getElementById('kpi-ribbon').innerHTML=kpis.map(k=>{
