@@ -451,7 +451,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
     <div class="page" id="page-coaching">
       <div class="page-inner">
         <div class="home-hero" style="padding-top:16px">
-          <div class="home-eyebrow">Manager Coaching Guide</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px"><div class="home-eyebrow">Manager Coaching Guide</div><button onclick="exportPreShift()" style="font-size:11px;padding:5px 14px;border:1px solid var(--accent);border-radius:6px;background:var(--adim);color:var(--accent);cursor:pointer;font-family:inherit;font-weight:600">Copy Pre-Shift Brief</button></div>
           <div class="home-title"><span>One metric.</span> One behavior. One action.</div>
         </div>
         <div class="coaching-sc" id="coaching-sc"></div>
@@ -1054,7 +1054,7 @@ function renderCoaching() {
      steps:[{tag:'DAILY',tagColor:'#f06565',title:'4PM Checkpoint',desc:'At 4PM the MOD reviews projected covers vs staff. If the next 90 minutes won\'t fill the floor, one cut happens <strong>before</strong> dinner service.'},
             {tag:'BOH',tagColor:'#f5c842',title:'Variable Kitchen',desc:'A 3-cook line doing 2-cook volume = $80–120 dead labor per shift. Cross-train so the third cook can prep or close early.'},
             {tag:'SCHEDULING',tagColor:'#60a5fa',title:'Build Schedule Backwards',desc:'Divide projected weekly sales by SPLH target. That\'s your max hours. <strong>Schedule to the number, not the habit.</strong>'}],
-     protip:'Jocko: "Discipline equals freedom." A disciplined schedule built to a number gives your team clarity and your P&L room. The operators who make the cut before they need to are the ones who never panic at month-end.',
+     protip:'The best-run shifts are not the ones where everything went right. They are the ones where the manager saw what was coming and made the call before they had to. Discipline in the schedule creates freedom on the floor.',
      slack:`Labor at ${w.labor_pct}% vs ${t.target_labor_pct}% target. Tonight: 4PM checkpoint, every shift. One cut before dinner if projected covers don't support the floor.`},
     {id:'starter_attach',icon:'🍽',label:'Starter Attach',color:'#f5c842',invert:false,actual:w.starter_attach,target:t.target_starter_attach,fmt:v=>v?.toFixed(0)+'%',
      weeklyImpact:Math.round(Math.abs(w.starter_attach-t.target_starter_attach)/100*(w.guests||0)*8),
@@ -1062,7 +1062,7 @@ function renderCoaching() {
      steps:[{tag:'SEQUENCE',tagColor:'#f5c842',title:'Offer Before Drinks',desc:'Greet → mention one specific item → "Before I get your drinks, can I start you with our [item]?" Then take the drink order. Always before, never after.'},
             {tag:'SPECIFICITY',tagColor:'#60a5fa',title:'One Item, Not the Menu',desc:'"We just got the crab dip in" beats "Can I start you with an appetizer?" by 3:1. Pick one item at pre-shift.'},
             {tag:'ACCOUNTABILITY',tagColor:'#a78bfa',title:'14-Day Server Tracking',desc:'Post starter attach by server name from Toast every Sunday. Servers at the bottom self-correct without a conversation.'}],
-     protip:'Meyer: "The charitable assumption" — assume every guest wants the full experience. A server given a tasting portion isn\'t pitching. They\'re a host sharing something they loved. Three portions at pre-shift changes the entire energy of the offer.'s featured starter to the server station. Servers who\'ve tasted it sell it 2–3x more.',
+     protip:'A server who has tasted the dish and loved it is not offering an appetizer — they are sharing something real. That energy is felt at the table. The guest who gets a genuine recommendation from someone who means it has a completely different night.'t pitching. They\'re a host sharing something they loved. Three portions at pre-shift changes the entire energy of the offer.'s featured starter to the server station. Servers who\'ve tasted it sell it 2–3x more.',
      slack:`Starter attach ${w.starter_attach}% vs ${t.target_starter_attach}% — $${Math.round(Math.abs(w.starter_attach-t.target_starter_attach)/100*(w.guests||0)*8).toLocaleString()}/week gap. Tonight: offer before the drink order. Every server, every table.`},
     {id:'drink_attach',icon:'🍹',label:'Drink Attach',color:'#a78bfa',invert:false,actual:w.drink_attach,target:t.target_drink_attach,fmt:v=>v?.toFixed(0)+'%',
      weeklyImpact:Math.round(Math.abs(w.drink_attach-t.target_drink_attach)/100*(w.guests||0)*9),
@@ -1070,7 +1070,7 @@ function renderCoaching() {
      steps:[{tag:'LANGUAGE',tagColor:'#a78bfa',title:'"What are we drinking tonight?"',desc:'Four words. Not "Can I get you something to drink?" The word "we" assumes. "Tonight" creates occasion. Lock this phrase this week.'},
             {tag:'FEATURE',tagColor:'#f5c842',title:'One Drink Per Shift',desc:'Every pre-shift: one cocktail, one wine, one beer. Every server leads with that item. Specific recommendation beats open question every time.'},
             {tag:'SECOND ROUND',tagColor:'#2dd4a0',title:'Half-Empty = Offer',desc:'When clearing entrées, if a glass is more than half empty, they offer a second. This alone adds 8–12% incremental drink revenue.'}],
-     protip:'Jocko: "Know what best looks like, and close the gap." 65% cocktail attach is a decided standard, not a suggestion. The manager who runs pre-shift with that number in mind and holds it at close is operating at that standard.',
+     protip:'A server who knows the menu — really knows it, has tasted it, has opinions about it — recommends cocktails differently than one reading from a list. The investment is a tasting. The return is a server who makes the offer because they mean it.',
      slack:`Drink attach ${w.drink_attach}% vs ${t.target_drink_attach}%. Tonight: "What are we drinking tonight?" — not "Can I get you something?" Four words. Practice at pre-shift.`},
     {id:'ppa',icon:'💰',label:'PPA',color:'#2dd4a0',invert:false,actual:w.ppa,target:t.target_ppa,fmt:v=>'$'+v?.toFixed(2),
      weeklyImpact:Math.round(Math.abs(w.ppa-t.target_ppa)*(w.guests||0)),
@@ -1078,7 +1078,7 @@ function renderCoaching() {
      steps:[{tag:'TIMING',tagColor:'#2dd4a0',title:'Dessert at 60 Seconds',desc:'Offer within 60 seconds of clearing the last entrée. "Before I close you out — are we doing dessert? The [item] is outstanding."'},
             {tag:'UPGRADE',tagColor:'#f5c842',title:'Protein Upgrades',desc:'Upgrade offers are almost never mentioned unless trained. Every bowl, salad, pasta has an upgrade path. 30-second review at pre-shift.'},
             {tag:'AUDIT',tagColor:'#a78bfa',title:'Mental 10-Second Check',desc:'Before dropping the check: did this table have a drink, starter, add-on? If two of three are missing, offer something.'}],
-     protip:'Meyer: "Business, like life, is all about how you make people feel." PPA is what happens when your team makes people feel genuinely cared for. A server who believes in what they\'re offering never has to sell — they share.',
+     protip:'PPA is what happens when your team makes people feel genuinely taken care of. The server who wants the table to have a great time does not need to be told to offer the starter — they do it because that is how they show up. That culture is what you are building.'re offering never has to sell — they share.',
      slack:`PPA $${w.ppa} vs $${t.target_ppa} target. Tonight: dessert offer when entrée plates clear, not when check is requested. One specific item, every table.`},
     {id:'splh',icon:'💵',label:'SPLH',color:'#60a5fa',invert:false,actual:w.splh,target:t.target_splh,fmt:v=>'$'+v?.toFixed(0),
      weeklyImpact:0,
@@ -1086,7 +1086,7 @@ function renderCoaching() {
      steps:[{tag:'FORMULA',tagColor:'#60a5fa',title:'Schedule Backwards',desc:'Projected sales ÷ SPLH target = max hours. Build schedule from that number, not from habit.'},
             {tag:'DAYPART',tagColor:'#f5c842',title:'Daypart Breakdown',desc:'Pull SPLH by daypart from Toast. If lunch is $38 and dinner is $62, the problem is lunch staffing. Diagnose before adjusting.'},
             {tag:'SALES FIRST',tagColor:'#2dd4a0',title:'Revenue Before Cuts',desc:'A $3 PPA lift on 1,470 guests = $4,400/week with zero labor change. Chase both — sales moves faster and protects culture.'}],
-     protip:'Jocko: "Don\'t just look at the problem — own it." SPLH is your operational report card. A manager who checks it daily and acts immediately is playing offense. One who reviews it Friday is playing cleanup.'s trending low at 7PM on a Tuesday, you can still make a cut. By close it\'s just a number on a report.',
+     protip:'SPLH does not care about excuses. It measures how much value your team generated per hour on the floor. Knowing it mid-shift and acting on it is what separates operators from order-takers.'t just look at the problem — own it." SPLH is your operational report card. A manager who checks it daily and acts immediately is playing offense. One who reviews it Friday is playing cleanup.'s trending low at 7PM on a Tuesday, you can still make a cut. By close it\'s just a number on a report.',
      slack:`SPLH $${w.splh} vs $${t.target_splh}. Pull your Toast daypart breakdown — find which service is dragging the number. Address root cause, not total.`},
     {id:'food_cost',icon:'🍳',label:'Food Cost %',color:'#fb7185',invert:true,actual:w.food_cost,target:t.target_food_cost,fmt:v=>v?.toFixed(1)+'%',
      weeklyImpact:Math.round(Math.abs(w.food_cost-t.target_food_cost)/100*(w.net_sales||0)),
@@ -1094,7 +1094,7 @@ function renderCoaching() {
      steps:[{tag:'DAILY',tagColor:'#fb7185',title:'5-Minute Line Check',desc:'Before every service: portion weights, mise en place levels, expiration on opened proteins. Catches 80% of food cost variance before it leaves the kitchen.'},
             {tag:'PREP',tagColor:'#f5c842',title:'Prep to 90th Percentile',desc:'Pull last 3 weeks same-day covers. Prep to 90th percentile, not worst-case. Every item prepped and not sold is cost without revenue.'},
             {tag:'TRACKING',tagColor:'#60a5fa',title:'End-of-Night Waste Log',desc:'Closing cook logs what didn\'t sell, what got 86\'d, what was over-prepped. One week of data tells you exactly where cost is going.'}],
-     protip:'Meyer: "The genuine desire to be of service." The lunch guest matters as much as the Friday night party of eight. Sandwich attach reflects whether your team brought the same energy to both.',
+     protip:'The guest at noon on a Tuesday deserves the same care as anyone else who walks through the door. When your lunch team brings that same intention — a recommendation, an upgrade, a moment of actual attention — those guests come back. That is where loyalty gets built.',
      slack:`Food cost ${w.food_cost}% vs ${t.target_food_cost}%. BOH this week: line check before every service, portion weights on top 3 sellers, waste log at close.`},
   ];
 
@@ -1624,6 +1624,195 @@ document.addEventListener('click', e => {
   const modal = document.getElementById('brief-modal');
   if (e.target === modal) closeBriefModal();
 });
+function exportPreShift(){const loc=S.currentLoc==='all'?(S.locations[0]?.slug||'warren'):S.currentLoc;const w=getLatestWeek(loc)||CHOMP_DEFAULTS.weeks.find(wk=>wk.location===loc)||CHOMP_DEFAULTS.weeks[0];const t=getTargets(loc);const locName=loc.charAt(0).toUpperCase()+loc.slice(1);const date=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});const allM=[{label:'Labor %',actual:w.labor_pct,target:t.target_labor_pct,inv:true,fmt:v=>v?.toFixed(1)+'%',move:'4PM checkpoint — count covers, count staff, make the call before service starts.',why:'When labor is controlled, we invest in the team. Overspend here and the people doing the work pay for it.'},{label:'SPLH',actual:w.splh,target:t.target_splh,inv:false,fmt:v=>'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+
+  <div id="brief-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+    <div style="background:var(--s1);border:0.5px solid var(--border);border-radius:12px;width:min(720px,92vw);max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)" id="brief-modal-title">Weekly CEO Brief</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="brief-modal-sub"></div>
+        </div>
+        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      <div id="brief-modal-body" style="padding:20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+        <button onclick="copyBrief()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy</button>
+        <button onclick="closeBriefModal()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
++v?.toFixed(0),move:'Pull Toast daypart report — find which service is dragging, coach that shift specifically.',why:'High SPLH means a productive, well-supported team. The business invests better when this number is strong.'},{label:'PPA',actual:w.ppa,target:t.target_ppa,inv:false,fmt:v=>'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+
+  <div id="brief-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+    <div style="background:var(--s1);border:0.5px solid var(--border);border-radius:12px;width:min(720px,92vw);max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)" id="brief-modal-title">Weekly CEO Brief</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="brief-modal-sub"></div>
+        </div>
+        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      <div id="brief-modal-body" style="padding:20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+        <button onclick="copyBrief()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy</button>
+        <button onclick="closeBriefModal()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
++v?.toFixed(2),move:'Before every check: starter, drink, add-on. Two missing means one more genuine offer.',why:'Servers who host fully earn more in tips. Guests who feel cared for come back. Same moment, both outcomes.'},{label:'GPLH',actual:w.gplh,target:t.target_gplh||2.1,inv:false,fmt:v=>v?.toFixed(2),move:'Sections set before service. Bus on last plate, every time. Expo owns the call.',why:'When the floor has rhythm, the whole night is better for staff and guests alike.'},{label:'Starter Attach',actual:w.starter_attach,target:t.target_starter_attach,inv:false,fmt:v=>v?.toFixed(0)+'%',move:'Offer before drinks. One item, tasted at pre-shift, recommended in your own voice.',why:'Tables that start with a shared appetizer stay longer, drink more, tip better.'},{label:'Drinks/Chk',actual:w.drink_attach,target:t.target_drink_attach||1.8,inv:false,fmt:v=>v?.toFixed(2),move:'"What are we drinking tonight?" every table. Notice the half-empty glass at entree.',why:'Presence is a skill. The table that feels noticed tips what they felt and comes back.'},{label:'Cocktail Attach',actual:w.cocktail_attach,target:65,inv:false,fmt:v=>v?.toFixed(0)+'%',move:'Feature one cocktail with a food pairing. Brief it, believe it, recommend it specifically.',why:'Highest margin pour. When your team is confident here, the business and the guest both win.'},{label:'Burger Attach',actual:w.burger_attach,target:95,inv:false,fmt:v=>v?.toFixed(0)+'%',move:'Lead with the featured burger when a guest is undecided. One sentence, your voice.',why:'This is the dish that builds regulars. A great recommendation tonight is a guest back next week.'}];const on=allM.filter(m=>m.actual!=null&&(m.inv?m.actual<=m.target:m.actual>=m.target));const off=allM.filter(m=>m.actual!=null&&(m.inv?m.actual>m.target:m.actual<m.target));let msg=':chomp: *Pre-Shift Brief — '+locName+' — '+date+'*\n';msg+='━━━━━━━━━━━━━━━━━━━━━━━\n\n';if(on.length){msg+=':white_check_mark: *Carrying forward*\n';on.forEach(m=>msg+='• '+m.label+': '+m.fmt(m.actual)+'  _(tgt '+m.fmt(m.target)+')_\n');msg+='\n';}if(off.length){msg+=':dart: *This shift\'s focus*\n';off.slice(0,3).forEach(m=>{msg+='\n*'+m.label+'* — '+m.fmt(m.actual)+' vs '+m.fmt(m.target)+' target\n';msg+='→ '+m.move+'\n';msg+='_Why it matters: '+m.why+'_\n';});msg+='\n';}msg+=':handshake: *Every table is someone\'s night. Make it worth it.*';navigator.clipboard.writeText(msg).then(()=>showToast('success','Pre-shift brief copied — paste into Slack'));}
 function navTo(page, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
