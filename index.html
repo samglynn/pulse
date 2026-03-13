@@ -627,7 +627,9 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
 // ══════════════════════════════════════════════════════════════════
 // SUPABASE INIT
 // ══════════════════════════════════════════════════════════════════
-const _sb = supabase.createClient(PULSE_CONFIG.supabaseUrl, PULSE_CONFIG.supabaseAnonKey);
+const _sb = supabase.createClient(PULSE_CONFIG.supabaseUrl, PULSE_CONFIG.supabaseAnonKey, {
+  auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false }
+});
 
 // ══════════════════════════════════════════════════════════════════
 // STATE
