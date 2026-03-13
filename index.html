@@ -1245,7 +1245,7 @@ async function saveManual() {
   row.health_score=computeScore(row,t).composite;
   try {
     if(S.user) {
-      const {data,error}=await _sb.from('weeks').upsert({...row,user_id:S.user.id}).select();
+      const {data,error}=await _sb.from('weeks').upsert({...row,user_id:S.user.id},{onConflict:'user_id,date,location'}).select();
       if(error) throw error;
       // Update local state
       S.weeks=S.weeks.filter(w=>!(w.date===date&&w.location===loc));
