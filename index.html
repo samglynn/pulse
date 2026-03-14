@@ -1475,51 +1475,200 @@ function renderLineheat() {
   const seen = new Set(); const uniq = locWeeks.filter(w=>{ if(seen.has(w.date)) return false; seen.add(w.date); return true; }).slice(0,6);
   if (!uniq.length) { root.innerHTML='<p style="padding:2rem;color:var(--text-muted)">No data yet.</p>'; return; }
   let selIdx = 0;
-  function stationData(w) {
-    const c = w.guests || 600;
-    const burgers=Math.round((w.burger_attach||100)/100*c);
-    const sandwiches=Math.round((w.sandwich_attach||60)/100*c);
-    const starters=Math.round((w.starter_attach||50)/100*c);
-    const sandHalf=Math.round(sandwiches/2);
-    const fryer=Math.round(starters*0.6+sandwiches*0.15);
-    const sauteHot=Math.round(starters*0.4);
-    const mac=Math.round(c*0.12);
-    const salads=Math.round(c*0.13);
-    return [
-      {name:'Flattop',items:[{name:'Burgers',count:burgers},{name:'Sandwiches (½)',count:sandHalf}]},
-      {name:'Fryer',items:[{name:'All fryer items',count:fryer}]},
-      {name:'Sauté',items:[{name:'Starters (hot)',count:sauteHot},{name:'Sandwiches (½)',count:sandHalf},{name:'Mac & Cheese',count:mac}]},
-      {name:'Pantry',items:[{name:'Salads',count:salads}]},
-    ];
-  }
-  function heat(pct) {
-    if(pct>=0.75) return {dot:'#e05c2a',fill:'#e05c2a',border:'rgba(224,92,42,0.25)'};
-    if(pct>=0.4) return {dot:'#d4a017',fill:'#d4a017',border:'rgba(212,160,23,0.18)'};
-    return {dot:'#4a9e6b',fill:'#4a9e6b',border:'rgba(74,158,107,0.15)'};
-  }
-  function render() {
-    const w=uniq[selIdx];
-    const stations=stationData(w);
-    const totals=stations.map(s=>s.items.reduce((a,b)=>a+b.count,0));
-    const maxTotal=Math.max(...totals);
-    const totalItems=totals.reduce((a,b)=>a+b,0);
-    const weekBtns=uniq.map((wk,i)=>`<button onclick="window._lhSel(${i})" style="font-size:11px;padding:4px 10px;border:0.5px solid ${i===selIdx?'var(--accent)':'var(--border)'};border-radius:4px;background:${i===selIdx?'var(--adim)':'transparent'};color:${i===selIdx?'var(--accent)':'var(--text-muted)'};cursor:pointer;font-family:inherit">${wk.date}</button>`).join('');
-    const summary=`<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:1.5rem"><div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Items fired</div><div style="font-size:20px;font-weight:500">${totalItems.toLocaleString()}</div></div><div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Guests</div><div style="font-size:20px;font-weight:500">${(w.guests||0).toLocaleString()}</div></div><div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Items / guest</div><div style="font-size:20px;font-weight:500">${w.guests?(totalItems/w.guests).toFixed(1):'—'}</div></div></div>`;
-    const stationCards=stations.map((s,i)=>{
-      const total=totals[i]; const pct=total/maxTotal; const h=heat(pct); const loadPct=Math.round(pct*100);
-      const itemMax=Math.max(...s.items.map(it=>it.count),1);
-      const itemRows=s.items.map(it=>{
-        const bp=it.count>0?Math.round(it.count/itemMax*100):0;
-        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="font-size:10px;color:var(--text-muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</span><div style="width:40px;height:4px;background:var(--border);border-radius:2px;flex-shrink:0;overflow:hidden"><div style="width:${bp}%;height:100%;background:${h.fill};border-radius:2px"></div></div><span style="font-size:11px;font-weight:500;color:${it.count>0?h.fill:'var(--text-muted)'};min-width:30px;text-align:right">${it.count>0?it.count.toLocaleString():'—'}</span></div>`;
-      }).join('');
-      return `<div style="border:0.5px solid ${h.border};border-radius:8px;padding:14px 12px 12px;position:relative"><div style="width:8px;height:8px;border-radius:50%;background:${h.dot};position:absolute;top:12px;right:12px"></div><div style="font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;color:var(--text)">${s.name}</div><div style="height:3px;background:var(--border);border-radius:2px;margin-bottom:10px;overflow:hidden"><div style="width:${loadPct}%;height:100%;background:${h.fill};border-radius:2px"></div></div>${itemRows}<div style="margin-top:10px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em">Total fired</span><span style="font-size:14px;font-weight:500;color:${h.fill}">${total.toLocaleString()}</span></div></div>`;
-    }).join('');
-    root.innerHTML=`<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:8px"><span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)">Kitchen line · ${loc}</span><div style="display:flex;gap:6px;flex-wrap:wrap">${weekBtns}</div></div>${summary}<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);text-align:center;margin-bottom:6px">← expo pass</div><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px">${stationCards}</div><div style="display:flex;gap:16px;margin-top:1rem"><span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)"><span style="width:8px;height:8px;border-radius:50%;background:#e05c2a;display:inline-block"></span>Hot</span><span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)"><span style="width:8px;height:8px;border-radius:50%;background:#d4a017;display:inline-block"></span>Moderate</span><span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)"><span style="width:8px;height:8px;border-radius:50%;background:#4a9e6b;display:inline-block"></span>Light</span></div><p style="font-size:11px;color:var(--text-muted);margin-top:1rem">* Item counts estimated from attach rates. Upload check detail CSV for exact per-item data.</p>`;
-  }
-  window._lhSel=function(i){selIdx=i;render();};
-  render();
-}
 
+  // Strike zone grid config — rows x cols per station
+  const STATIONS = [
+    {
+      name: 'Flattop', pos: 0,
+      items: [
+        {name:'Burgers', key:'burger_attach', row:0, col:0, span:2},
+        {name:'Sandwiches', key:'sandwich_attach', row:0, col:2, span:2},
+      ],
+      cols: 4, rows: 2,
+      desc: 'Burgers + Sandwiches'
+    },
+    {
+      name: 'Fryer', pos: 1,
+      items: [
+        {name:'Wings', key:'starter_attach', row:0, col:0, span:1, weight:0.15},
+        {name:'Sprouts', key:'starter_attach', row:0, col:1, span:1, weight:0.12},
+        {name:'Fries', key:'burger_attach', row:0, col:2, span:1, weight:0.08},
+        {name:'Rangoon', key:'starter_attach', row:0, col:3, span:1, weight:0.10},
+        {name:'Skins', key:'starter_attach', row:1, col:0, span:1, weight:0.08},
+        {name:'Boneless', key:'starter_attach', row:1, col:1, span:1, weight:0.12},
+        {name:'Sandwiches', key:'sandwich_attach', row:1, col:2, span:2, weight:0.15},
+      ],
+      cols: 4, rows: 2,
+      desc: 'All fried items'
+    },
+    {
+      name: 'Sauté', pos: 2,
+      items: [
+        {name:'Hot Starters', key:'starter_attach', row:0, col:0, span:2, weight:0.4},
+        {name:'Mac & Cheese', key:'gplh', row:0, col:2, span:2, weight:0.12},
+        {name:'Sandwiches', key:'sandwich_attach', row:1, col:0, span:4, weight:0.3},
+      ],
+      cols: 4, rows: 2,
+      desc: 'Starters + Sandwiches + Mac'
+    },
+    {
+      name: 'Pantry', pos: 3,
+      items: [
+        {name:'Salads', key:'gplh', row:0, col:0, span:4, weight:0.13},
+        {name:'Garnish', key:'gplh', row:1, col:0, span:2, weight:0.05},
+        {name:'Cold Apps', key:'starter_attach', row:1, col:2, span:2, weight:0.08},
+      ],
+      cols: 4, rows: 2,
+      desc: 'Salads + Cold items'
+    }
+  ];
+
+  function getCellHeat(w, item) {
+    const base = w[item.key] || 0;
+    const weight = item.weight || 0.5;
+    // normalize to 0-1 scale
+    let norm;
+    if (item.key === 'burger_attach') norm = Math.min(base / 110, 1);
+    else if (item.key === 'sandwich_attach') norm = Math.min(base / 70, 1);
+    else if (item.key === 'starter_attach') norm = Math.min(base / 60, 1);
+    else if (item.key === 'gplh') norm = Math.min(base / 2.5, 1);
+    else norm = 0.5;
+    return Math.min(1, norm * weight * 4);
+  }
+
+  function heatToColor(heat) {
+    // Cool blue -> teal -> yellow -> orange -> deep red  (baseball strike zone style)
+    if (heat < 0.15) return { bg: 'rgba(30,60,120,0.85)', text: '#6090dd', border: 'rgba(60,100,200,0.4)' };
+    if (heat < 0.35) return { bg: 'rgba(15,90,100,0.85)', text: '#2dd4a0', border: 'rgba(45,212,160,0.4)' };
+    if (heat < 0.55) return { bg: 'rgba(90,120,10,0.85)', text: '#f5c842', border: 'rgba(245,200,66,0.5)' };
+    if (heat < 0.75) return { bg: 'rgba(140,70,0,0.85)', text: '#f97316', border: 'rgba(249,115,22,0.6)' };
+    return { bg: 'rgba(160,20,20,0.92)', text: '#ff6060', border: 'rgba(240,50,50,0.7)' };
+  }
+
+  function heatLabel(heat) {
+    if (heat < 0.15) return 'Cold';
+    if (heat < 0.35) return 'Light';
+    if (heat < 0.55) return 'Moderate';
+    if (heat < 0.75) return 'Hot';
+    return 'Firing';
+  }
+
+  function renderWeek(w) {
+    const date = w.date;
+
+    // Summary stats
+    const totalItems = Math.round(
+      (w.burger_attach||0)/100*(w.guests||600) +
+      (w.sandwich_attach||0)/100*(w.guests||600) +
+      (w.starter_attach||0)/100*(w.guests||600)
+    );
+
+    // Week selector
+    const weekBtns = uniq.map((wk,i) =>
+      `<button onclick="window._lhSel(${i})" style="font-size:11px;padding:4px 10px;border:0.5px solid ${i===selIdx?'var(--accent)':'var(--border)'};border-radius:4px;background:${i===selIdx?'var(--adim)':'transparent'};color:${i===selIdx?'var(--accent)':'var(--text-muted)'};cursor:pointer;font-family:inherit">${wk.date}</button>`
+    ).join('');
+
+    // Summary row
+    const summaryHTML = `<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.5rem">
+      <div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Items Fired</div><div style="font-size:20px;font-weight:600">${totalItems.toLocaleString()}</div></div>
+      <div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Guests</div><div style="font-size:20px;font-weight:600">${(w.guests||0).toLocaleString()}</div></div>
+      <div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Items / Guest</div><div style="font-size:20px;font-weight:600">${w.guests?((totalItems/w.guests).toFixed(1)):'—'}</div></div>
+      <div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Peak Load</div><div style="font-size:20px;font-weight:600;color:#f97316">Flattop</div></div>
+    </div>`;
+
+    // Build strike zone grid for each station
+    const stationGrids = STATIONS.map(station => {
+      const grid = Array(station.rows).fill(null).map(() => Array(station.cols).fill(null));
+      
+      // Place items into grid
+      const cellData = {};
+      station.items.forEach(item => {
+        const heat = getCellHeat(w, item);
+        const c = heatToColor(heat);
+        const key = `${item.row},${item.col}`;
+        cellData[key] = { item, heat, c };
+      });
+
+      // Build cell HTML
+      let cellsHTML = '';
+      for (let r = 0; r < station.rows; r++) {
+        for (let col = 0; col < station.cols; col++) {
+          const key = `${r},${col}`;
+          const cell = cellData[key];
+          // Check if this col is covered by a span from an earlier cell
+          const coveredBy = station.items.find(it => it.row === r && it.col < col && (it.col + (it.span||1)) > col);
+          if (coveredBy) continue;
+
+          const span = cell ? (cell.item.span || 1) : 1;
+          if (cell) {
+            const pct = Math.round(cell.heat * 100);
+            // Glow intensity
+            const glowStr = cell.heat > 0.6 ? `box-shadow: 0 0 ${Math.round(cell.heat*20)}px ${cell.c.border}, inset 0 0 ${Math.round(cell.heat*10)}px rgba(255,255,255,0.05);` : '';
+            cellsHTML += `<div style="grid-column: span ${span}; background:${cell.c.bg}; border:1px solid ${cell.c.border}; border-radius:6px; padding:8px 6px; position:relative; ${glowStr} transition:all .3s">
+              <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${cell.c.text};margin-bottom:4px;opacity:.9">${cell.item.name}</div>
+              <div style="font-size:13px;font-weight:700;color:${cell.c.text}">${heatLabel(cell.heat)}</div>
+              <div style="position:absolute;bottom:4px;right:5px;font-size:9px;color:${cell.c.text};opacity:.6">${pct}%</div>
+            </div>`;
+          } else {
+            cellsHTML += `<div style="grid-column: span 1; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px 6px">
+              <div style="font-size:9px;color:var(--text-muted);opacity:.4">—</div>
+            </div>`;
+          }
+        }
+      }
+
+      // Compute overall station heat
+      const stationHeats = station.items.map(it => getCellHeat(w, it));
+      const maxHeat = Math.max(...stationHeats);
+      const sc = heatToColor(maxHeat);
+
+      return `<div style="background:var(--surface);border:1px solid ${sc.border};border-radius:10px;padding:14px;position:relative">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${sc.text}">${station.name}</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${station.desc}</div>
+          </div>
+          <div style="width:10px;height:10px;border-radius:50%;background:${sc.text};box-shadow:0 0 8px ${sc.text};flex-shrink:0"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(${station.cols},1fr);gap:5px">
+          ${cellsHTML}
+        </div>
+      </div>`;
+    });
+
+    // Legend
+    const legendItems = [
+      { label: 'Cold', color: '#6090dd' },
+      { label: 'Light', color: '#2dd4a0' },
+      { label: 'Moderate', color: '#f5c842' },
+      { label: 'Hot', color: '#f97316' },
+      { label: 'Firing', color: '#ff6060' },
+    ];
+    const legendHTML = legendItems.map(l =>
+      `<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><span style="width:10px;height:10px;border-radius:2px;background:${l.color};display:inline-block;box-shadow:0 0 4px ${l.color}"></span>${l.label}</span>`
+    ).join('');
+
+    root.innerHTML = `
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:8px">
+        <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)">Kitchen Line · ${loc} · Strike Zone</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${weekBtns}</div>
+      </div>
+      ${summaryHTML}
+      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);text-align:center;margin-bottom:10px;opacity:.7">← expo pass ·  left to right: flattop → fryer → sauté → pantry</div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px">
+        ${stationGrids.join('')}
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-right:4px">Heat</span>
+        ${legendHTML}
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:.75rem;opacity:.7">* Item heat derived from attach rates. Upload check detail CSV for exact item-level data.</p>
+    `;
+  }
+
+  window._lhSel = function(i) { selIdx = i; renderWeek(uniq[i]); };
+  renderWeek(uniq[0]);
+}
 
 function openBriefModal(locName, locSlug) {
   const modal = document.getElementById('brief-modal');
