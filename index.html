@@ -1832,6 +1832,17 @@ _sb.auth.onAuthStateChange(async(event, session)=>{
   }
 });
 
+// Hard timeout — if onAuthStateChange never fires, force init after 4s
+setTimeout(()=>{
+  const loading=document.getElementById('loading');
+  if(loading&&loading.style.display!=='none'){
+    loading.style.display='none';
+    if(!window.S||!window.S.user){
+      document.getElementById('auth-screen').style.display='flex';
+    }
+  }
+},4000);
+
 // Check for unconfigured Supabase (demo mode)
 if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
   // Run in demo mode without auth
