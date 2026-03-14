@@ -1820,7 +1820,16 @@ function showToast(type, msg) {
 // ══════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════
+// Timeout fallback: if auth never fires in 5s, show sign-in
+const _authTimer = setTimeout(()=>{
+  if(document.getElementById('loading').style.display!=='none'){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+}, 5000);
+
 _sb.auth.onAuthStateChange(async(event, session)=>{
+  clearTimeout(_authTimer);
   document.getElementById('loading').style.display='none';
   if(session?.user){
     S.user=session.user;
@@ -1830,7 +1839,6 @@ _sb.auth.onAuthStateChange(async(event, session)=>{
     const meta=session.user.user_metadata;
     document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
     await loadData();
-    // Set default date for manual entry
     document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
     staffCalc();
   } else {
