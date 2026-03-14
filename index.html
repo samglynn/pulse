@@ -1843,6 +1843,17 @@ setTimeout(()=>{
   }
 },4000);
 
+// Hard timeout — if onAuthStateChange never fires within 4s, force to sign-in
+setTimeout(()=>{
+  const loading=document.getElementById('loading');
+  if(loading&&loading.style.display!=='none'){
+    loading.style.display='none';
+    if(!window.S||!window.S.user){
+      document.getElementById('auth-screen').style.display='flex';
+    }
+  }
+},4000);
+
 // Check for unconfigured Supabase (demo mode)
 if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
   // Run in demo mode without auth
@@ -1973,6 +1984,631 @@ if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
 </body>
 </html>
 +v?.toFixed(2),move:'Before every check: starter, drink, add-on. Two missing means one more genuine offer.',why:'Servers who host fully earn more in tips. Guests who feel cared for come back. Same moment, both outcomes.'},{label:'GPLH',actual:w.gplh,target:t.target_gplh||2.1,inv:false,fmt:v=>v?.toFixed(2),move:'Sections set before service. Bus on last plate, every time. Expo owns the call.',why:'When the floor has rhythm, the whole night is better for staff and guests alike.'},{label:'Starter Attach',actual:w.starter_attach,target:t.target_starter_attach,inv:false,fmt:v=>v?.toFixed(0)+'%',move:'Offer before drinks. One item, tasted at pre-shift, recommended in your own voice.',why:'Tables that start with a shared appetizer stay longer, drink more, tip better.'},{label:'Drinks/Chk',actual:w.drink_attach,target:t.target_drink_attach||1.8,inv:false,fmt:v=>v?.toFixed(2),move:'"What are we drinking tonight?" every table. Notice the half-empty glass at entree.',why:'Presence is a skill. The table that feels noticed tips what they felt and comes back.'},{label:'Cocktail Attach',actual:w.cocktail_attach,target:65,inv:false,fmt:v=>v?.toFixed(0)+'%',move:'Feature one cocktail with a food pairing. Brief it, believe it, recommend it specifically.',why:'Highest margin pour. When your team is confident here, the business and the guest both win.'},{label:'Burger Attach',actual:w.burger_attach,target:95,inv:false,fmt:v=>v?.toFixed(0)+'%',move:'Lead with the featured burger when a guest is undecided. One sentence, your voice.',why:'This is the dish that builds regulars. A great recommendation tonight is a guest back next week.'}];const on=allM.filter(m=>m.actual!=null&&(m.inv?m.actual<=m.target:m.actual>=m.target));const off=allM.filter(m=>m.actual!=null&&(m.inv?m.actual>m.target:m.actual<m.target));let msg=':chomp: *Pre-Shift Brief — '+locName+' — '+date+'*\n';msg+='━━━━━━━━━━━━━━━━━━━━━━━\n\n';if(on.length){msg+=':white_check_mark: *Carrying forward*\n';on.forEach(m=>msg+='• '+m.label+': '+m.fmt(m.actual)+'  _(tgt '+m.fmt(m.target)+')_\n');msg+='\n';}if(off.length){msg+=':dart: *This shift\'s focus*\n';off.slice(0,3).forEach(m=>{msg+='\n*'+m.label+'* — '+m.fmt(m.actual)+' vs '+m.fmt(m.target)+' target\n';msg+='→ '+m.move+'\n';msg+='_Why it matters: '+m.why+'_\n';});msg+='\n';}msg+=':handshake: *Every table is someone\'s night. Make it worth it.*';navigator.clipboard.writeText(msg).then(()=>showToast('success','Pre-shift brief copied — paste into Slack'));}
+
+function renderBrief() {
+  const root = document.getElementById('brief-root');
+  if (!root) return;
+  const loc = S.currentLoc === 'all' ? null : S.currentLoc;
+  const locs = loc ? S.locations.filter(l=>l.slug===loc) : S.locations;
+  const now = new Date();
+  const weekStr = now.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  function fmt(v,pre='',suf='',dec=1){return v!=null?pre+parseFloat(v).toFixed(dec)+suf:'—';}
+  let sectionsHTML='';
+  locs.forEach(l=>{
+    const w=(S.weeks||[]).filter(wk=>wk.location===l.slug).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    const prev=(S.weeks||[]).filter(wk=>wk.location===l.slug).sort((a,b)=>b.date.localeCompare(a.date))[1];
+    if(!w)return;
+    const t=l;
+    const sc=computeScore(w,t);
+    const g=grade(sc.composite);
+    const salesChg=prev?((w.net_sales-prev.net_sales)/prev.net_sales*100):null;
+    const gaps=[];
+    if(w.labor_pct>t.target_labor_pct)gaps.push('Labor '+(w.labor_pct-t.target_labor_pct).toFixed(1)+'pts over — cut before dinner, not during');
+    if(w.drink_attach<(t.target_drink_attach||1.8))gaps.push('Drinks/chk '+((t.target_drink_attach||1.8)-w.drink_attach).toFixed(2)+' short — "What are we drinking tonight?"');
+    if(w.starter_attach<t.target_starter_attach)gaps.push('Starter '+(t.target_starter_attach-w.starter_attach).toFixed(0)+'pts short — offer before drink order, every table');
+    if(w.ppa<t.target_ppa)gaps.push('PPA 
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+
+  <div id="brief-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+    <div style="background:var(--s1);border:0.5px solid var(--border);border-radius:12px;width:min(720px,92vw);max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)" id="brief-modal-title">Weekly CEO Brief</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="brief-modal-sub"></div>
+        </div>
+        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      <div id="brief-modal-body" style="padding:20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+        <button onclick="copyBrief()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy</button>
+        <button onclick="closeBriefModal()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
++(t.target_ppa-w.ppa).toFixed(2)+' short — one more offer before the check drops');
+    const kpiRows=[
+      ['Net Sales',fmt(w.net_sales,'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+
+  <div id="brief-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+    <div style="background:var(--s1);border:0.5px solid var(--border);border-radius:12px;width:min(720px,92vw);max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)" id="brief-modal-title">Weekly CEO Brief</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="brief-modal-sub"></div>
+        </div>
+        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      <div id="brief-modal-body" style="padding:20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+        <button onclick="copyBrief()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy</button>
+        <button onclick="closeBriefModal()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+,'',0),null],['PPA',fmt(w.ppa,'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+
+  <div id="brief-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+    <div style="background:var(--s1);border:0.5px solid var(--border);border-radius:12px;width:min(720px,92vw);max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)" id="brief-modal-title">Weekly CEO Brief</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="brief-modal-sub"></div>
+        </div>
+        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      <div id="brief-modal-body" style="padding:20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+        <button onclick="copyBrief()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy</button>
+        <button onclick="closeBriefModal()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+,'',2),fmt(t.target_ppa,'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+
+  <div id="brief-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+    <div style="background:var(--s1);border:0.5px solid var(--border);border-radius:12px;width:min(720px,92vw);max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)" id="brief-modal-title">Weekly CEO Brief</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="brief-modal-sub"></div>
+        </div>
+        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      <div id="brief-modal-body" style="padding:20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+        <button onclick="copyBrief()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy</button>
+        <button onclick="closeBriefModal()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+,'',2)],
+      ['Labor %',fmt(w.labor_pct,'','%'),fmt(t.target_labor_pct,'','%')],['SPLH',fmt(w.splh,'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+
+  <div id="brief-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+    <div style="background:var(--s1);border:0.5px solid var(--border);border-radius:12px;width:min(720px,92vw);max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)" id="brief-modal-title">Weekly CEO Brief</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="brief-modal-sub"></div>
+        </div>
+        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      <div id="brief-modal-body" style="padding:20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+        <button onclick="copyBrief()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy</button>
+        <button onclick="closeBriefModal()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+,'',0),fmt(t.target_splh,'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+
+  <div id="brief-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+    <div style="background:var(--s1);border:0.5px solid var(--border);border-radius:12px;width:min(720px,92vw);max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)" id="brief-modal-title">Weekly CEO Brief</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="brief-modal-sub"></div>
+        </div>
+        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      <div id="brief-modal-body" style="padding:20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+        <button onclick="copyBrief()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy</button>
+        <button onclick="closeBriefModal()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+,'',0)],
+      ['GPLH',fmt(w.gplh,'','',2),fmt(t.target_gplh||2,'','',2)],['Starter',fmt(w.starter_attach,'','%',0),fmt(t.target_starter_attach,'','%',0)],
+      ['Drinks/Chk',fmt(w.drink_attach,'','',2),fmt(t.target_drink_attach||1.8,'','',2)],
+      ['Cocktail',fmt(w.cocktail_attach,'','%',0),'65%'],['Burger',fmt(w.burger_attach,'','%',0),'95%'],
+      ['Sandwich',fmt(w.sandwich_attach,'','%',0),'60%'],['Food Cost',fmt(w.food_cost,'','%'),fmt(t.target_food_cost,'','%')],
+    ].map(([label,val,tgt])=>`<tr style="border-bottom:0.5px solid var(--border)">
+      <td style="padding:8px 6px;font-size:12px;color:var(--text-muted)">${label}</td>
+      <td style="padding:8px 6px;font-size:13px;font-weight:600;color:var(--text)">${val}</td>
+      <td style="padding:8px 6px;font-size:12px;color:var(--text-muted)">${tgt||''}</td>
+    </tr>`).join('');
+    sectionsHTML+=`<div style="margin-bottom:2rem;padding-bottom:2rem;border-bottom:0.5px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+        <div style="font-size:16px;font-weight:600">${l.name}</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          ${salesChg!=null?`<span style="font-size:12px;color:${salesChg>=0?'#2dd4a0':'#f06565'}">${salesChg>=0?'+':''}${salesChg.toFixed(1)}% vs prior week</span>`:''}
+          <span style="font-size:13px;font-weight:700;color:${sColor(sc.composite)}">${g.letter} — ${g.label} (${sc.composite})</span>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:1rem">
+        <thead><tr style="border-bottom:0.5px solid var(--border)">
+          <th style="padding:6px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Metric</th>
+          <th style="padding:6px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Actual</th>
+          <th style="padding:6px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Target</th>
+        </tr></thead>
+        <tbody>${kpiRows}</tbody>
+      </table>
+      ${gaps.length?`<div style="margin-top:.75rem"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">This week's gaps</div>${gaps.map(g=>`<div style="font-size:12px;color:var(--text);padding:5px 0;border-bottom:0.5px solid var(--border);display:flex;gap:8px"><span style="color:#f5c842;flex-shrink:0">›</span>${g}</div>`).join('')}</div>`:'<div style="font-size:12px;color:#2dd4a0">All metrics on target.</div>'}
+    </div>`;
+  });
+  const totalSales=locs.reduce((s,l)=>{const w=(S.weeks||[]).filter(wk=>wk.location===l.slug).sort((a,b)=>b.date.localeCompare(a.date))[0];return s+(w?.net_sales||0);},0);
+  root.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px">
+    <div><div style="font-size:20px;font-weight:700;margin-bottom:4px">Weekly CEO Brief</div>
+    <div style="font-size:12px;color:var(--text-muted)">Week of ${weekStr} · ${locs.length} location${locs.length!==1?'s':''} · ${totalSales.toLocaleString()} total</div></div>
+    <button onclick="navigator.clipboard.writeText(document.getElementById('brief-root').innerText).then(()=>showToast('success','Brief copied'))" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy brief</button>
+  </div>${sectionsHTML||'<div style="color:var(--text-muted);font-size:13px">No data loaded yet.</div>'}`;
+}
 function navTo(page, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
