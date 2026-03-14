@@ -435,7 +435,15 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
           <div class="home-sub" id="home-sub">Loading your latest data...</div>
         </div>
         <div class="kpi-ribbon" id="kpi-ribbon"></div>
-        <div class="gauge-wrap" id="gauge-wrap"></div>
+        <div id="kpi-trend-drawer" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div><span id="ktd-label" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)"></span><span id="ktd-trend" style="font-size:12px;margin-left:10px;font-weight:700"></span></div>
+          <button onclick="document.getElementById('kpi-trend-drawer').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1">×</button>
+        </div>
+        <canvas id="ktd-canvas" height="80" style="width:100%;display:block"></canvas>
+        <div id="ktd-points" style="display:flex;justify-content:space-between;margin-top:8px"></div>
+      </div>
+      <div class="gauge-wrap" id="gauge-wrap"></div>
         <div class="trend-wrap">
           <div class="trend-title"><span style="color:var(--green)">●</span> Health Score Trend</div>
           <div class="trend-chart" id="trend-chart"></div>
@@ -899,7 +907,7 @@ function renderHome() {
     return `<div class="kpi-card ${k.on?'on':'off'}" onclick="navToMetric('${k.label}')">
       <div class="kpi-badge" style="background:${k.on?'#2dd4a0':'#f06565'}">${k.on?'✓':'!'}</div>
       <div class="kpi-icon">${k.icon}</div>
-      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-label" style="cursor:pointer;user-select:none" onclick="event.stopPropagation();showKpiTrend('${k.id}','${k.label}',${k.inv})">${k.label} <span style="font-size:8px;opacity:.45">▾</span></div>
       <div class="kpi-val" style="color:${col}">${k.val}</div>
       <div class="kpi-tgt">${k.tgt}</div>
     </div>`;
@@ -2608,6 +2616,140 @@ if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
     <div style="font-size:12px;color:var(--text-muted)">Week of ${weekStr} · ${locs.length} location${locs.length!==1?'s':''} · ${totalSales.toLocaleString()} total</div></div>
     <button onclick="navigator.clipboard.writeText(document.getElementById('brief-root').innerText).then(()=>showToast('success','Brief copied'))" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy brief</button>
   </div>${sectionsHTML||'<div style="color:var(--text-muted);font-size:13px">No data loaded yet.</div>'}`;
+}
+function showKpiTrend(metricId,label,invert){
+  const drawer=document.getElementById('kpi-trend-drawer');
+  const canvas=document.getElementById('ktd-canvas');
+  const loc=S.currentLoc==='all'?null:S.currentLoc;
+  const allW=S.weeks||[];
+  const filtered=(loc?allW.filter(w=>w.location===loc):allW).sort((a,b)=>a.date.localeCompare(b.date));
+  const byDate={};
+  filtered.forEach(w=>{if(!byDate[w.date])byDate[w.date]=[];if(w[metricId]!=null)byDate[w.date].push(parseFloat(w[metricId]));});
+  const points=Object.entries(byDate).map(([date,vals])=>({date,val:vals.reduce((a,b)=>a+b,0)/vals.length})).filter(p=>!isNaN(p.val)).slice(-12);
+  if(points.length<2){showToast('info','Need 2+ weeks of data for trend');return;}
+  const t=getTargets(loc||(S.locations[0]?.slug)||'warren');
+  const target=t['target_'+metricId];
+  const first=points[0].val,last=points[points.length-1].val;
+  const chg=((last-first)/Math.abs(first||1)*100);
+  const good=invert?last<=first:last>=first;
+  const te=document.getElementById('ktd-trend');
+  te.textContent=(chg>=0?'↑':'↓')+Math.abs(chg).toFixed(1)+'%';
+  te.style.color=good?'#2dd4a0':'#f06565';
+  document.getElementById('ktd-label').textContent=label+' — '+points.length+' weeks';
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||700,H=80;
+  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const vals=points.map(p=>p.val);
+  const mn=Math.min(...vals)*0.93,mx=Math.max(...vals)*1.07,rng=(mx-mn)||1;
+  const pl=8,pr=8,pt=10,pb=4;
+  const cw=W-pl-pr,ch=H-pt-pb;
+  const xi=i=>pl+(i/(points.length-1))*cw;
+  const yi=v=>pt+ch-((v-mn)/rng)*ch;
+  if(target!=null){const ty=yi(parseFloat(target));ctx.beginPath();ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(249,115,22,0.45)';ctx.lineWidth=1;ctx.moveTo(pl,ty);ctx.lineTo(W-pr,ty);ctx.stroke();ctx.setLineDash([]);}
+  ctx.beginPath();ctx.moveTo(xi(0),yi(vals[0]));points.forEach((p,i)=>{if(i>0)ctx.lineTo(xi(i),yi(p.val));});ctx.lineTo(xi(points.length-1),H);ctx.lineTo(xi(0),H);ctx.closePath();
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,good?'rgba(45,212,160,0.28)':'rgba(240,101,101,0.22)');gr.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=gr;ctx.fill();
+  ctx.beginPath();ctx.moveTo(xi(0),yi(vals[0]));points.forEach((p,i)=>{if(i>0)ctx.lineTo(xi(i),yi(p.val));});ctx.strokeStyle=good?'#2dd4a0':'#f06565';ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();
+  points.forEach((p,i)=>{ctx.beginPath();ctx.arc(xi(i),yi(p.val),3.5,0,Math.PI*2);ctx.fillStyle=good?'#2dd4a0':'#f06565';ctx.fill();});
+  const fmtV=v=>{if(metricId==='ppa'||metricId==='splh')return'
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  if(page==='staffing') staffCalc();
+  if(page==='lineheat') renderLineheat();
+}
+
+function navToMetric(label) {
+  navTo('coaching', document.querySelector('.nav-item:nth-child(2)'));
+  setTimeout(()=>{
+    const metricMap={'Labor %':'c-labor_pct','SPLH':'c-splh','PPA':'c-ppa','Starter':'c-starter_attach','Drinks':'c-drink_attach','Food Cost':'c-food_cost'};
+    const id=Object.entries(metricMap).find(([k])=>label.includes(k))?.[1];
+    if(id) document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function onLocChange() {
+  S.currentLoc=document.getElementById('loc-select').value;
+  renderAll();
+}
+
+function toggleSb() {
+  S.sbOpen=!S.sbOpen;
+  document.getElementById('sb').classList.toggle('collapsed',!S.sbOpen);
+}
+
+function showToast(type, msg) {
+  const t=document.getElementById('toast');
+  t.className='toast '+type; t.textContent=msg;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+_sb.auth.onAuthStateChange(async(event, session)=>{
+  document.getElementById('loading').style.display='none';
+  if(session?.user){
+    S.user=session.user;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-email').textContent=session.user.email;
+    const meta=session.user.user_metadata;
+    document.getElementById('user-name').textContent=meta?.restaurant_name||session.user.email.split('@')[0];
+    await loadData();
+    // Set default date for manual entry
+    document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+    staffCalc();
+  } else {
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
+
+// Check for unconfigured Supabase (demo mode)
+if(PULSE_CONFIG.supabaseUrl==='YOUR_SUPABASE_URL'){
+  // Run in demo mode without auth
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  S.locations=CHOMP_DEFAULTS.locations;
+  S.weeks=CHOMP_DEFAULTS.weeks;
+  document.getElementById('user-name').textContent='Chomp Kitchen';
+  document.getElementById('user-email').textContent='Demo Mode';
+  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  staffCalc();
+  showToast('info','Running in demo mode. Add Supabase credentials to config.js to enable login.');
+}
+</script>
+
+  <div id="brief-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+    <div style="background:var(--s1);border:0.5px solid var(--border);border-radius:12px;width:min(720px,92vw);max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)" id="brief-modal-title">Weekly CEO Brief</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="brief-modal-sub"></div>
+        </div>
+        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      <div id="brief-modal-body" style="padding:20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)"></div>
+      <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+        <button onclick="copyBrief()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy</button>
+        <button onclick="closeBriefModal()" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
++v.toFixed(0);if(metricId==='drink_attach'||metricId==='gplh')return v.toFixed(2);if(metricId.includes('attach')||metricId==='labor_pct'||metricId==='food_cost')return v.toFixed(1)+'%';return v.toFixed(1);};
+  document.getElementById('ktd-points').innerHTML=points.map(p=>`<div style="text-align:center;flex:1"><div style="font-size:10px;font-weight:700;color:var(--text)">${fmtV(p.val)}</div><div style="font-size:9px;color:var(--muted)">${p.date.slice(5)}</div></div>`).join('');
+  drawer.style.display='block';
+  drawer.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function navTo(page, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
