@@ -573,8 +573,10 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
             <div class="field"><label>SPLH ($)</label><input type="number" id="m-splh" step=".01" placeholder="77"></div>
             <div class="field"><label>GPLH</label><input type="number" id="m-gplh" step=".01" placeholder="2.28"></div>
             <div class="field"><label>Starter Attach %</label><input type="number" id="m-starter" placeholder="28"></div>
-            <div class="field"><label>Drink Attach %</label><input type="number" id="m-drink" placeholder="76"></div>
-            <div class="field"><label>Dessert Attach %</label><input type="number" id="m-dessert" placeholder="11"></div>
+            <div class="field"><label>Drinks/Check</label><input type="number" id="m-drink" step=".01" placeholder="1.49"></div>
+            <div class="field"><label>Cocktail Attach %</label><input type="number" id="m-cocktail" placeholder="65"></div>
+            <div class="field"><label>Burger Attach %</label><input type="number" id="m-burger" placeholder="100"></div>
+            <div class="field"><label>Sandwich Attach %</label><input type="number" id="m-sandwich" placeholder="60"></div>
             <div class="field"><label>Food Cost %</label><input type="number" id="m-fc" step=".1" placeholder="28.5"></div>
             <div class="field"><label>Sched Variance (hrs)</label><input type="number" id="m-svar" step=".1" placeholder="4.2"></div>
           </div>
@@ -663,20 +665,20 @@ let S = {
 // Fallback data for Chomp (used if no DB data yet)
 const CHOMP_DEFAULTS = {
   locations: [
-    { name:'Warren',     slug:'warren',     target_labor_pct:22, target_splh:70, target_ppa:35, target_starter_attach:35, target_drink_attach:80, target_dessert_attach:18, target_food_cost:28, target_gplh:2.0 },
-    { name:'Providence', slug:'providence', target_labor_pct:26, target_splh:55, target_ppa:30, target_starter_attach:40, target_drink_attach:85, target_dessert_attach:20, target_food_cost:27, target_gplh:2.2 },
-    { name:'Newport',    slug:'newport',    target_labor_pct:26, target_splh:55, target_ppa:29, target_starter_attach:40, target_drink_attach:85, target_dessert_attach:20, target_food_cost:27, target_gplh:2.2 },
+    { name:'Warren',     slug:'warren',     target_labor_pct:22, target_splh:70, target_ppa:35, target_starter_attach:35, target_drink_attach:1.8, target_cocktail_attach:65, target_burger_attach:100, target_sandwich_attach:60, target_food_cost:28, target_gplh:2.0, target_fplh:55 },
+    { name:'Providence', slug:'providence', target_labor_pct:26, target_splh:55, target_ppa:30, target_starter_attach:40, target_drink_attach:1.8, target_cocktail_attach:65, target_burger_attach:100, target_sandwich_attach:60, target_food_cost:27, target_gplh:2.2, target_fplh:55 },
+    { name:'Newport',    slug:'newport',    target_labor_pct:26, target_splh:55, target_ppa:29, target_starter_attach:40, target_drink_attach:1.8, target_cocktail_attach:65, target_burger_attach:100, target_sandwich_attach:60, target_food_cost:27, target_gplh:2.2, target_fplh:55 },
   ],
   weeks: [
-    { date:'2026-03-06', location:'warren',     net_sales:49669,  guests:1470, ppa:33.80, labor_pct:20.2, splh:77,   gplh:2.28, starter_attach:28, drink_attach:76, dessert_attach:11, food_cost:28.5, schedule_variance:4.2 },
-    { date:'2026-03-06', location:'providence', net_sales:122808, guests:2785, ppa:27.80, labor_pct:28.4, splh:42.8, gplh:2.10, starter_attach:32, drink_attach:78, dessert_attach:14, food_cost:28.5, schedule_variance:4.5 },
-    { date:'2026-03-06', location:'newport',    net_sales:113344, guests:3079, ppa:27.30, labor_pct:25.8, splh:46.2, gplh:2.30, starter_attach:38, drink_attach:82, dessert_attach:18, food_cost:27.1, schedule_variance:1.8 },
-    { date:'2026-02-27', location:'warren',     net_sales:47200,  guests:1410, ppa:33.50, labor_pct:20.5, splh:75.8, gplh:2.24, starter_attach:27, drink_attach:75, dessert_attach:11, food_cost:28.6, schedule_variance:5.0 },
-    { date:'2026-02-27', location:'providence', net_sales:119500, guests:2710, ppa:44.10, labor_pct:28.7, splh:41.9, gplh:2.04, starter_attach:31, drink_attach:77, dessert_attach:13, food_cost:28.7, schedule_variance:5.1 },
-    { date:'2026-02-27', location:'newport',    net_sales:110200, guests:2980, ppa:36.98, labor_pct:26.1, splh:44.9, gplh:2.22, starter_attach:37, drink_attach:80, dessert_attach:17, food_cost:27.3, schedule_variance:2.2 },
-    { date:'2026-02-20', location:'warren',     net_sales:45800,  guests:1370, ppa:33.43, labor_pct:21.0, splh:73.5, gplh:2.19, starter_attach:26, drink_attach:74, dessert_attach:10, food_cost:29.0, schedule_variance:6.0 },
-    { date:'2026-02-20', location:'providence', net_sales:116900, guests:2640, ppa:44.28, labor_pct:29.2, splh:40.8, gplh:1.98, starter_attach:30, drink_attach:76, dessert_attach:12, food_cost:29.1, schedule_variance:5.8 },
-    { date:'2026-02-20', location:'newport',    net_sales:107600, guests:2890, ppa:37.23, labor_pct:26.5, splh:43.8, gplh:2.15, starter_attach:36, drink_attach:79, dessert_attach:16, food_cost:27.8, schedule_variance:2.8 },
+    { date:'2026-03-06', location:'warren',     net_sales:49669,  guests:1470, ppa:33.80, labor_pct:20.2, splh:77,   gplh:2.28, starter_attach:28, drink_attach:1.48, cocktail_attach:65.6, burger_attach:98.9, sandwich_attach:60.3, food_cost:28.5, schedule_variance:4.2 },
+    { date:'2026-03-06', location:'providence', net_sales:122808, guests:2785, ppa:27.80, labor_pct:28.4, splh:42.8, gplh:2.10, starter_attach:32, drink_attach:1.50, cocktail_attach:62.0, burger_attach:95.0, sandwich_attach:58.0, food_cost:28.5, schedule_variance:4.5 },
+    { date:'2026-03-06', location:'newport',    net_sales:113344, guests:3079, ppa:27.30, labor_pct:25.8, splh:46.2, gplh:2.30, starter_attach:38, drink_attach:1.52, cocktail_attach:64.0, burger_attach:97.0, sandwich_attach:59.0, food_cost:27.1, schedule_variance:1.8 },
+    { date:'2026-02-27', location:'warren',     net_sales:47200,  guests:1410, ppa:33.50, labor_pct:20.5, splh:75.8, gplh:2.24, starter_attach:27, drink_attach:1.46, cocktail_attach:63.5, burger_attach:97.5, sandwich_attach:59.0, food_cost:28.6, schedule_variance:5.0 },
+    { date:'2026-02-27', location:'providence', net_sales:119500, guests:2710, ppa:44.10, labor_pct:28.7, splh:41.9, gplh:2.04, starter_attach:31, drink_attach:1.48, cocktail_attach:61.0, burger_attach:94.0, sandwich_attach:57.0, food_cost:28.7, schedule_variance:5.1 },
+    { date:'2026-02-27', location:'newport',    net_sales:110200, guests:2980, ppa:36.98, labor_pct:26.1, splh:44.9, gplh:2.22, starter_attach:37, drink_attach:1.50, cocktail_attach:63.0, burger_attach:96.0, sandwich_attach:58.0, food_cost:27.3, schedule_variance:2.2 },
+    { date:'2026-02-20', location:'warren',     net_sales:45800,  guests:1370, ppa:33.43, labor_pct:21.0, splh:73.5, gplh:2.19, starter_attach:26, drink_attach:1.44, cocktail_attach:62.0, burger_attach:96.0, sandwich_attach:58.0, food_cost:29.0, schedule_variance:6.0 },
+    { date:'2026-02-20', location:'providence', net_sales:116900, guests:2640, ppa:44.28, labor_pct:29.2, splh:40.8, gplh:1.98, starter_attach:30, drink_attach:1.46, cocktail_attach:60.0, burger_attach:93.0, sandwich_attach:56.0, food_cost:29.1, schedule_variance:5.8 },
+    { date:'2026-02-20', location:'newport',    net_sales:107600, guests:2890, ppa:37.23, labor_pct:26.5, splh:43.8, gplh:2.15, starter_attach:36, drink_attach:1.48, cocktail_attach:62.0, burger_attach:95.0, sandwich_attach:57.0, food_cost:27.8, schedule_variance:2.8 },
   ]
 };
 
@@ -863,7 +865,8 @@ function getBlendedLatest() {
     guests: weeks.reduce((s,w)=>s+(w.guests||0),0),
     ppa: avg('ppa'), labor_pct: avg('labor_pct'), splh: avg('splh'),
     gplh: avg('gplh'), starter_attach: avg('starter_attach'),
-    drink_attach: avg('drink_attach'), dessert_attach: avg('dessert_attach'),
+    drink_attach: avg('drink_attach'), cocktail_attach: avg('cocktail_attach'),
+    burger_attach: avg('burger_attach'), sandwich_attach: avg('sandwich_attach'),
     food_cost: avg('food_cost'), schedule_variance: avg('schedule_variance'),
   };
 }
@@ -1074,14 +1077,14 @@ function renderCoaching() {
             {tag:'ACCOUNTABILITY',tagColor:'#a78bfa',title:'14-Day Server Tracking',desc:'Post starter attach by server name from Toast every Sunday. Servers at the bottom self-correct without a conversation.'}],
      protip:'A server who has tasted the dish and loved it is not pitching 2014 they are sharing something real. That energy is felt at the table. Three portions at pre-shift changes the entire energy of the offer.',
      slack:`Starter attach ${w.starter_attach}% vs ${t.target_starter_attach}% â $${Math.round(Math.abs(w.starter_attach-t.target_starter_attach)/100*(w.guests||0)*8).toLocaleString()}/week gap. Tonight: offer before the drink order. Every server, every table.`},
-    {id:'drink_attach',icon:'ð¹',label:'Drink Attach',color:'#a78bfa',invert:false,actual:w.drink_attach,target:t.target_drink_attach,fmt:v=>v?.toFixed(0)+'%',
-     weeklyImpact:Math.round(Math.abs(w.drink_attach-t.target_drink_attach)/100*(w.guests||0)*9),
-     diagnosis:`Drink attach at <strong>${w.drink_attach}%</strong> vs <strong>${t.target_drink_attach}%</strong>. Gap = $${Math.round(Math.abs(w.drink_attach-t.target_drink_attach)/100*(w.guests||0)*9).toLocaleString()}/week.`,
+    {id:'drink_attach',icon:'🍹',label:'Drinks/Check',color:'#a78bfa',invert:false,actual:w.drink_attach,target:t.target_drink_attach||1.8,fmt:v=>v?.toFixed(2),
+     weeklyImpact:Math.round(Math.abs(w.drink_attach-(t.target_drink_attach||1.8))*(w.guests||0)*9),
+     diagnosis:`Drinks per check at <strong>${(w.drink_attach||0).toFixed(2)}</strong> vs <strong>${(t.target_drink_attach||1.8).toFixed(2)}</strong> target. Gap = $${Math.round(Math.abs(w.drink_attach-(t.target_drink_attach||1.8))*(w.guests||0)*9).toLocaleString()}/week.`,
      steps:[{tag:'LANGUAGE',tagColor:'#a78bfa',title:'"What are we drinking tonight?"',desc:'Four words. Not "Can I get you something to drink?" The word "we" assumes. "Tonight" creates occasion. Lock this phrase this week.'},
             {tag:'FEATURE',tagColor:'#f5c842',title:'One Drink Per Shift',desc:'Every pre-shift: one cocktail, one wine, one beer. Every server leads with that item. Specific recommendation beats open question every time.'},
             {tag:'SECOND ROUND',tagColor:'#2dd4a0',title:'Half-Empty = Offer',desc:'When clearing entrÃ©es, if a glass is more than half empty, they offer a second. This alone adds 8â12% incremental drink revenue.'}],
      protip:'A server who knows the menu â really knows it, has tasted it, has opinions about it â recommends cocktails differently than one reading from a list. The investment is a tasting. The return is a server who makes the offer because they mean it.',
-     slack:`Drink attach ${w.drink_attach}% vs ${t.target_drink_attach}%. Tonight: "What are we drinking tonight?" â not "Can I get you something?" Four words. Practice at pre-shift.`},
+     slack:`Drinks/check ${(w.drink_attach||0).toFixed(2)} vs ${(t.target_drink_attach||1.8).toFixed(2)} target. Tonight: \"What are we drinking tonight?\" \u2014 not \"Can I get you something?\" Four words. Practice at pre-shift.`},
     {id:'ppa',icon:'ð°',label:'PPA',color:'#2dd4a0',invert:false,actual:w.ppa,target:t.target_ppa,fmt:v=>'$'+v?.toFixed(2),
      weeklyImpact:Math.round(Math.abs(w.ppa-t.target_ppa)*(w.guests||0)),
      diagnosis:`PPA at <strong>$${w.ppa}</strong> vs <strong>$${t.target_ppa}</strong>. Each $1 of gap = $${(w.guests||0).toLocaleString()}/week.`,
@@ -1211,8 +1214,10 @@ function renderLocSettings() {
         <div class="field"><label>SPLH Tgt $</label><input type="number" step=".01" value="${l.target_splh}" onchange="updateLocTarget('${l.slug}','target_splh',this.value)"></div>
         <div class="field"><label>PPA Tgt $</label><input type="number" step=".01" value="${l.target_ppa}" onchange="updateLocTarget('${l.slug}','target_ppa',this.value)"></div>
         <div class="field"><label>Starter Tgt %</label><input type="number" value="${l.target_starter_attach}" onchange="updateLocTarget('${l.slug}','target_starter_attach',this.value)"></div>
-        <div class="field"><label>Drink Tgt %</label><input type="number" value="${l.target_drink_attach}" onchange="updateLocTarget('${l.slug}','target_drink_attach',this.value)"></div>
-        <div class="field"><label>Dessert Tgt %</label><input type="number" value="${l.target_dessert_attach}" onchange="updateLocTarget('${l.slug}','target_dessert_attach',this.value)"></div>
+        <div class="field"><label>Drinks/Chk Tgt</label><input type="number" step=".01" value="${l.target_drink_attach}" onchange="updateLocTarget('${l.slug}','target_drink_attach',this.value)"></div>
+        <div class="field"><label>Cocktail Tgt %</label><input type="number" value="${l.target_cocktail_attach}" onchange="updateLocTarget('${l.slug}','target_cocktail_attach',this.value)"></div>
+        <div class="field"><label>Burger Tgt %</label><input type="number" value="${l.target_burger_attach}" onchange="updateLocTarget('${l.slug}','target_burger_attach',this.value)"></div>
+        <div class="field"><label>Sandwich Tgt %</label><input type="number" value="${l.target_sandwich_attach}" onchange="updateLocTarget('${l.slug}','target_sandwich_attach',this.value)"></div>
         <div class="field"><label>Food Cost Tgt %</label><input type="number" step=".1" value="${l.target_food_cost}" onchange="updateLocTarget('${l.slug}','target_food_cost',this.value)"></div>
       </div>
       <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="saveLocationTargets('${l.slug}')">Save ${l.name} Targets</button>
@@ -1251,7 +1256,7 @@ function addLocation() {
   const name=prompt('Location name (e.g. "Boston"):');
   if(!name) return;
   const slug=name.toLowerCase().replace(/[^a-z0-9]/g,'-');
-  S.locations.push({name,slug,...PULSE_CONFIG.defaultTargets,target_labor_pct:26,target_splh:55,target_ppa:30,target_starter_attach:40,target_drink_attach:85,target_dessert_attach:20,target_food_cost:28});
+  S.locations.push({name,slug,...PULSE_CONFIG.defaultTargets,target_labor_pct:26,target_splh:55,target_ppa:30,target_starter_attach:40,target_drink_attach:1.8,target_cocktail_attach:65,target_burger_attach:100,target_sandwich_attach:60,target_food_cost:28});
   buildLocSelect();
   populateManualLoc();
   renderLocSettings();
@@ -1296,7 +1301,9 @@ async function saveManual() {
     gplh:parseFloat(document.getElementById('m-gplh').value)||null,
     starter_attach:parseFloat(document.getElementById('m-starter').value)||null,
     drink_attach:parseFloat(document.getElementById('m-drink').value)||null,
-    dessert_attach:parseFloat(document.getElementById('m-dessert').value)||null,
+    cocktail_attach:parseFloat(document.getElementById('m-cocktail').value)||null,
+    burger_attach:parseFloat(document.getElementById('m-burger').value)||null,
+    sandwich_attach:parseFloat(document.getElementById('m-sandwich').value)||null,
     food_cost:parseFloat(document.getElementById('m-fc').value)||null,
     schedule_variance:parseFloat(document.getElementById('m-svar').value)||null,
   };
@@ -1344,7 +1351,8 @@ function handleFile(files) {
           ppa:parseFloat(row.ppa)||null,labor_pct:parseFloat(row.labor_pct)||null,
           labor_hrs:parseFloat(row.labor_hrs)||null,splh:parseFloat(row.splh)||null,
           gplh:parseFloat(row.gplh)||null,starter_attach:parseFloat(row.starter_attach)||null,
-          drink_attach:parseFloat(row.drink_attach)||null,dessert_attach:parseFloat(row.dessert_attach)||null,
+          drink_attach:parseFloat(row.drink_attach)||null,cocktail_attach:parseFloat(row.cocktail_attach)||null,
+          burger_attach:parseFloat(row.burger_attach)||null,sandwich_attach:parseFloat(row.sandwich_attach)||null,
           food_cost:parseFloat(row.food_cost)||null,schedule_variance:parseFloat(row.schedule_variance)||null};
         const t=getTargets(locSlug);
         week.health_score=computeScore(week,t).composite;
@@ -1377,7 +1385,7 @@ function parseCSV(text,delim=','){
 }
 
 function downloadTemplate(){
-  const csv='date,location,net_sales,guests,ppa,labor_pct,labor_hrs,splh,gplh,starter_attach,drink_attach,dessert_attach,food_cost,schedule_variance\n2026-03-13,Warren,49669,1470,33.80,20.2,645,77,2.28,28,76,11,28.5,4.2\n2026-03-13,Providence,122808,2785,27.80,28.4,2870,42.8,2.10,32,78,14,28.5,4.5\n2026-03-13,Newport,113344,3079,27.30,25.8,2455,46.2,2.30,38,82,18,27.1,1.8\n';
+  const csv='date,location,net_sales,guests,ppa,labor_pct,labor_hrs,splh,gplh,starter_attach,drink_attach,cocktail_attach,burger_attach,sandwich_attach,food_cost,schedule_variance\n2026-03-13,Warren,49669,1470,33.80,20.2,645,77,2.28,54,1.49,65.6,98.9,60.3,28.5,4.2\n2026-03-13,Providence,122808,2785,27.80,28.4,2870,42.8,2.10,32,1.50,62.0,95.0,58.0,28.5,4.5\n2026-03-13,Newport,113344,3079,27.30,25.8,2455,46.2,2.30,38,1.52,64.0,97.0,59.0,27.1,1.8\n';
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download='pulse-template.csv';a.click();showToast('success','Template downloaded');
 }
