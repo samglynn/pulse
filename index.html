@@ -285,7 +285,8 @@ function loadData(rows, name) {
   document.getElementById('screen-upload').style.display = 'none';
   document.getElementById('screen-dashboard').style.display = 'block';
   renderDashboard();
-}
+}const SUPABASE_URL  = 'https://wogtyrgckqoopzoziwbr.supabase.co';
+   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZ3R5cmdja3Fvb3B6b3ppd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTAxNTgsImV4cCI6MjA4ODk4NjE1OH0.9VQHHo9NX7Jf3cUpnljsXBI0jBQxjVzjPuqfQ8vGczI';
 
 function loadDemo() {
   const csv = `week_ending,location,net_sales,guests,ppa,labor_pct,labor_hrs,splh,gplh,fplh,starter_attach,drink_attach,food_cost,cocktail_attach,burger_attach
