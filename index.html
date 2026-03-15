@@ -6,6 +6,8 @@
 <title>Pulse — AI Coaching Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -112,16 +114,18 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
   <div class="upload-screen" id="screen-upload">
     <div class="badge">Shift Notes × Pulse</div>
     <h1>Restaurant KPI Dashboard</h1>
-    <p style="color:var(--text-2);font-size:14px;margin-bottom:6px">Upload your Toast CSV export or connect to Supabase. Auto-generates KPI scorecards, trend charts, and <strong>AI coaching notes</strong> with actionable shift-level plays.</p>
+    <p style="color:var(--text-2);font-size:14px;margin-bottom:6px">Upload your Toast exports. Accepts <strong>SalesSummary ZIPs</strong>, <strong>PayrollExport CSVs</strong>, <strong>ProductMix ZIPs/XLSX</strong>, or pre-formatted weekly CSVs. Upload multiple files at once — we'll cross-reference everything.</p>
     <p style="color:var(--text-muted);font-size:12px;margin-bottom:28px">
-      Columns: <code style="font-family:'JetBrains Mono',monospace;background:var(--surface-2);padding:2px 6px;border-radius:4px;font-size:11px;color:var(--green)">week_ending, location, net_sales, guests, ppa, labor_pct, splh, gplh, fplh, starter_attach, drink_attach, food_cost</code>
+      Auto-calculates: <code style="font-family:'JetBrains Mono',monospace;background:var(--surface-2);padding:2px 6px;border-radius:4px;font-size:11px;color:var(--green)">Net Sales, Guests, PPA, SPLH, GPLH, Labor %, Starter Attach, Drinks/Check, Food Cost</code>
     </p>
     <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
       <div class="icon">📊</div>
-      <div style="font-weight:600;font-size:14px">Drop your .csv here or click to browse</div>
-      <div style="color:var(--text-muted);font-size:12px;margin-top:4px">Toast SalesSummary CSV · Any weekly export</div>
+      <div style="font-weight:600;font-size:14px">Drop your Toast files here or click to browse</div>
+      <div style="color:var(--text-muted);font-size:12px;margin-top:4px">SalesSummary.zip · PayrollExport.csv · ProductMix.zip/.xlsx · Weekly CSV</div>
+      <div style="color:var(--text-muted);font-size:11px;margin-top:2px">Upload multiple files at once for automatic cross-referencing</div>
     </div>
-    <input type="file" id="file-input" accept=".csv,.tsv" style="display:none">
+    <input type="file" id="file-input" accept=".csv,.tsv,.zip,.xlsx,.xls" multiple style="display:none">
+    <div id="upload-status" style="margin-top:12px;font-size:12px;color:var(--text-muted);display:none"></div>
     <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
       <button class="btn btn-primary" onclick="loadDemo()">Load Chomp Demo Data</button>
     </div>
@@ -339,15 +343,271 @@ async function connectSupabase() {
 }
 
 // ══════════════════════════════════════════════
-// FILE HANDLING
+// FILE HANDLING — Toast Multi-Format Ingestion
 // ══════════════════════════════════════════════
 const dz = document.getElementById('drop-zone');
 const fi = document.getElementById('file-input');
+const statusEl = document.getElementById('upload-status');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
-fi.addEventListener('change', e => handleFile(e.target.files[0]));
-function handleFile(f) { if(!f)return; const r=new FileReader(); r.onload=e=>loadData(parseCSV(e.target.result),f.name); r.readAsText(f); }
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+fi.addEventListener('change', e => handleFiles(e.target.files));
+
+function showStatus(msg) { statusEl.style.display='block'; statusEl.textContent=msg; }
+
+async function handleFiles(fileList) {
+  if (!fileList || !fileList.length) return;
+  showStatus('Processing ' + fileList.length + ' file(s)...');
+
+  const parsed = { sales: [], payroll: [], productMix: [], manualRows: [], weekDates: [] };
+
+  for (const file of fileList) {
+    const name = file.name.toLowerCase();
+    try {
+      if (name.endsWith('.zip')) {
+        const zip = await JSZip.loadAsync(file);
+        const csvFiles = {};
+        for (const [path, entry] of Object.entries(zip.files)) {
+          if (!entry.dir && path.endsWith('.csv')) {
+            csvFiles[path.split('/').pop()] = await entry.async('text');
+          }
+        }
+        // Detect type from zip contents
+        if (csvFiles['Net sales summary.csv'] || csvFiles['Sales by day.csv'] || csvFiles['Revenue summary.csv']) {
+          // SalesSummary ZIP
+          const weekDate = extractWeekDate(file.name);
+          const loc = extractLocation(file.name);
+          parsed.sales.push({ csvFiles, weekDate, location: loc, fileName: file.name });
+          showStatus('Parsed SalesSummary: ' + file.name);
+        } else if (csvFiles['Items.csv'] || csvFiles['Menu groups.csv']) {
+          // ProductMix ZIP
+          const weekDate = extractWeekDate(file.name);
+          parsed.productMix.push({ csvFiles, weekDate, fileName: file.name });
+          showStatus('Parsed ProductMix: ' + file.name);
+        }
+      } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data);
+        // Check if ProductMix
+        if (wb.SheetNames.includes('Menu groups') || wb.SheetNames.includes('Items')) {
+          const csvFiles = {};
+          wb.SheetNames.forEach(sn => {
+            csvFiles[sn + '.csv'] = XLSX.utils.sheet_to_csv(wb.Sheets[sn]);
+          });
+          const weekDate = extractWeekDate(file.name);
+          parsed.productMix.push({ csvFiles, weekDate, fileName: file.name });
+          showStatus('Parsed ProductMix XLSX: ' + file.name);
+        }
+      } else if (name.endsWith('.csv') || name.endsWith('.tsv')) {
+        const text = await file.text();
+        const firstLine = text.split('\n')[0].toLowerCase();
+        if (firstLine.includes('employee') && firstLine.includes('job title') && firstLine.includes('regular hours')) {
+          // Payroll CSV
+          const weekDate = extractWeekDate(file.name);
+          const loc = extractLocation(file.name) || extractLocationFromPayroll(text);
+          parsed.payroll.push({ text, weekDate, location: loc, fileName: file.name });
+          showStatus('Parsed Payroll: ' + file.name);
+        } else if (firstLine.includes('week_ending') || firstLine.includes('net_sales') || firstLine.includes('location')) {
+          // Manual/pre-formatted CSV
+          parsed.manualRows.push(...parseCSV(text));
+          showStatus('Parsed weekly CSV: ' + file.name);
+        } else {
+          // Try generic CSV
+          parsed.manualRows.push(...parseCSV(text));
+          showStatus('Parsed CSV: ' + file.name);
+        }
+      }
+    } catch (err) {
+      showStatus('Error with ' + file.name + ': ' + err.message);
+      console.error('File parse error:', file.name, err);
+    }
+  }
+
+  // Now build weekly rows from Toast data
+  const rows = [...parsed.manualRows];
+
+  for (const salesData of parsed.sales) {
+    const row = buildRowFromToast(salesData, parsed.payroll, parsed.productMix);
+    if (row) rows.push(row);
+  }
+
+  if (rows.length === 0) {
+    showStatus('No data could be extracted. Upload SalesSummary ZIPs + PayrollExport CSVs, or a pre-formatted weekly CSV.');
+    return;
+  }
+
+  const names = [...new Set([...parsed.sales.map(s=>s.fileName), ...parsed.payroll.map(p=>p.fileName), ...parsed.productMix.map(p=>p.fileName)])];
+  loadData(rows, names.length > 1 ? names.length + ' Toast files' : (names[0] || fileList[0].name));
+  showStatus('');
+}
+
+function extractWeekDate(filename) {
+  // Extract date range from filenames like SalesSummary_2026-02-23_2026-03-01
+  const match = filename.match(/(\d{4}[-_]\d{2}[-_]\d{2}).*?(\d{4}[-_]\d{2}[-_]\d{2})/);
+  if (match) return match[2].replace(/_/g, '-'); // return end date
+  const single = filename.match(/(\d{4}[-_]\d{2}[-_]\d{2})/);
+  if (single) return single[1].replace(/_/g, '-');
+  return new Date().toISOString().slice(0, 10);
+}
+
+function extractLocation(filename) {
+  const lower = filename.toLowerCase();
+  if (lower.includes('newport')) return 'newport';
+  if (lower.includes('warren')) return 'warren';
+  if (lower.includes('providence')) return 'providence';
+  return '';
+}
+
+function extractLocationFromPayroll(text) {
+  const lines = text.split('\n');
+  for (let i = 1; i < lines.length && i < 5; i++) {
+    const match = lines[i].match(/,(\w+),\s*$/);
+    if (match) return match[1].toLowerCase();
+    // Check Location column
+    const cols = lines[0].split(',');
+    const locIdx = cols.findIndex(c => c.trim().toLowerCase() === 'location');
+    if (locIdx >= 0) {
+      const vals = lines[i].split(',');
+      if (vals[locIdx]) return vals[locIdx].replace(/"/g,'').trim().toLowerCase();
+    }
+  }
+  return '';
+}
+
+function buildRowFromToast(salesData, payrollList, productMixList) {
+  const csv = salesData.csvFiles;
+  const weekDate = salesData.weekDate;
+  let location = salesData.location;
+
+  // 1. Net Sales from "Net sales summary.csv"
+  let netSales = 0;
+  if (csv['Net sales summary.csv']) {
+    const rows = parseCSV(csv['Net sales summary.csv']);
+    if (rows[0]) netSales = parseFloat(rows[0]['Net sales'] || rows[0]['Net Sales'] || 0);
+  }
+
+  // 2. Guests & Orders from "Sales by day.csv"
+  let totalGuests = 0, totalOrders = 0;
+  if (csv['Sales by day.csv']) {
+    const rows = parseCSV(csv['Sales by day.csv']);
+    rows.forEach(r => {
+      totalGuests += parseFloat(r['Total guests'] || 0);
+      totalOrders += parseFloat(r['Total orders'] || 0);
+    });
+  }
+
+  // 3. Dine-in orders from "Dining options summary.csv"
+  let dineInOrders = 0;
+  if (csv['Dining options summary.csv']) {
+    const rows = parseCSV(csv['Dining options summary.csv']);
+    rows.forEach(r => {
+      const opt = (r['Dining option'] || '').toLowerCase();
+      if (opt.includes('dine in')) dineInOrders += parseFloat(r['Orders'] || 0);
+    });
+  }
+
+  // 4. Alcohol items from "Sales category summary.csv"
+  let foodItems = 0, alcoholItems = 0, beerItems = 0, spiritItems = 0, wineItems = 0;
+  if (csv['Sales category summary.csv']) {
+    const rows = parseCSV(csv['Sales category summary.csv']);
+    rows.forEach(r => {
+      const cat = (r['Sales category'] || '').toLowerCase();
+      const qty = parseFloat(r['Items'] || 0);
+      if (cat.includes('food')) foodItems += qty;
+      else if (cat.includes('beer')) beerItems += qty;
+      else if (cat.includes('spirit')) spiritItems += qty;
+      else if (cat.includes('wine')) wineItems += qty;
+    });
+    alcoholItems = beerItems + spiritItems + wineItems;
+  }
+
+  // 5. Payroll data — match by week date
+  let totalHrs = 0, fohHrs = 0, bohHrs = 0, totalPay = 0, lineCookHrs = 0;
+  const fohJobs = new Set(['server','bartender','host','expo']);
+  const bohJobs = new Set(['line cook','chef','prep','dishwasher','sous chef','head chef']);
+  const lineCookJobs = new Set(['line cook','sous chef','head chef','chef']);
+
+  const matchingPayroll = payrollList.find(p => {
+    if (p.weekDate === weekDate) return true;
+    // Fuzzy match on date range
+    const pDate = p.weekDate.replace(/_/g,'-');
+    return Math.abs(new Date(pDate) - new Date(weekDate)) < 7 * 86400000;
+  });
+
+  if (matchingPayroll) {
+    if (!location) location = matchingPayroll.location;
+    const pRows = parseCSV(matchingPayroll.text);
+    pRows.forEach(r => {
+      const job = (r['Job Title'] || '').trim().toLowerCase();
+      const reg = parseFloat(r['Regular Hours'] || 0);
+      const ot = parseFloat(r['Overtime Hours'] || 0);
+      const hrs = reg + ot;
+      const pay = parseFloat(r['Total Pay'] || 0);
+      if (job === 'owner' || job === 'delivery service driver' || job === 'admin' || job === 'training') return;
+      totalHrs += hrs;
+      totalPay += pay;
+      if (fohJobs.has(job)) fohHrs += hrs;
+      if (bohJobs.has(job)) bohHrs += hrs;
+      if (lineCookJobs.has(job)) lineCookHrs += hrs;
+    });
+  }
+
+  // 6. ProductMix — starter attach from Menu Groups
+  let starterQty = 0, burgerQty = 0, sandwichQty = 0, saladQty = 0, totalFoodQty = 0;
+  const matchingPM = productMixList.find(p => {
+    if (p.weekDate === weekDate) return true;
+    return Math.abs(new Date(p.weekDate) - new Date(weekDate)) < 7 * 86400000;
+  });
+
+  if (matchingPM) {
+    const mgKey = Object.keys(matchingPM.csvFiles).find(k => k.toLowerCase().includes('menu group'));
+    if (mgKey) {
+      const mgRows = parseCSV(matchingPM.csvFiles[mgKey]);
+      mgRows.forEach(r => {
+        const group = (r['Menu group'] || '').toLowerCase();
+        const qty = parseFloat(r['Qty sold'] || 0);
+        if (group.includes('starter')) starterQty += qty;
+        else if (group.includes('burger')) burgerQty += qty;
+        else if (group.includes('sandwich')) sandwichQty += qty;
+        else if (group.includes('salad')) saladQty += qty;
+        if (group && !group.includes('beer') && !group.includes('wine') && !group.includes('cocktail') && !group.includes('spirit') && !group.includes('soda') && !group.includes('seltzer') && !group.includes('gift') && !group.includes('amaro') && !group.includes('gin') && !group.includes('tequila') && !group.includes('vodka') && !group.includes('whiskey') && !group.includes('frozen') && !group.includes('marg') && !group.includes('mocktail') && !group.includes('refill') && !group.includes('sauce') && !group.includes('kick')) {
+          totalFoodQty += qty;
+        }
+      });
+    }
+  }
+
+  // Calculate KPIs
+  const ppa = totalGuests > 0 ? netSales / totalGuests : 0;
+  const splh = totalHrs > 0 ? netSales / totalHrs : 0;
+  const gplh = totalHrs > 0 ? totalGuests / totalHrs : 0;
+  const fplh = lineCookHrs > 0 ? foodItems / lineCookHrs : 0;
+  const laborPct = netSales > 0 ? (totalPay / netSales) * 100 : 0;
+  const starterAttach = dineInOrders > 0 ? (starterQty / dineInOrders) * 100 : 0;
+  const drinkAttach = totalOrders > 0 ? alcoholItems / totalOrders : 0;
+
+  if (!location) location = 'unknown';
+
+  return {
+    week_ending: weekDate,
+    location: location,
+    net_sales: netSales,
+    guests: totalGuests,
+    ppa: Math.round(ppa * 100) / 100,
+    labor_pct: Math.round(laborPct * 10) / 10,
+    labor_hrs: Math.round(totalHrs * 10) / 10,
+    splh: Math.round(splh * 100) / 100,
+    gplh: Math.round(gplh * 100) / 100,
+    fplh: Math.round(fplh * 10) / 10,
+    starter_attach: Math.round(starterAttach),
+    drink_attach: Math.round(drinkAttach * 100) / 100,
+    food_cost: 0, // Not in Toast exports — needs manual entry or invoice data
+    cocktail_attach: 0,
+    burger_attach: 0,
+  };
+}
+
+function handleFile(f) { handleFiles([f]); }
 
 // ══════════════════════════════════════════════
 // AGGREGATION
