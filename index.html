@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pulse — Restaurant Intelligence</title>
+<title>Pulse â Restaurant Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -32,7 +32,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(ellipse 800px 500px at 15% 10%,rgba(249,115,22,.04),transparent 60%),
              radial-gradient(ellipse 600px 400px at 85% 90%,rgba(45,212,160,.04),transparent 60%)}
 
-/* ── AUTH SCREEN ── */
+/* ââ AUTH SCREEN ââ */
 #auth-screen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
   background:var(--bg);padding:20px}
 .auth-card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--border);
@@ -55,10 +55,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .auth-err{color:var(--red);font-size:12px;margin-top:10px;min-height:18px}
 .auth-footer{font-size:11px;color:var(--muted);margin-top:20px;line-height:1.6}
 
-/* ── APP LAYOUT ── */
+/* ââ APP LAYOUT ââ */
 #app{display:flex;height:100vh;position:relative;z-index:1;display:none}
 
-/* ── SIDEBAR ── */
+/* ââ SIDEBAR ââ */
 .sb{width:var(--sb);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
   display:flex;flex-direction:column;overflow:hidden;transition:width .3s;position:relative}
 .sb.collapsed{width:0;border-right:none}
@@ -101,7 +101,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   cursor:pointer;transition:.15s}
 .signout-btn:hover{border-color:var(--red);color:var(--red)}
 
-/* ── MAIN ── */
+/* ââ MAIN ââ */
 .main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;
   min-height:52px;flex-shrink:0;background:rgba(8,10,15,.9);backdrop-filter:blur(20px);
@@ -120,12 +120,12 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);
   box-shadow:0 0 6px var(--green);animation:glow 1.5s ease-in-out infinite}
 
-/* ── PAGES ── */
+/* ââ PAGES ââ */
 .page{flex:1;overflow-y:auto;padding:0;display:none;flex-direction:column}
 .page.active{display:flex}
 .page-inner{max-width:1100px;width:100%;margin:0 auto;padding:24px 24px 80px}
 
-/* ── SHARED COMPONENTS ── */
+/* ââ SHARED COMPONENTS ââ */
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}
 .panel-title{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
   letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;
@@ -157,7 +157,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
 .badge-accent{background:var(--adim);color:var(--accent);border:1px solid rgba(249,115,22,.25)}
 .badge-blue{background:var(--bdim);color:var(--blue);border:1px solid rgba(96,165,250,.25)}
 
-/* ── HOME PAGE ── */
+/* ââ HOME PAGE ââ */
 .home-hero{padding:36px 0 24px;border-bottom:1px solid var(--border);margin-bottom:24px}
 .home-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
   letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
@@ -203,7 +203,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
 .trend-empty{height:140px;display:flex;align-items:center;justify-content:center;
   flex-direction:column;gap:8px;color:var(--muted);font-size:13px;text-align:center}
 
-/* ── COACHING PAGE ── */
+/* ââ COACHING PAGE ââ */
 .coaching-sc{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:20px}
 .coaching-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
   padding:20px;margin-bottom:14px}
@@ -237,7 +237,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
   font-size:10px;color:var(--t2);cursor:pointer;transition:.15s}
 .copy-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-/* ── DATA ENTRY PAGE ── */
+/* ââ DATA ENTRY PAGE ââ */
 .upload-zone{border:2px dashed var(--border);border-radius:12px;padding:30px 20px;
   text-align:center;cursor:pointer;transition:.2s;position:relative;margin-bottom:16px}
 .upload-zone:hover,.upload-zone.over{border-color:var(--accent);background:var(--adim)}
@@ -265,7 +265,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
 .del-row{color:var(--muted);cursor:pointer;font-size:13px}
 .del-row:hover{color:var(--red)}
 
-/* ── STAFFING PAGE ── */
+/* ââ STAFFING PAGE ââ */
 .mode-bar{display:flex;background:var(--surface);border:1px solid var(--border);
   border-radius:10px;padding:4px;margin-bottom:16px}
 .mode-btn{flex:1;padding:10px;border:none;border-radius:7px;
@@ -318,12 +318,12 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
   letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .t-item-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700}
 
-/* ── SETTINGS PAGE ── */
+/* ââ SETTINGS PAGE ââ */
 .settings-section{margin-bottom:28px}
 .settings-title{font-size:17px;font-weight:700;margin-bottom:4px}
 .settings-sub{font-size:13px;color:var(--t2);margin-bottom:16px}
 
-/* ── TOAST ── */
+/* ââ TOAST ââ */
 .toast{position:fixed;bottom:24px;right:24px;z-index:999;padding:12px 18px;
   border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;
   transform:translateY(100px);opacity:0;transition:all .3s cubic-bezier(.34,1.2,.64,1);pointer-events:none}
@@ -332,7 +332,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
 .toast.error{background:var(--rdim);border:1px solid var(--red);color:var(--text)}
 .toast.info{background:var(--bdim);border:1px solid var(--blue);color:var(--text)}
 
-/* ── LOADING ── */
+/* ââ LOADING ââ */
 .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);
   border-radius:50%;animation:spin .7s linear infinite;margin:0 auto}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -399,19 +399,19 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
     </div>
     <nav class="sb-nav">
       <div class="nav-group">Overview</div>
-      <div class="nav-item active" onclick="navTo('home',this)"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></div>
-      <div class="nav-item" onclick="navTo('coaching',this)"><span class="nav-icon">🎯</span><span class="nav-label">Coaching Guide</span></div>
+      <div class="nav-item active" onclick="navTo('home',this)"><span class="nav-icon">ð</span><span class="nav-label">Dashboard</span></div>
+      <div class="nav-item" onclick="navTo('coaching',this)"><span class="nav-icon">ð¯</span><span class="nav-label">Coaching Guide</span></div>
       <div class="nav-group">Tools</div>
-      <div class="nav-item" onclick="navTo('staffing',this)"><span class="nav-icon">👥</span><span class="nav-label">Staffing Tool</span></div>
-      <div class="nav-item" onclick="navTo('lineheat',this)"><span class="nav-icon">🔥</span><span class="nav-label">Heatmap</span></div>
+      <div class="nav-item" onclick="navTo('staffing',this)"><span class="nav-icon">ð¥</span><span class="nav-label">Staffing Tool</span></div>
+      <div class="nav-item" onclick="navTo('lineheat',this)"><span class="nav-icon">ð¥</span><span class="nav-label">Heatmap</span></div>
       <div class="nav-group">Data</div>
-      <div class="nav-item" onclick="navTo('kpiref',this)"><span class="nav-icon">📖</span><span class="nav-label">KPI Reference</span></div>
-      <div class="nav-item" onclick="navTo('data',this)"><span class="nav-icon">📁</span><span class="nav-label">Data Entry</span></div>
-      <div class="nav-item" onclick="navTo('settings',this)"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></div>
+      <div class="nav-item" onclick="navTo('kpiref',this)"><span class="nav-icon">ð</span><span class="nav-label">KPI Reference</span></div>
+      <div class="nav-item" onclick="navTo('data',this)"><span class="nav-icon">ð</span><span class="nav-label">Data Entry</span></div>
+      <div class="nav-item" onclick="navTo('settings',this)"><span class="nav-icon">âï¸</span><span class="nav-label">Settings</span></div>
     </nav>
     <div class="sb-foot">
       <div class="user-row">
-        <div class="user-avatar">👤</div>
+        <div class="user-avatar">ð¤</div>
         <div><div class="user-name" id="user-name">Loading...</div><div class="user-email" id="user-email"></div></div>
       </div>
       <button class="signout-btn" onclick="signOut()">Sign out</button>
@@ -422,7 +422,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
   <div class="main">
     <div class="topbar">
       <div class="topbar-left">
-        <button class="sb-toggle" onclick="toggleSb()">☰</button>
+        <button class="sb-toggle" onclick="toggleSb()">â°</button>
         <span class="topbar-title" id="page-title">Dashboard</span>
       </div>
       <div class="live-badge"><div class="live-dot"></div>LIVE</div>
@@ -440,14 +440,14 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
         <div id="kpi-trend-drawer" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div><span id="ktd-label" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)"></span><span id="ktd-trend" style="font-size:12px;margin-left:10px;font-weight:700"></span></div>
-          <button onclick="document.getElementById('kpi-trend-drawer').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1">×</button>
+          <button onclick="document.getElementById('kpi-trend-drawer').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1">Ã</button>
         </div>
         <canvas id="ktd-canvas" height="80" style="width:100%;display:block"></canvas>
         <div id="ktd-points" style="display:flex;justify-content:space-between;margin-top:8px"></div>
       </div>
       <div class="gauge-wrap" id="gauge-wrap"></div>
         <div class="trend-wrap">
-          <div class="trend-title"><span style="color:var(--green)">●</span> Health Score Trend</div>
+          <div class="trend-title"><span style="color:var(--green)">â</span> Health Score Trend</div>
           <div class="trend-chart" id="trend-chart"></div>
         </div>
         <div class="grid2">
@@ -495,19 +495,19 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
           <!-- FOH Staff -->
           <div id="foh-staff">
             <div class="panel-title">Staff on Floor</div>
-            <div class="counter-row"><div><div class="counter-role">Servers</div><div class="counter-sub">Dining room</div></div><div class="counter"><button class="cnt-btn" onclick="sc('servers',-1)">−</button><div class="cnt-val" id="sv-servers">4</div><button class="cnt-btn" onclick="sc('servers',1)">+</button></div></div>
-            <div class="counter-row"><div><div class="counter-role">Bartenders</div><div class="counter-sub">Bar service</div></div><div class="counter"><button class="cnt-btn" onclick="sc('bartenders',-1)">−</button><div class="cnt-val" id="sv-bartenders">1</div><button class="cnt-btn" onclick="sc('bartenders',1)">+</button></div></div>
-            <div class="counter-row"><div><div class="counter-role">Hosts</div><div class="counter-sub">Door & seating</div></div><div class="counter"><button class="cnt-btn" onclick="sc('hosts',-1)">−</button><div class="cnt-val" id="sv-hosts">1</div><button class="cnt-btn" onclick="sc('hosts',1)">+</button></div></div>
-            <div class="counter-row"><div><div class="counter-role">Bussers / SA</div><div class="counter-sub">Support</div></div><div class="counter"><button class="cnt-btn" onclick="sc('bussers',-1)">−</button><div class="cnt-val" id="sv-bussers">1</div><button class="cnt-btn" onclick="sc('bussers',1)">+</button></div></div>
-            <div class="counter-row"><div><div class="counter-role">Barbacks</div><div class="counter-sub">Bar support</div></div><div class="counter"><button class="cnt-btn" onclick="sc('barbacks',-1)">−</button><div class="cnt-val" id="sv-barbacks">0</div><button class="cnt-btn" onclick="sc('barbacks',1)">+</button></div></div>
+            <div class="counter-row"><div><div class="counter-role">Servers</div><div class="counter-sub">Dining room</div></div><div class="counter"><button class="cnt-btn" onclick="sc('servers',-1)">â</button><div class="cnt-val" id="sv-servers">4</div><button class="cnt-btn" onclick="sc('servers',1)">+</button></div></div>
+            <div class="counter-row"><div><div class="counter-role">Bartenders</div><div class="counter-sub">Bar service</div></div><div class="counter"><button class="cnt-btn" onclick="sc('bartenders',-1)">â</button><div class="cnt-val" id="sv-bartenders">1</div><button class="cnt-btn" onclick="sc('bartenders',1)">+</button></div></div>
+            <div class="counter-row"><div><div class="counter-role">Hosts</div><div class="counter-sub">Door & seating</div></div><div class="counter"><button class="cnt-btn" onclick="sc('hosts',-1)">â</button><div class="cnt-val" id="sv-hosts">1</div><button class="cnt-btn" onclick="sc('hosts',1)">+</button></div></div>
+            <div class="counter-row"><div><div class="counter-role">Bussers / SA</div><div class="counter-sub">Support</div></div><div class="counter"><button class="cnt-btn" onclick="sc('bussers',-1)">â</button><div class="cnt-val" id="sv-bussers">1</div><button class="cnt-btn" onclick="sc('bussers',1)">+</button></div></div>
+            <div class="counter-row"><div><div class="counter-role">Barbacks</div><div class="counter-sub">Bar support</div></div><div class="counter"><button class="cnt-btn" onclick="sc('barbacks',-1)">â</button><div class="cnt-val" id="sv-barbacks">0</div><button class="cnt-btn" onclick="sc('barbacks',1)">+</button></div></div>
           </div>
           <!-- BOH Staff -->
           <div id="boh-staff" class="hidden">
             <div class="panel-title">Kitchen Staff</div>
-            <div class="counter-row"><div><div class="counter-role">Line Cooks</div><div class="counter-sub">Hot line</div></div><div class="counter"><button class="cnt-btn" onclick="sc('linecooks',-1)">−</button><div class="cnt-val" id="sv-linecooks">3</div><button class="cnt-btn" onclick="sc('linecooks',1)">+</button></div></div>
-            <div class="counter-row"><div><div class="counter-role">Prep Cooks</div><div class="counter-sub">Prep & mise</div></div><div class="counter"><button class="cnt-btn" onclick="sc('prepcooks',-1)">−</button><div class="cnt-val" id="sv-prepcooks">1</div><button class="cnt-btn" onclick="sc('prepcooks',1)">+</button></div></div>
-            <div class="counter-row"><div><div class="counter-role">Dishwashers</div><div class="counter-sub">Dish pit</div></div><div class="counter"><button class="cnt-btn" onclick="sc('dish',-1)">−</button><div class="cnt-val" id="sv-dish">1</div><button class="cnt-btn" onclick="sc('dish',1)">+</button></div></div>
-            <div class="counter-row"><div><div class="counter-role">Expo</div><div class="counter-sub">Expeditor</div></div><div class="counter"><button class="cnt-btn" onclick="sc('expo',-1)">−</button><div class="cnt-val" id="sv-expo">0</div><button class="cnt-btn" onclick="sc('expo',1)">+</button></div></div>
+            <div class="counter-row"><div><div class="counter-role">Line Cooks</div><div class="counter-sub">Hot line</div></div><div class="counter"><button class="cnt-btn" onclick="sc('linecooks',-1)">â</button><div class="cnt-val" id="sv-linecooks">3</div><button class="cnt-btn" onclick="sc('linecooks',1)">+</button></div></div>
+            <div class="counter-row"><div><div class="counter-role">Prep Cooks</div><div class="counter-sub">Prep & mise</div></div><div class="counter"><button class="cnt-btn" onclick="sc('prepcooks',-1)">â</button><div class="cnt-val" id="sv-prepcooks">1</div><button class="cnt-btn" onclick="sc('prepcooks',1)">+</button></div></div>
+            <div class="counter-row"><div><div class="counter-role">Dishwashers</div><div class="counter-sub">Dish pit</div></div><div class="counter"><button class="cnt-btn" onclick="sc('dish',-1)">â</button><div class="cnt-val" id="sv-dish">1</div><button class="cnt-btn" onclick="sc('dish',1)">+</button></div></div>
+            <div class="counter-row"><div><div class="counter-role">Expo</div><div class="counter-sub">Expeditor</div></div><div class="counter"><button class="cnt-btn" onclick="sc('expo',-1)">â</button><div class="cnt-val" id="sv-expo">0</div><button class="cnt-btn" onclick="sc('expo',1)">+</button></div></div>
           </div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--s2);border:1px solid var(--border);border-radius:10px;margin-bottom:14px">
@@ -516,16 +516,16 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
         </div>
         <div class="target-bar" id="s-target-bar"></div>
         <div class="result-card" id="s-result-card">
-          <div class="result-metric" id="s-metric-lbl">GPLH — Guests Per Labor Hour</div>
-          <div class="result-val" id="s-metric-val">—</div>
-          <div class="result-status" id="s-status">—</div>
+          <div class="result-metric" id="s-metric-lbl">GPLH â Guests Per Labor Hour</div>
+          <div class="result-val" id="s-metric-val">â</div>
+          <div class="result-status" id="s-status">â</div>
         </div>
         <div class="variance-grid">
-          <div class="var-box"><div class="var-label">Optimal Hours</div><div class="var-val" id="s-opt-hrs" style="color:var(--green)">—</div></div>
-          <div class="var-box"><div class="var-label">Variance</div><div class="var-val" id="s-variance">—</div></div>
+          <div class="var-box"><div class="var-label">Optimal Hours</div><div class="var-val" id="s-opt-hrs" style="color:var(--green)">â</div></div>
+          <div class="var-box"><div class="var-label">Variance</div><div class="var-val" id="s-variance">â</div></div>
         </div>
         <div class="action-list"><h4>Manager Actions</h4><div id="s-actions"></div></div>
-        <div class="protip"><strong>⚡ Pro Tip</strong><br><span id="s-tip"></span></div>
+        <div class="protip"><strong>â¡ Pro Tip</strong><br><span id="s-tip"></span></div>
       </div>
     </div>
 
@@ -550,20 +550,20 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
 
         <!-- CSV Upload -->
         <div class="panel">
-          <div class="panel-title">📁 CSV Upload</div>
+          <div class="panel-title">ð CSV Upload</div>
           <div class="upload-zone" id="upload-zone">
             <input type="file" accept=".csv,.tsv" id="file-input" onchange="handleFile(this.files)">
-            <div class="upload-icon">⬆</div>
+            <div class="upload-icon">â¬</div>
             <div class="upload-text">Drop your Toast export here or <strong>browse</strong></div>
-            <div class="upload-fmt">CSV • TSV</div>
+            <div class="upload-fmt">CSV â¢ TSV</div>
           </div>
-          <button class="btn btn-ghost btn-sm" onclick="downloadTemplate()" style="margin-bottom:8px">📄 Download CSV Template</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadTemplate()" style="margin-bottom:8px">ð Download CSV Template</button>
           <div id="upload-history"></div>
         </div>
 
         <!-- Manual Entry -->
         <div class="panel">
-          <div class="panel-title">✏️ Manual Entry</div>
+          <div class="panel-title">âï¸ Manual Entry</div>
           <div class="grid2" style="margin-bottom:12px">
             <div class="field"><label>Week Of (date)</label><input type="date" id="m-date"></div>
             <div class="field"><label>Location</label><select id="m-loc"><option value="">Select location...</option></select></div>
@@ -589,7 +589,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
 
         <!-- History Table -->
         <div class="panel">
-          <div class="panel-title">📋 Saved Weeks <span id="week-count" style="color:var(--accent)"></span></div>
+          <div class="panel-title">ð Saved Weeks <span id="week-count" style="color:var(--accent)"></span></div>
           <div style="overflow-x:auto">
             <table class="week-table" id="week-table">
               <thead><tr>
@@ -613,7 +613,7 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
 
         <!-- Profile -->
         <div class="panel">
-          <div class="panel-title">👤 Profile</div>
+          <div class="panel-title">ð¤ Profile</div>
           <div class="grid2">
             <div class="field"><label>Restaurant Name</label><input type="text" id="s-restname" placeholder="Chomp Kitchen & Drinks"></div>
             <div class="field"><label>Owner Name</label><input type="text" id="s-ownername" placeholder="Sam Glynn"></div>
@@ -623,17 +623,17 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
 
         <!-- Locations -->
         <div class="panel">
-          <div class="panel-title">📍 Locations & Targets</div>
+          <div class="panel-title">ð Locations & Targets</div>
           <div id="loc-settings"></div>
           <button class="btn btn-ghost" onclick="addLocation()" style="margin-top:12px">+ Add Location</button>
         </div>
 
         <!-- Data -->
         <div class="panel">
-          <div class="panel-title">💾 Data Management</div>
+          <div class="panel-title">ð¾ Data Management</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn-ghost" onclick="exportData()">📦 Export All Data (JSON)</button>
-            <button class="btn btn-danger" onclick="clearAllData()">🗑 Clear All Data</button>
+            <button class="btn btn-ghost" onclick="exportData()">ð¦ Export All Data (JSON)</button>
+            <button class="btn btn-danger" onclick="clearAllData()">ð Clear All Data</button>
           </div>
           <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">
             Data is stored in your Supabase database and syncs across all devices.<br>
@@ -649,19 +649,19 @@ label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-we
 <div class="toast" id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // SUPABASE INIT
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const _sb = supabase.createClient(PULSE_CONFIG.supabaseUrl, PULSE_CONFIG.supabaseAnonKey);
 
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // STATE
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 let S = {
   user: null,
   profile: null,
   locations: [],      // from DB
-  weeks: [],          // from DB — all weeks for this user
+  weeks: [],          // from DB â all weeks for this user
   currentLoc: 'all',
   sbOpen: true,
 };
@@ -686,9 +686,9 @@ const CHOMP_DEFAULTS = {
   ]
 };
 
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // SCORING ENGINE
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function computeScore(a, t) {
   const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
   const sLP = (a,t) => { const d=a-t; return d<=0?100:clamp(100-d*15,0,100); };
@@ -738,16 +738,16 @@ function calcTrend(weeks, metric, invert=false) {
 
 function trendBadge(t) {
   if(t.direction==='unknown') return '';
-  const arrow=t.direction==='improving'?'▲':t.direction==='declining'?'▼':'→';
+  const arrow=t.direction==='improving'?'â²':t.direction==='declining'?'â¼':'â';
   const col=t.direction==='improving'?'#2dd4a0':t.direction==='declining'?'#f06565':'#525878';
   const bg=t.direction==='improving'?'rgba(45,212,160,.12)':t.direction==='declining'?'rgba(240,101,101,.12)':'rgba(82,88,120,.12)';
-  const sk=t.streak>=2?` · ${t.streak}wk`:'';
+  const sk=t.streak>=2?` Â· ${t.streak}wk`:'';
   return `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:${bg};border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:10px;color:${col};font-weight:600">${arrow} ${t.direction}${sk}</span>`;
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // AUTH
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function authTab(t) {
   document.querySelectorAll('.auth-tab').forEach(el=>el.classList.remove('active'));
   event.target.classList.add('active');
@@ -782,9 +782,9 @@ async function signOut() {
   await _sb.auth.signOut();
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // DATA LOADING
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function sbFetch(table, params='') {
   const url = PULSE_CONFIG.supabaseUrl + '/rest/v1/' + table + '?' + params;
   const { data: { session } } = await _sb.auth.getSession();
@@ -839,9 +839,9 @@ function populateManualLoc() {
   S.locations.forEach(l=>sel.innerHTML+=`<option value="${l.slug}">${l.name}</option>`);
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // FILTERED DATA HELPERS
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function getLocations() {
   return S.currentLoc==='all' ? S.locations : S.locations.filter(l=>l.slug===S.currentLoc);
 }
@@ -875,9 +875,9 @@ function getBlendedLatest() {
   };
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // RENDER ENGINE
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderAll() {
   renderHome();
   renderCoaching();
@@ -895,28 +895,28 @@ function renderHome() {
   // Sub headline
   const totalSales=locs.reduce((s,l)=>{const w=getLatestWeek(l.slug);return s+(w?.net_sales||0);},0);
   document.getElementById('home-sub').textContent=
-    `${locs.length} location${locs.length>1?'s':''} · $${totalSales.toLocaleString()} this week · latest data loaded`;
+    `${locs.length} location${locs.length>1?'s':''} Â· $${totalSales.toLocaleString()} this week Â· latest data loaded`;
 
-  // KPI ribbon — use blended or single-loc targets
+  // KPI ribbon â use blended or single-loc targets
   const t=S.currentLoc==='all'
     ? {target_labor_pct:26,target_splh:55,target_ppa:30,target_starter_attach:40,target_drink_attach:1.8,target_cocktail_attach:65,target_burger_attach:100,target_sandwich_attach:60,target_food_cost:28}
     : getTargets(S.currentLoc);
 
   const kpis=[
-    {icon:'⏱',label:'Labor %',val:blended.labor_pct?.toFixed(1)+'%',tgt:'tgt '+t.target_labor_pct+'%',on:blended.labor_pct<=t.target_labor_pct,raw:blended.labor_pct,traw:t.target_labor_pct,inv:true},
-    {icon:'💵',label:'SPLH',val:'$'+blended.splh?.toFixed(0),tgt:'tgt $'+t.target_splh,on:blended.splh>=t.target_splh,raw:blended.splh,traw:t.target_splh,inv:false},
-    {icon:'💰',label:'PPA',val:'$'+blended.ppa?.toFixed(2),tgt:'tgt $'+t.target_ppa,on:blended.ppa>=t.target_ppa,raw:blended.ppa,traw:t.target_ppa,inv:false},
-    {icon:'🍽',label:'Starter',val:blended.starter_attach?.toFixed(0)+'%',tgt:'tgt '+t.target_starter_attach+'%',on:blended.starter_attach>=t.target_starter_attach,raw:blended.starter_attach,traw:t.target_starter_attach,inv:false},
-    {icon:'🍺',label:'Drinks/Chk',val:blended.drink_attach?.toFixed(2),tgt:'tgt '+(t.target_drink_attach||1.8),on:blended.drink_attach>=(t.target_drink_attach||1.8),raw:blended.drink_attach,traw:t.target_drink_attach||1.8,inv:false},
-    {icon:'🍳',label:'Food Cost',val:blended.food_cost?.toFixed(1)+'%',tgt:'tgt '+t.target_food_cost+'%',on:blended.food_cost<=t.target_food_cost,raw:blended.food_cost,traw:t.target_food_cost,inv:true},
+    {icon:'â±',label:'Labor %',val:blended.labor_pct?.toFixed(1)+'%',tgt:'tgt '+t.target_labor_pct+'%',on:blended.labor_pct<=t.target_labor_pct,raw:blended.labor_pct,traw:t.target_labor_pct,inv:true},
+    {icon:'ðµ',label:'SPLH',val:'$'+blended.splh?.toFixed(0),tgt:'tgt $'+t.target_splh,on:blended.splh>=t.target_splh,raw:blended.splh,traw:t.target_splh,inv:false},
+    {icon:'ð°',label:'PPA',val:'$'+blended.ppa?.toFixed(2),tgt:'tgt $'+t.target_ppa,on:blended.ppa>=t.target_ppa,raw:blended.ppa,traw:t.target_ppa,inv:false},
+    {icon:'ð½',label:'Starter',val:blended.starter_attach?.toFixed(0)+'%',tgt:'tgt '+t.target_starter_attach+'%',on:blended.starter_attach>=t.target_starter_attach,raw:blended.starter_attach,traw:t.target_starter_attach,inv:false},
+    {icon:'ðº',label:'Drinks/Chk',val:blended.drink_attach?.toFixed(2),tgt:'tgt '+(t.target_drink_attach||1.8),on:blended.drink_attach>=(t.target_drink_attach||1.8),raw:blended.drink_attach,traw:t.target_drink_attach||1.8,inv:false},
+    {icon:'ð³',label:'Food Cost',val:blended.food_cost?.toFixed(1)+'%',tgt:'tgt '+t.target_food_cost+'%',on:blended.food_cost<=t.target_food_cost,raw:blended.food_cost,traw:t.target_food_cost,inv:true},
   ];
   document.getElementById('kpi-ribbon').innerHTML=kpis.map(k=>{
     const pct=k.inv?Math.min(100,k.traw/k.raw*100):Math.min(100,k.raw/k.traw*100);
     const col=k.on?'#2dd4a0':pct>85?'#f5c842':'#f06565';
     return `<div class="kpi-card ${k.on?'on':'off'}" onclick="navToMetric('${k.label}')">
-      <div class="kpi-badge" style="background:${k.on?'#2dd4a0':'#f06565'}">${k.on?'✓':'!'}</div>
+      <div class="kpi-badge" style="background:${k.on?'#2dd4a0':'#f06565'}">${k.on?'â':'!'}</div>
       <div class="kpi-icon">${k.icon}</div>
-      <div class="kpi-label" style="cursor:pointer;user-select:none" onclick="event.stopPropagation();showKpiTrend('${k.id}','${k.label}',${k.inv})">${k.label} <span style="font-size:8px;opacity:.45">▾</span></div>
+      <div class="kpi-label" style="cursor:pointer;user-select:none" onclick="event.stopPropagation();showKpiTrend('${k.id}','${k.label}',${k.inv})">${k.label} <span style="font-size:8px;opacity:.45">â¾</span></div>
       <div class="kpi-val" style="color:${col}">${k.val}</div>
       <div class="kpi-tgt">${k.tgt}</div>
     </div>`;
@@ -949,7 +949,7 @@ function renderHome() {
   const locCardsHTML = locBriefs.map(b => {
     const cl = sColor(b.sc.composite);
     const chgStr = b.salesChg !== null ? `<span style="font-size:11px;font-weight:600;color:${b.salesChg>=0?'#2dd4a0':'#f06565'}">${b.salesChg>=0?'+':''}${b.salesChg.toFixed(1)}% WoW</span>` : '';
-    const gapHTML = b.gaps.length ? b.gaps.slice(0,3).map(g=>`<div style="font-size:11px;color:var(--muted);padding:2px 0;display:flex;gap:6px"><span style="color:#f5c842">›</span>${g}</div>`).join('') : `<div style="font-size:11px;color:#2dd4a0">All metrics on target</div>`;
+    const gapHTML = b.gaps.length ? b.gaps.slice(0,3).map(g=>`<div style="font-size:11px;color:var(--muted);padding:2px 0;display:flex;gap:6px"><span style="color:#f5c842">âº</span>${g}</div>`).join('') : `<div style="font-size:11px;color:#2dd4a0">All metrics on target</div>`;
     return `<div onclick="openBriefModal('${b.name}','${b.w.location}')" style="flex:1;min-width:140px;border:0.5px solid ${cl}44;border-radius:8px;padding:12px;background:${cl}08;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='${cl}aa'" onmouseout="this.style.borderColor='${cl}44'">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:var(--text)">${b.name}</span><span style="font-size:13px;font-weight:700;color:${cl}">${b.gl.letter}</span></div>
       <div style="font-size:18px;font-weight:700;color:${cl};margin-bottom:2px">${b.sc.composite}</div>
@@ -966,10 +966,10 @@ function renderHome() {
           <text x="60" y="56" text-anchor="middle" font-size="22" font-weight="700" fill="${c}">${avgScore}</text>
           <text x="60" y="72" text-anchor="middle" font-size="9" fill="var(--muted)" letter-spacing="1">SCORE</text>
         </svg>
-        <div style="font-size:11px;font-weight:700;color:${c};letter-spacing:.04em">${g.letter} — ${g.label}</div>
+        <div style="font-size:11px;font-weight:700;color:${c};letter-spacing:.04em">${g.letter} â ${g.label}</div>
       </div>
       <div style="flex:1;min-width:200px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">CEO Summary · Week of ${latestDate}</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">CEO Summary Â· Week of ${latestDate}</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">${locCardsHTML}</div>
       </div>
     </div>`;
@@ -987,7 +987,7 @@ function renderTrend() {
   // Build blended weekly scores
   const allDates=[...new Set(S.weeks.map(w=>w.date))].sort((a,b)=>a>b?-1:1).slice(0,12).reverse();
   if(allDates.length<2){
-    document.getElementById('trend-chart').innerHTML=`<div class="trend-empty">📈<br>Upload at least 2 weeks of data to see trends.</div>`;
+    document.getElementById('trend-chart').innerHTML=`<div class="trend-empty">ð<br>Upload at least 2 weeks of data to see trends.</div>`;
     return;
   }
   const points=allDates.map(date=>{
@@ -1028,16 +1028,16 @@ function renderTrend() {
 function renderOneMovePanel(blended, t) {
   // Find biggest gap
   const gaps=[];
-  if(blended.labor_pct>t.target_labor_pct) gaps.push({metric:'labor',gap:blended.labor_pct-t.target_labor_pct,msg:'4PM checkpoint — cut before the rush, not during.'});
-  if(blended.starter_attach<t.target_starter_attach) gaps.push({metric:'starter',gap:t.target_starter_attach-blended.starter_attach,msg:'Starter offer before the drink order — every table.'});
-  if(blended.drink_attach<t.target_drink_attach) gaps.push({metric:'drink',gap:t.target_drink_attach-blended.drink_attach,msg:'"What are we drinking tonight?" — lock the language.'});
+  if(blended.labor_pct>t.target_labor_pct) gaps.push({metric:'labor',gap:blended.labor_pct-t.target_labor_pct,msg:'4PM checkpoint â cut before the rush, not during.'});
+  if(blended.starter_attach<t.target_starter_attach) gaps.push({metric:'starter',gap:t.target_starter_attach-blended.starter_attach,msg:'Starter offer before the drink order â every table.'});
+  if(blended.drink_attach<t.target_drink_attach) gaps.push({metric:'drink',gap:t.target_drink_attach-blended.drink_attach,msg:'"What are we drinking tonight?" â lock the language.'});
   if(blended.ppa<t.target_ppa) gaps.push({metric:'ppa',gap:t.target_ppa-blended.ppa,msg:'Dessert offer at 60 seconds after plates clear.'});
   gaps.sort((a,b)=>b.gap-a.gap);
   const top=gaps[0]||{msg:'Hold the standard. All metrics on target.',metric:'none'};
   document.getElementById('one-move-panel').innerHTML=`
-    <div class="panel-title" style="color:var(--accent)">⚡ This Week's One Move</div>
+    <div class="panel-title" style="color:var(--accent)">â¡ This Week's One Move</div>
     <div style="font-size:20px;font-weight:700;line-height:1.3;margin-bottom:12px">${top.msg}</div>
-    ${gaps.length?`<div style="font-size:12px;color:var(--t2);line-height:1.6">Biggest gap: <strong>${top.metric}</strong> — ${top.gap?.toFixed(1)} points from target. This is the move that moves the number fastest this week.</div>`:'<div style="font-size:12px;color:var(--green)">✓ All tracked metrics are on target. Use pre-shift to name the behavior driving it — recognition makes it stick.</div>'}`;
+    ${gaps.length?`<div style="font-size:12px;color:var(--t2);line-height:1.6">Biggest gap: <strong>${top.metric}</strong> â ${top.gap?.toFixed(1)} points from target. This is the move that moves the number fastest this week.</div>`:'<div style="font-size:12px;color:var(--green)">â All tracked metrics are on target. Use pre-shift to name the behavior driving it â recognition makes it stick.</div>'}`;
 }
 
 function renderQuickWins(locs) {
@@ -1047,17 +1047,17 @@ function renderQuickWins(locs) {
     const t=getTargets(l.slug);
     if(w.starter_attach>=t.target_starter_attach) wins.push(`${l.name}: Starter attach on target (${w.starter_attach}%)`);
     if(w.labor_pct<=t.target_labor_pct) wins.push(`${l.name}: Labor under control (${w.labor_pct}%)`);
-    if(w.labor_pct>t.target_labor_pct+3) risks.push(`${l.name}: Labor ${(w.labor_pct-t.target_labor_pct).toFixed(1)}pts over — $${Math.round((w.labor_pct-t.target_labor_pct)/100*(w.net_sales||0)).toLocaleString()}/week`);
+    if(w.labor_pct>t.target_labor_pct+3) risks.push(`${l.name}: Labor ${(w.labor_pct-t.target_labor_pct).toFixed(1)}pts over â $${Math.round((w.labor_pct-t.target_labor_pct)/100*(w.net_sales||0)).toLocaleString()}/week`);
     if(w.drink_attach<t.target_drink_attach-10) risks.push(`${l.name}: Drink attach ${t.target_drink_attach-w.drink_attach}pts below target`);
   });
   document.getElementById('quick-wins-panel').innerHTML=`
-    <div class="panel-title">📋 Signals This Week</div>
-    ${wins.slice(0,3).map(w=>`<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px"><span style="color:var(--green);margin-top:1px">✓</span><span style="font-size:13px">${w}</span></div>`).join('')}
+    <div class="panel-title">ð Signals This Week</div>
+    ${wins.slice(0,3).map(w=>`<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px"><span style="color:var(--green);margin-top:1px">â</span><span style="font-size:13px">${w}</span></div>`).join('')}
     ${risks.slice(0,3).map(r=>`<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px"><span style="color:var(--red);margin-top:1px">!</span><span style="font-size:13px">${r}</span></div>`).join('')}
     ${!wins.length&&!risks.length?'<div style="color:var(--muted);font-size:13px">No data for current location. Enter data to see signals.</div>':''}`;
 }
 
-// ── COACHING RENDER ──
+// ââ COACHING RENDER ââ
 function renderCoaching() {
   const loc=S.currentLoc==='all'?S.locations[0]?.slug||'warren':S.currentLoc;
   const w=getLatestWeek(loc)||CHOMP_DEFAULTS.weeks.find(wk=>wk.location===loc)||CHOMP_DEFAULTS.weeks[0];
@@ -1065,53 +1065,53 @@ function renderCoaching() {
   const allW=getWeeks(loc);
 
   const metrics=[
-    {id:'labor_pct',icon:'⏱',label:'Labor %',color:'#f06565',invert:true,actual:w.labor_pct,target:t.target_labor_pct,fmt:v=>v?.toFixed(1)+'%',
+    {id:'labor_pct',icon:'â±',label:'Labor %',color:'#f06565',invert:true,actual:w.labor_pct,target:t.target_labor_pct,fmt:v=>v?.toFixed(1)+'%',
      weeklyImpact:Math.round(Math.abs(w.labor_pct-t.target_labor_pct)/100*(w.net_sales||0)),
      diagnosis:`Labor at <strong>${w.labor_pct}%</strong> vs <strong>${t.target_labor_pct}%</strong> target. Each 1pt over = $${Math.round((w.net_sales||0)/100).toLocaleString()}/week.`,
      steps:[{tag:'DAILY',tagColor:'#f06565',title:'4PM Checkpoint',desc:'At 4PM the MOD reviews projected covers vs staff. If the next 90 minutes won\'t fill the floor, one cut happens <strong>before</strong> dinner service.'},
-            {tag:'BOH',tagColor:'#f5c842',title:'Variable Kitchen',desc:'A 3-cook line doing 2-cook volume = $80–120 dead labor per shift. Cross-train so the third cook can prep or close early.'},
+            {tag:'BOH',tagColor:'#f5c842',title:'Variable Kitchen',desc:'A 3-cook line doing 2-cook volume = $80â120 dead labor per shift. Cross-train so the third cook can prep or close early.'},
             {tag:'SCHEDULING',tagColor:'#60a5fa',title:'Build Schedule Backwards',desc:'Divide projected weekly sales by SPLH target. That\'s your max hours. <strong>Schedule to the number, not the habit.</strong>'}],
      protip:'The best-run shifts are not the ones where everything went right. They are the ones where the manager saw what was coming and made the call before they had to. Discipline in the schedule creates freedom on the floor.',
      slack:`Labor at ${w.labor_pct}% vs ${t.target_labor_pct}% target. Tonight: 4PM checkpoint, every shift. One cut before dinner if projected covers don't support the floor.`},
-    {id:'starter_attach',icon:'🍽',label:'Starter Attach',color:'#f5c842',invert:false,actual:w.starter_attach,target:t.target_starter_attach,fmt:v=>v?.toFixed(0)+'%',
+    {id:'starter_attach',icon:'ð½',label:'Starter Attach',color:'#f5c842',invert:false,actual:w.starter_attach,target:t.target_starter_attach,fmt:v=>v?.toFixed(0)+'%',
      weeklyImpact:Math.round(Math.abs(w.starter_attach-t.target_starter_attach)/100*(w.guests||0)*8),
      diagnosis:`Starter attach at <strong>${w.starter_attach}%</strong> vs <strong>${t.target_starter_attach}%</strong>. Closing this gap = $${Math.round(Math.abs(w.starter_attach-t.target_starter_attach)/100*(w.guests||0)*8).toLocaleString()}/week.`,
-     steps:[{tag:'SEQUENCE',tagColor:'#f5c842',title:'Offer Before Drinks',desc:'Greet → mention one specific item → "Before I get your drinks, can I start you with our [item]?" Then take the drink order. Always before, never after.'},
+     steps:[{tag:'SEQUENCE',tagColor:'#f5c842',title:'Offer Before Drinks',desc:'Greet â mention one specific item â "Before I get your drinks, can I start you with our [item]?" Then take the drink order. Always before, never after.'},
             {tag:'SPECIFICITY',tagColor:'#60a5fa',title:'One Item, Not the Menu',desc:'"We just got the crab dip in" beats "Can I start you with an appetizer?" by 3:1. Pick one item at pre-shift.'},
             {tag:'ACCOUNTABILITY',tagColor:'#a78bfa',title:'14-Day Server Tracking',desc:'Post starter attach by server name from Toast every Sunday. Servers at the bottom self-correct without a conversation.'}],
      protip:'A server who has tasted the dish and loved it is not pitching 2014 they are sharing something real. That energy is felt at the table. Three portions at pre-shift changes the entire energy of the offer.',
-     slack:`Starter attach ${w.starter_attach}% vs ${t.target_starter_attach}% — $${Math.round(Math.abs(w.starter_attach-t.target_starter_attach)/100*(w.guests||0)*8).toLocaleString()}/week gap. Tonight: offer before the drink order. Every server, every table.`},
-    {id:'drink_attach',icon:'🍹',label:'Drinks/Check',color:'#a78bfa',invert:false,actual:w.drink_attach,target:t.target_drink_attach||1.8,fmt:v=>v?.toFixed(2),
+     slack:`Starter attach ${w.starter_attach}% vs ${t.target_starter_attach}% â $${Math.round(Math.abs(w.starter_attach-t.target_starter_attach)/100*(w.guests||0)*8).toLocaleString()}/week gap. Tonight: offer before the drink order. Every server, every table.`},
+    {id:'drink_attach',icon:'ð¹',label:'Drinks/Check',color:'#a78bfa',invert:false,actual:w.drink_attach,target:t.target_drink_attach||1.8,fmt:v=>v?.toFixed(2),
      weeklyImpact:Math.round(Math.abs(w.drink_attach-(t.target_drink_attach||1.8))*(w.guests||0)*9),
      diagnosis:`Drinks per check at <strong>${(w.drink_attach||0).toFixed(2)}</strong> vs <strong>${(t.target_drink_attach||1.8).toFixed(2)}</strong> target. Gap = $${Math.round(Math.abs(w.drink_attach-(t.target_drink_attach||1.8))*(w.guests||0)*9).toLocaleString()}/week.`,
      steps:[{tag:'LANGUAGE',tagColor:'#a78bfa',title:'"What are we drinking tonight?"',desc:'Four words. Not "Can I get you something to drink?" The word "we" assumes. "Tonight" creates occasion. Lock this phrase this week.'},
             {tag:'FEATURE',tagColor:'#f5c842',title:'One Drink Per Shift',desc:'Every pre-shift: one cocktail, one wine, one beer. Every server leads with that item. Specific recommendation beats open question every time.'},
-            {tag:'SECOND ROUND',tagColor:'#2dd4a0',title:'Half-Empty = Offer',desc:'When clearing entrées, if a glass is more than half empty, they offer a second. This alone adds 8–12% incremental drink revenue.'}],
-     protip:'A server who knows the menu — really knows it, has tasted it, has opinions about it — recommends cocktails differently than one reading from a list. The investment is a tasting. The return is a server who makes the offer because they mean it.',
+            {tag:'SECOND ROUND',tagColor:'#2dd4a0',title:'Half-Empty = Offer',desc:'When clearing entrÃ©es, if a glass is more than half empty, they offer a second. This alone adds 8â12% incremental drink revenue.'}],
+     protip:'A server who knows the menu â really knows it, has tasted it, has opinions about it â recommends cocktails differently than one reading from a list. The investment is a tasting. The return is a server who makes the offer because they mean it.',
      slack:`Drinks/check ${(w.drink_attach||0).toFixed(2)} vs ${(t.target_drink_attach||1.8).toFixed(2)} target. Tonight: \"What are we drinking tonight?\" \u2014 not \"Can I get you something?\" Four words. Practice at pre-shift.`},
-    {id:'ppa',icon:'💰',label:'PPA',color:'#2dd4a0',invert:false,actual:w.ppa,target:t.target_ppa,fmt:v=>'$'+v?.toFixed(2),
+    {id:'ppa',icon:'ð°',label:'PPA',color:'#2dd4a0',invert:false,actual:w.ppa,target:t.target_ppa,fmt:v=>'$'+v?.toFixed(2),
      weeklyImpact:Math.round(Math.abs(w.ppa-t.target_ppa)*(w.guests||0)),
      diagnosis:`PPA at <strong>$${w.ppa}</strong> vs <strong>$${t.target_ppa}</strong>. Each $1 of gap = $${(w.guests||0).toLocaleString()}/week.`,
-     steps:[{tag:'TIMING',tagColor:'#2dd4a0',title:'Dessert at 60 Seconds',desc:'Offer within 60 seconds of clearing the last entrée. "Before I close you out — are we doing dessert? The [item] is outstanding."'},
+     steps:[{tag:'TIMING',tagColor:'#2dd4a0',title:'Dessert at 60 Seconds',desc:'Offer within 60 seconds of clearing the last entrÃ©e. "Before I close you out â are we doing dessert? The [item] is outstanding."'},
             {tag:'UPGRADE',tagColor:'#f5c842',title:'Protein Upgrades',desc:'Upgrade offers are almost never mentioned unless trained. Every bowl, salad, pasta has an upgrade path. 30-second review at pre-shift.'},
             {tag:'AUDIT',tagColor:'#a78bfa',title:'Mental 10-Second Check',desc:'Before dropping the check: did this table have a drink, starter, add-on? If two of three are missing, offer something.'}],
      protip:'PPA is what happens when your team makes people feel genuinely taken care of. The server who wants the table to have a great time does not need to be told to offer the starter 2014 they do it because that is how they show up. That culture is what you are building.',
-     slack:`PPA $${w.ppa} vs $${t.target_ppa} target. Tonight: dessert offer when entrée plates clear, not when check is requested. One specific item, every table.`},
-    {id:'splh',icon:'💵',label:'SPLH',color:'#60a5fa',invert:false,actual:w.splh,target:t.target_splh,fmt:v=>'$'+v?.toFixed(0),
+     slack:`PPA $${w.ppa} vs $${t.target_ppa} target. Tonight: dessert offer when entrÃ©e plates clear, not when check is requested. One specific item, every table.`},
+    {id:'splh',icon:'ðµ',label:'SPLH',color:'#60a5fa',invert:false,actual:w.splh,target:t.target_splh,fmt:v=>'$'+v?.toFixed(0),
      weeklyImpact:0,
      diagnosis:`SPLH at <strong>$${w.splh}</strong> vs <strong>$${t.target_splh}</strong>. Sales lever moves this faster than labor cuts.`,
-     steps:[{tag:'FORMULA',tagColor:'#60a5fa',title:'Schedule Backwards',desc:'Projected sales ÷ SPLH target = max hours. Build schedule from that number, not from habit.'},
+     steps:[{tag:'FORMULA',tagColor:'#60a5fa',title:'Schedule Backwards',desc:'Projected sales Ã· SPLH target = max hours. Build schedule from that number, not from habit.'},
             {tag:'DAYPART',tagColor:'#f5c842',title:'Daypart Breakdown',desc:'Pull SPLH by daypart from Toast. If lunch is $38 and dinner is $62, the problem is lunch staffing. Diagnose before adjusting.'},
-            {tag:'SALES FIRST',tagColor:'#2dd4a0',title:'Revenue Before Cuts',desc:'A $3 PPA lift on 1,470 guests = $4,400/week with zero labor change. Chase both — sales moves faster and protects culture.'}],
+            {tag:'SALES FIRST',tagColor:'#2dd4a0',title:'Revenue Before Cuts',desc:'A $3 PPA lift on 1,470 guests = $4,400/week with zero labor change. Chase both â sales moves faster and protects culture.'}],
      protip:'SPLH does not care about excuses. It measures how much value your team generated per hour on the floor. Knowing it mid-shift and acting on it is what separates operators from order-takers. A manager who checks it daily and acts immediately is playing offense.',
-     slack:`SPLH $${w.splh} vs $${t.target_splh}. Pull your Toast daypart breakdown — find which service is dragging the number. Address root cause, not total.`},
-    {id:'food_cost',icon:'🍳',label:'Food Cost %',color:'#fb7185',invert:true,actual:w.food_cost,target:t.target_food_cost,fmt:v=>v?.toFixed(1)+'%',
+     slack:`SPLH $${w.splh} vs $${t.target_splh}. Pull your Toast daypart breakdown â find which service is dragging the number. Address root cause, not total.`},
+    {id:'food_cost',icon:'ð³',label:'Food Cost %',color:'#fb7185',invert:true,actual:w.food_cost,target:t.target_food_cost,fmt:v=>v?.toFixed(1)+'%',
      weeklyImpact:Math.round(Math.abs(w.food_cost-t.target_food_cost)/100*(w.net_sales||0)),
      diagnosis:`Food cost <strong>${w.food_cost}%</strong> vs <strong>${t.target_food_cost}%</strong>. Each 1pt = $${Math.round((w.net_sales||0)/100).toLocaleString()}/week.`,
      steps:[{tag:'DAILY',tagColor:'#fb7185',title:'5-Minute Line Check',desc:'Before every service: portion weights, mise en place levels, expiration on opened proteins. Catches 80% of food cost variance before it leaves the kitchen.'},
             {tag:'PREP',tagColor:'#f5c842',title:'Prep to 90th Percentile',desc:'Pull last 3 weeks same-day covers. Prep to 90th percentile, not worst-case. Every item prepped and not sold is cost without revenue.'},
             {tag:'TRACKING',tagColor:'#60a5fa',title:'End-of-Night Waste Log',desc:'Closing cook logs what didn\'t sell, what got 86\'d, what was over-prepped. One week of data tells you exactly where cost is going.'}],
-     protip:'The guest at noon on a Tuesday deserves the same care as anyone else who walks through the door. When your lunch team brings that same intention — a recommendation, an upgrade, a moment of actual attention — those guests come back. That is where loyalty gets built.',
+     protip:'The guest at noon on a Tuesday deserves the same care as anyone else who walks through the door. When your lunch team brings that same intention â a recommendation, an upgrade, a moment of actual attention â those guests come back. That is where loyalty gets built.',
      slack:`Food cost ${w.food_cost}% vs ${t.target_food_cost}%. BOH this week: line check before every service, portion weights on top 3 sellers, waste log at close.`},
   ];
 
@@ -1121,7 +1121,7 @@ function renderCoaching() {
     const pct=m.invert?Math.min(100,m.target/m.actual*100):Math.min(100,m.actual/m.target*100);
     const col=on?'#2dd4a0':pct>85?'#f5c842':'#f06565';
     return `<div class="kpi-card ${on?'on':'off'}" onclick="document.getElementById('c-${m.id}')?.scrollIntoView({behavior:'smooth'})">
-      <div class="kpi-badge" style="background:${on?'#2dd4a0':'#f06565'}">${on?'✓':'!'}</div>
+      <div class="kpi-badge" style="background:${on?'#2dd4a0':'#f06565'}">${on?'â':'!'}</div>
       <div class="kpi-icon">${m.icon}</div>
       <div class="kpi-label">${m.label}</div>
       <div class="kpi-val" style="color:${col}">${m.fmt(m.actual)}</div>
@@ -1160,7 +1160,7 @@ function renderCoaching() {
           <div class="step-title">${s.title}</div>
           <div class="step-desc">${s.desc}</div>
         </div>`).join('')}
-        <div class="protip" style="margin-top:8px"><strong>⚡ Pro Tip</strong><br>${m.protip}</div>
+        <div class="protip" style="margin-top:8px"><strong>â¡ Pro Tip</strong><br>${m.protip}</div>
       </div>
       <div class="c-tab-content" id="ct-${m.id}-slack">
         <div class="slack-box">${m.slack}<button class="copy-btn" onclick="copyText('${m.slack.replace(/'/g,"\\'")}')">Copy</button></div>
@@ -1181,7 +1181,7 @@ function copyText(txt) {
   navigator.clipboard.writeText(txt).then(()=>showToast('success','Copied to clipboard'));
 }
 
-// ── WEEK TABLE ──
+// ââ WEEK TABLE ââ
 function renderWeekTable() {
   const wks=[...S.weeks].sort((a,b)=>a.date>b.date?-1:1).slice(0,50);
   document.getElementById('week-count').textContent=`(${S.weeks.length})`;
@@ -1194,18 +1194,18 @@ function renderWeekTable() {
       <td style="text-transform:capitalize">${w.location}</td>
       <td>$${(w.net_sales||0).toLocaleString()}</td>
       <td>${(w.guests||0).toLocaleString()}</td>
-      <td>$${w.ppa?.toFixed(2)||'—'}</td>
-      <td style="color:${w.labor_pct>=(t.target_labor_pct||26)?'var(--red)':'var(--green)'}">${w.labor_pct?.toFixed(1)||'—'}%</td>
-      <td>$${w.splh?.toFixed(0)||'—'}</td>
-      <td>${w.starter_attach?.toFixed(0)||'—'}%</td>
-      <td>${w.drink_attach?.toFixed(2)||'—'}</td>
+      <td>$${w.ppa?.toFixed(2)||'â'}</td>
+      <td style="color:${w.labor_pct>=(t.target_labor_pct||26)?'var(--red)':'var(--green)'}">${w.labor_pct?.toFixed(1)||'â'}%</td>
+      <td>$${w.splh?.toFixed(0)||'â'}</td>
+      <td>${w.starter_attach?.toFixed(0)||'â'}%</td>
+      <td>${w.drink_attach?.toFixed(2)||'â'}</td>
       <td><span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${sc}">${score}</span></td>
-      <td><span class="del-row" onclick="deleteWeek('${w.id}','${w.date}','${w.location}')">✕</span></td>
+      <td><span class="del-row" onclick="deleteWeek('${w.id}','${w.date}','${w.location}')">â</span></td>
     </tr>`;
   }).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:20px">No data yet. Upload a CSV or enter manually.</td></tr>';
 }
 
-// ── SETTINGS ──
+// ââ SETTINGS ââ
 function renderLocSettings() {
   document.getElementById('loc-settings').innerHTML=S.locations.map((l,i)=>`
     <div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px">
@@ -1240,7 +1240,7 @@ async function saveLocationTargets(slug) {
     if(S.user) {
       await _sb.from('locations').upsert({...loc,user_id:S.user.id}).select();
     }
-    showToast('success',`✓ ${loc.name} targets saved`);
+    showToast('success',`â ${loc.name} targets saved`);
     renderAll();
   } catch(e) { showToast('error','Save failed: '+e.message); }
 }
@@ -1252,7 +1252,7 @@ async function saveProfile() {
     if(S.user) {
       await _sb.from('profiles').upsert({user_id:S.user.id,restaurant_name:name,owner_name:owner,email:S.user.email}).select();
     }
-    showToast('success','✓ Profile saved');
+    showToast('success','â Profile saved');
   } catch(e) { showToast('error','Save failed: '+e.message); }
 }
 
@@ -1290,7 +1290,7 @@ async function clearAllData() {
   } catch(e) { showToast('error','Error: '+e.message); }
 }
 
-// ── DATA ENTRY ──
+// ââ DATA ENTRY ââ
 async function saveManual() {
   const date=document.getElementById('m-date').value;
   const loc=document.getElementById('m-loc').value;
@@ -1322,7 +1322,7 @@ async function saveManual() {
       S.weeks=S.weeks.filter(w=>!(w.date===date&&w.location===loc));
       S.weeks.push(row);
     }
-    showToast('success','✓ Week saved');
+    showToast('success','â Week saved');
     renderAll();
   } catch(e) { showToast('error','Save failed: '+e.message); }
 }
@@ -1338,7 +1338,7 @@ async function deleteWeek(id, date, loc) {
 
 function handleFile(files) {
   for(const file of files){
-    if(!file.name.match(/\.(csv|tsv)$/i)){showToast('error',`${file.name} — use CSV or TSV`);continue;}
+    if(!file.name.match(/\.(csv|tsv)$/i)){showToast('error',`${file.name} â use CSV or TSV`);continue;}
     const reader=new FileReader();
     reader.onload=async function(e){
       const rows=parseCSV(e.target.result,file.name.endsWith('.tsv')?'\t':',');
@@ -1373,7 +1373,7 @@ function handleFile(files) {
         } catch(err){console.error('Upload exception:',err);showToast('error','Upload error: '+err.message);}
       }
       document.getElementById('file-input').value='';
-      if(saved>0) showToast('success',`✓ ${saved} week${saved>1?'s':''} saved from ${file.name}`);
+      if(saved>0) showToast('success',`â ${saved} week${saved>1?'s':''} saved from ${file.name}`);
       else showToast('error','No rows matched your locations. Check that location names match.');
       renderAll();
     };
@@ -1397,15 +1397,15 @@ function downloadTemplate(){
   a.download='pulse-template.csv';a.click();showToast('success','Template downloaded');
 }
 
-// ── DRAG DROP ──
+// ââ DRAG DROP ââ
 const uz=document.getElementById('upload-zone');
 uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('over')});
 uz.addEventListener('dragleave',()=>uz.classList.remove('over'));
 uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('over');handleFile(e.dataTransfer.files)});
 
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // STAFFING TOOL
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 let sMode='foh', sBohDay='midweek';
 const sCounts={servers:4,bartenders:1,hosts:1,bussers:1,barbacks:0,linecooks:3,prepcooks:1,dish:1,expo:0};
 const FOH_T=2.1,FOH_LO=1.8,FOH_HI=2.4;
@@ -1429,7 +1429,7 @@ function staffCalc(){
     const covers=parseInt(document.getElementById('s-covers').value)||0;
     totalStaff=sCounts.servers+sCounts.bartenders+sCounts.hosts+sCounts.bussers+sCounts.barbacks;
     totalHours=totalStaff*hrs; metric=totalHours>0?covers/totalHours:0;
-    t=FOH_T;lo=FOH_LO;hi=FOH_HI;metricName='GPLH — Guests Per Labor Hour';
+    t=FOH_T;lo=FOH_LO;hi=FOH_HI;metricName='GPLH â Guests Per Labor Hour';
     document.getElementById('s-metric-lbl').textContent=metricName;
     document.getElementById('s-metric-val').textContent=metric.toFixed(2);
   } else {
@@ -1437,7 +1437,7 @@ function staffCalc(){
     totalStaff=sCounts.linecooks+sCounts.prepcooks+sCounts.dish+sCounts.expo;
     totalHours=totalStaff*hrs; metric=totalHours>0?items/totalHours:0;
     const boh=sBohDay==='weekend'?BOH_WE:BOH_MW;
-    t=boh.t;lo=boh.lo;hi=boh.hi;metricName='IPLH — Items Per Labor Hour';
+    t=boh.t;lo=boh.lo;hi=boh.hi;metricName='IPLH â Items Per Labor Hour';
     document.getElementById('s-metric-lbl').textContent=metricName;
     document.getElementById('s-metric-val').textContent=metric.toFixed(1);
   }
@@ -1451,22 +1451,22 @@ function staffCalc(){
   document.getElementById('s-opt-hrs').textContent=optHrs.toFixed(1);
   const ve=document.getElementById('s-variance');
   if(variance>0.5){ve.textContent='+'+Math.abs(variance).toFixed(1)+' hrs';ve.style.color='var(--yellow)';}
-  else if(variance<-0.5){ve.textContent='−'+Math.abs(variance).toFixed(1)+' hrs';ve.style.color='var(--red)';}
+  else if(variance<-0.5){ve.textContent='â'+Math.abs(variance).toFixed(1)+' hrs';ve.style.color='var(--red)';}
   else{ve.textContent='0 hrs';ve.style.color='var(--green)';}
   const vStaff=hrs>0?variance/hrs:0;
   let cls,status,actions,tip;
   if(metric>=hi){
-    if(metric>hi*1.25){cls='danger';status='UNDERSTAFFED ⚠️';
-      actions=[`~${Math.abs(vStaff).toFixed(1)} people short. Call someone now — don't wait for the rush.`,`If you can't add staff, reduce scope: close a section, simplify.`,'Pre-bus aggressively, strict rotation at the door.'];
+    if(metric>hi*1.25){cls='danger';status='UNDERSTAFFED â ï¸';
+      actions=[`~${Math.abs(vStaff).toFixed(1)} people short. Call someone now â don't wait for the rush.`,`If you can't add staff, reduce scope: close a section, simplify.`,'Pre-bus aggressively, strict rotation at the door.'];
       tip='High GPLH looks great until the Yelp reviews come in. Protect the guest experience.';}
-    else{cls='crushing';status='CRUSHING IT 🔥';
-      actions=['Running lean and clean. Document this floor plan for this cover count.','Watch for stress signals — if ticket times rise, you\'re at the edge.','Share this setup with other managers.'];
+    else{cls='crushing';status='CRUSHING IT ð¥';
+      actions=['Running lean and clean. Document this floor plan for this cover count.','Watch for stress signals â if ticket times rise, you\'re at the edge.','Share this setup with other managers.'];
       tip='This is what labor discipline looks like. Capture this staffing level for your playbook.';}
-  } else if(metric>=lo){cls='optimal';status='OPTIMAL ✓';
-    actions=['Staffing dialed. Focus energy on sales execution.','Run a pre-shift challenge: highest starter attach wins priority section.','Monitor the bar — if it slows first, consider an early bar cut.'];
+  } else if(metric>=lo){cls='optimal';status='OPTIMAL â';
+    actions=['Staffing dialed. Focus energy on sales execution.','Run a pre-shift challenge: highest starter attach wins priority section.','Monitor the bar â if it slows first, consider an early bar cut.'];
     tip='Optimal staffing is the time to practice precision. Pick one sales behavior and track it this shift.';}
   else{cls='warning';status='OVERSTAFFED';
-    actions=[`~${Math.abs(vStaff).toFixed(1)} people over. Merge the weakest section first.`,'Cut lowest-performing server — check their PPA from last week.','Don\'t let them "hang out" after cutting — that\'s shadow labor.'];
+    actions=[`~${Math.abs(vStaff).toFixed(1)} people over. Merge the weakest section first.`,'Cut lowest-performing server â check their PPA from last week.','Don\'t let them "hang out" after cutting â that\'s shadow labor.'];
     tip='Overstaffed floors breed complacency. Servers with 2-table sections stop selling.';}
   const card=document.getElementById('s-result-card');
   card.className='result-card '+cls;
@@ -1475,9 +1475,9 @@ function staffCalc(){
   document.getElementById('s-tip').textContent=tip;
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // NAV & UI
-// ══════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const pageTitles={home:'Dashboard',coaching:'Coaching Guide',staffing:'Staffing Tool',lineheat:'Heatmap',kpiref:'KPI Reference',data:'Data Entry',settings:'Settings'};
 
 
@@ -1501,7 +1501,7 @@ function renderLineheat() {
   if (!uniq.length) { root.innerHTML='<p style="padding:2rem;color:var(--muted)">No data yet.</p>'; return; }
   let selIdx = 0;
 
-  // Strike zone grid config — rows x cols per station
+  // Strike zone grid config â rows x cols per station
   const STATIONS = [
     {
       name: 'Flattop', pos: 0,
@@ -1527,7 +1527,7 @@ function renderLineheat() {
       desc: 'All fried items'
     },
     {
-      name: 'Sauté', pos: 2,
+      name: 'SautÃ©', pos: 2,
       items: [
         {name:'Hot Starters', key:'starter_attach', row:0, col:0, span:2, weight:0.4},
         {name:'Mac & Cheese', key:'gplh', row:0, col:2, span:2, weight:0.12},
@@ -1597,7 +1597,7 @@ function renderLineheat() {
     const summaryHTML = `<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.5rem">
       <div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Items Fired</div><div style="font-size:20px;font-weight:600">${totalItems.toLocaleString()}</div></div>
       <div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Guests</div><div style="font-size:20px;font-weight:600">${(w.guests||0).toLocaleString()}</div></div>
-      <div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Items / Guest</div><div style="font-size:20px;font-weight:600">${w.guests?((totalItems/w.guests).toFixed(1)):'—'}</div></div>
+      <div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Items / Guest</div><div style="font-size:20px;font-weight:600">${w.guests?((totalItems/w.guests).toFixed(1)):'â'}</div></div>
       <div style="background:var(--s2);border-radius:8px;padding:10px 12px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Peak Load</div><div style="font-size:20px;font-weight:600;color:#f97316">Flattop</div></div>
     </div>`;
 
@@ -1636,7 +1636,7 @@ function renderLineheat() {
             </div>`;
           } else {
             cellsHTML += `<div style="grid-column: span 1; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px 6px">
-              <div style="font-size:9px;color:var(--muted);opacity:.4">—</div>
+              <div style="font-size:9px;color:var(--muted);opacity:.4">â</div>
             </div>`;
           }
         }
@@ -1675,11 +1675,11 @@ function renderLineheat() {
 
     root.innerHTML = `
       <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:8px">
-        <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Kitchen Line · ${loc} · Strike Zone</span>
+        <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Kitchen Line Â· ${loc} Â· Strike Zone</span>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${weekBtns}</div>
       </div>
       ${summaryHTML}
-      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:10px;opacity:.7">← expo pass ·  left to right: flattop → fryer → sauté → pantry</div>
+      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:10px;opacity:.7">â expo pass Â·  left to right: flattop â fryer â sautÃ© â pantry</div>
       <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px">
         ${stationGrids.join('')}
       </div>
@@ -1702,7 +1702,7 @@ function openBriefModal(locName, locSlug) {
   const sub = document.getElementById('brief-modal-sub');
 
   modal.style.display = 'flex';
-  title.textContent = locName + ' — Weekly CEO Brief';
+  title.textContent = locName + ' â Weekly CEO Brief';
 
   const w = getLatestWeek(locSlug);
   const t = getTargets(locSlug);
@@ -1710,7 +1710,7 @@ function openBriefModal(locName, locSlug) {
 
   const sc = computeScore(w, t);
   const g = grade(sc.composite);
-  sub.textContent = 'Week of ' + w.date + ' · Score ' + sc.composite + ' · ' + g.letter + ' — ' + g.label;
+  sub.textContent = 'Week of ' + w.date + ' Â· Score ' + sc.composite + ' Â· ' + g.letter + ' â ' + g.label;
 
   // Build structured data prompt
   const dataStr = JSON.stringify({
@@ -1757,7 +1757,7 @@ function openBriefModal(locName, locSlug) {
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1000,
-      system: "You are a restaurant operations analyst writing a weekly CEO brief for Sam Glynn, owner of Chomp Kitchen & Drinks, a 3-location casual dining group in Rhode Island. Write in a direct, compressed style — no fluff, no pleasantries. Use concrete numbers. Structure your response with these exact sections: **HEADLINE** (one punchy sentence summarizing the week), **WINS** (bullet points, what worked), **GAPS** (bullet points, what missed and by how much), **ONE MOVE** (single most important action for next week), **OUTLOOK** (2-3 sentences on trajectory). Keep the whole report under 350 words.",
+      system: "You are a restaurant operations analyst writing a weekly CEO brief for Sam Glynn, owner of Chomp Kitchen & Drinks, a 3-location casual dining group in Rhode Island. Write in a direct, compressed style â no fluff, no pleasantries. Use concrete numbers. Structure your response with these exact sections: **HEADLINE** (one punchy sentence summarizing the week), **WINS** (bullet points, what worked), **GAPS** (bullet points, what missed and by how much), **ONE MOVE** (single most important action for next week), **OUTLOOK** (2-3 sentences on trajectory). Keep the whole report under 350 words.",
       messages: [{
         role: "user",
         content: "Generate the weekly CEO brief for this location. Here is the data:\n\n" + dataStr
@@ -1799,9 +1799,9 @@ document.addEventListener('click', e => {
   if (e.target === modal) closeBriefModal();
 });
 
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // EXPORT PRE-SHIFT BRIEF (Slack format)
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function exportPreShift() {
   const loc = S.currentLoc === 'all' ? (S.locations[0]?.slug || 'warren') : S.currentLoc;
   const w = getLatestWeek(loc) || CHOMP_DEFAULTS.weeks.find(wk => wk.location === loc) || CHOMP_DEFAULTS.weeks[0];
@@ -1812,7 +1812,7 @@ function exportPreShift() {
   const allM = [
     { label: 'Labor %', actual: w.labor_pct, target: t.target_labor_pct, inv: true,
       fmt: v => v?.toFixed(1) + '%',
-      move: '4PM checkpoint — count covers, count staff, make the call before service starts.',
+      move: '4PM checkpoint â count covers, count staff, make the call before service starts.',
       why: 'When labor is controlled, we invest in the team. Overspend here and the people doing the work pay for it.' },
     { label: 'SPLH', actual: w.splh, target: t.target_splh, inv: false,
       fmt: v => '$' + v?.toFixed(0),
@@ -1832,7 +1832,7 @@ function exportPreShift() {
       why: 'Tables that start with a shared appetizer stay longer, drink more, tip better.' },
     { label: 'Drinks/Chk', actual: w.drink_attach, target: t.target_drink_attach || 1.8, inv: false,
       fmt: v => v?.toFixed(2),
-      move: '"What are we drinking tonight?" every table. Notice the half-empty glass at entrée.',
+      move: '"What are we drinking tonight?" every table. Notice the half-empty glass at entrÃ©e.',
       why: 'Presence is a skill. The table that feels noticed tips what they felt and comes back.' },
     { label: 'Cocktail Attach', actual: w.cocktail_attach, target: 65, inv: false,
       fmt: v => v?.toFixed(0) + '%',
@@ -1847,30 +1847,30 @@ function exportPreShift() {
   const on = allM.filter(m => m.actual != null && (m.inv ? m.actual <= m.target : m.actual >= m.target));
   const off = allM.filter(m => m.actual != null && (m.inv ? m.actual > m.target : m.actual < m.target));
 
-  let msg = ':chomp: *Pre-Shift Brief — ' + locName + ' — ' + date + '*\n';
-  msg += '———————————————————————\n\n';
+  let msg = ':chomp: *Pre-Shift Brief â ' + locName + ' â ' + date + '*\n';
+  msg += 'âââââââââââââââââââââââ\n\n';
 
   if (on.length) {
     msg += ':white_check_mark: *Carrying forward*\n';
-    on.forEach(m => msg += '• ' + m.label + ': ' + m.fmt(m.actual) + '  _(tgt ' + m.fmt(m.target) + ')_\n');
+    on.forEach(m => msg += 'â¢ ' + m.label + ': ' + m.fmt(m.actual) + '  _(tgt ' + m.fmt(m.target) + ')_\n');
     msg += '\n';
   }
   if (off.length) {
     msg += ':dart: *This shift\'s focus*\n';
     off.slice(0, 3).forEach(m => {
-      msg += '\n*' + m.label + '* — ' + m.fmt(m.actual) + ' vs ' + m.fmt(m.target) + ' target\n';
-      msg += '→ ' + m.move + '\n';
+      msg += '\n*' + m.label + '* â ' + m.fmt(m.actual) + ' vs ' + m.fmt(m.target) + ' target\n';
+      msg += 'â ' + m.move + '\n';
       msg += '_Why it matters: ' + m.why + '_\n';
     });
     msg += '\n';
   }
   msg += ':handshake: *Every table is someone\'s night. Make it worth it.*';
-  navigator.clipboard.writeText(msg).then(() => showToast('success', 'Pre-shift brief copied — paste into Slack'));
+  navigator.clipboard.writeText(msg).then(() => showToast('success', 'Pre-shift brief copied â paste into Slack'));
 }
 
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // RENDER BRIEF (CEO Weekly Brief page)
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderBrief() {
   const root = document.getElementById('brief-root');
   if (!root) return;
@@ -1878,7 +1878,7 @@ function renderBrief() {
   const locs = loc ? S.locations.filter(l => l.slug === loc) : S.locations;
   const now = new Date();
   const weekStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  function fmt(v, pre = '', suf = '', dec = 1) { return v != null ? pre + parseFloat(v).toFixed(dec) + suf : '—'; }
+  function fmt(v, pre = '', suf = '', dec = 1) { return v != null ? pre + parseFloat(v).toFixed(dec) + suf : 'â'; }
 
   let sectionsHTML = '';
   locs.forEach(l => {
@@ -1890,24 +1890,24 @@ function renderBrief() {
     const g = grade(sc.composite);
     const salesChg = prev ? ((w.net_sales - prev.net_sales) / prev.net_sales * 100) : null;
     const gaps = [];
-    if (w.labor_pct > t.target_labor_pct) gaps.push('Labor ' + (w.labor_pct - t.target_labor_pct).toFixed(1) + 'pts over — cut before dinner, not during');
-    if (w.drink_attach < (t.target_drink_attach || 1.8)) gaps.push('Drinks/chk ' + ((t.target_drink_attach || 1.8) - w.drink_attach).toFixed(2) + ' short — "What are we drinking tonight?"');
-    if (w.starter_attach < t.target_starter_attach) gaps.push('Starter ' + (t.target_starter_attach - w.starter_attach).toFixed(0) + 'pts short — offer before drink order, every table');
-    if (w.ppa < t.target_ppa) gaps.push('PPA $' + (t.target_ppa - w.ppa).toFixed(2) + ' short — one more offer before the check drops');
+    if (w.labor_pct > t.target_labor_pct) gaps.push('Labor ' + (w.labor_pct - t.target_labor_pct).toFixed(1) + 'pts over â cut before dinner, not during');
+    if (w.drink_attach < (t.target_drink_attach || 1.8)) gaps.push('Drinks/chk ' + ((t.target_drink_attach || 1.8) - w.drink_attach).toFixed(2) + ' short â "What are we drinking tonight?"');
+    if (w.starter_attach < t.target_starter_attach) gaps.push('Starter ' + (t.target_starter_attach - w.starter_attach).toFixed(0) + 'pts short â offer before drink order, every table');
+    if (w.ppa < t.target_ppa) gaps.push('PPA $' + (t.target_ppa - w.ppa).toFixed(2) + ' short â one more offer before the check drops');
 
     const kpiRows = [
-      ['Net Sales', fmt(w.net_sales, '$', '', 0), prev ? fmt(prev.net_sales, '$', '', 0) : '—'],
-      ['Guests', fmt(w.guests, '', '', 0), prev ? fmt(prev.guests, '', '', 0) : '—'],
-      ['PPA', fmt(w.ppa, '$', '', 2), prev ? fmt(prev.ppa, '$', '', 2) : '—'],
-      ['Labor %', fmt(w.labor_pct, '', '%'), prev ? fmt(prev.labor_pct, '', '%') : '—'],
-      ['SPLH', fmt(w.splh, '$', '', 0), prev ? fmt(prev.splh, '$', '', 0) : '—'],
-      ['Starter', fmt(w.starter_attach, '', '%', 0), prev ? fmt(prev.starter_attach, '', '%', 0) : '—'],
-      ['Drinks/Chk', fmt(w.drink_attach, '', '', 2), prev ? fmt(prev.drink_attach, '', '', 2) : '—'],
-      ['Food Cost', fmt(w.food_cost, '', '%'), prev ? fmt(prev.food_cost, '', '%') : '—'],
+      ['Net Sales', fmt(w.net_sales, '$', '', 0), prev ? fmt(prev.net_sales, '$', '', 0) : 'â'],
+      ['Guests', fmt(w.guests, '', '', 0), prev ? fmt(prev.guests, '', '', 0) : 'â'],
+      ['PPA', fmt(w.ppa, '$', '', 2), prev ? fmt(prev.ppa, '$', '', 2) : 'â'],
+      ['Labor %', fmt(w.labor_pct, '', '%'), prev ? fmt(prev.labor_pct, '', '%') : 'â'],
+      ['SPLH', fmt(w.splh, '$', '', 0), prev ? fmt(prev.splh, '$', '', 0) : 'â'],
+      ['Starter', fmt(w.starter_attach, '', '%', 0), prev ? fmt(prev.starter_attach, '', '%', 0) : 'â'],
+      ['Drinks/Chk', fmt(w.drink_attach, '', '', 2), prev ? fmt(prev.drink_attach, '', '', 2) : 'â'],
+      ['Food Cost', fmt(w.food_cost, '', '%'), prev ? fmt(prev.food_cost, '', '%') : 'â'],
     ];
 
     const chgStr = salesChg !== null ? `<span style="color:${salesChg >= 0 ? '#2dd4a0' : '#f06565'};font-weight:600">${salesChg >= 0 ? '+' : ''}${salesChg.toFixed(1)}%</span>` : '';
-    const gapHTML = gaps.length ? gaps.map(g => `<div style="display:flex;gap:6px;margin-bottom:4px"><span style="color:#f5c842">▸</span><span>${g}</span></div>`).join('') : '<div style="color:#2dd4a0">All metrics on target</div>';
+    const gapHTML = gaps.length ? gaps.map(g => `<div style="display:flex;gap:6px;margin-bottom:4px"><span style="color:#f5c842">â¸</span><span>${g}</span></div>`).join('') : '<div style="color:#2dd4a0">All metrics on target</div>';
 
     sectionsHTML += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -1935,14 +1935,14 @@ function renderBrief() {
 
   root.innerHTML = `<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px">
     <div><div style="font-size:20px;font-weight:700;margin-bottom:4px">Weekly CEO Brief</div>
-    <div style="font-size:12px;color:var(--muted)">Week of ${weekStr} · ${locs.length} location${locs.length !== 1 ? 's' : ''} · $${totalSales.toLocaleString()} total</div></div>
+    <div style="font-size:12px;color:var(--muted)">Week of ${weekStr} Â· ${locs.length} location${locs.length !== 1 ? 's' : ''} Â· $${totalSales.toLocaleString()} total</div></div>
     <button onclick="navigator.clipboard.writeText(document.getElementById('brief-root').innerText).then(()=>showToast('success','Brief copied'))" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer">Copy brief</button>
   </div>${sectionsHTML || '<div style="color:var(--muted);font-size:13px">No data loaded yet.</div>'}`;
 }
 
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // KPI TREND DRAWER
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function showKpiTrend(metricId, label, invert) {
   const drawer = document.getElementById('kpi-trend-drawer');
   const canvas = document.getElementById('ktd-canvas');
@@ -1961,9 +1961,9 @@ function showKpiTrend(metricId, label, invert) {
   const good = invert ? last <= first : last >= first;
 
   const te = document.getElementById('ktd-trend');
-  te.textContent = (chg >= 0 ? '↑' : '↓') + Math.abs(chg).toFixed(1) + '%';
+  te.textContent = (chg >= 0 ? 'â' : 'â') + Math.abs(chg).toFixed(1) + '%';
   te.style.color = good ? '#2dd4a0' : '#f06565';
-  document.getElementById('ktd-label').textContent = label + ' — ' + points.length + ' weeks';
+  document.getElementById('ktd-label').textContent = label + ' â ' + points.length + ' weeks';
 
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
@@ -2017,40 +2017,40 @@ function showKpiTrend(metricId, label, invert) {
   drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// ════════════════════════════════════════════════════════════════
-// FPLH (stub — add data to enable)
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// FPLH (stub â add data to enable)
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderFplh() {
   const root = document.getElementById('fplh-root');
   if (!root) return;
   root.innerHTML = '<div style="padding:2rem;color:var(--muted);text-align:center">FPLH analysis coming soon. Upload check-level data to enable.</div>';
 }
 
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // KPI REFERENCE
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderKpiRef() {
   const root = document.getElementById('kpiref-root');
   if (!root) return;
   const kpis = [
-    { name: 'Labor %', formula: 'Total Labor Cost ÷ Net Sales × 100', target: '22–28%', why: 'The single biggest controllable expense. Every point over target is pure margin loss.', levers: 'Schedule backwards from projected sales, 4PM checkpoint, cut before rush.' },
-    { name: 'SPLH (Sales Per Labor Hour)', formula: 'Net Sales ÷ Total Labor Hours', target: '$45–$70+', why: 'Measures revenue efficiency of every hour worked. Higher = leaner operation.', levers: 'Increase PPA (sales lever), tighten scheduling, reduce side-work overlap.' },
-    { name: 'GPLH (Guests Per Labor Hour)', formula: 'Guest Count ÷ FOH Labor Hours', target: '1.8–2.4', why: 'Real-time staffing gauge. Below 1.8 = overstaffed. Above 2.4 = stretched thin.', levers: 'Merge sections, stagger cuts, pre-bus aggressively.' },
-    { name: 'PPA (Per Person Average)', formula: 'Net Sales ÷ Guest Count', target: '$28–$36+', why: 'Every $1 of PPA × guest count = weekly revenue lift with zero added labor.', levers: 'Starter offer before drinks, dessert at 60 seconds, upgrade prompts.' },
-    { name: 'Starter Attach %', formula: 'Tables with Starter ÷ Total Tables × 100', target: '35–45%', why: 'Highest-margin course. Drives PPA, ticket time, and perceived value.', levers: 'Offer before drink order, one specific item at pre-shift, post by server.' },
-    { name: 'Drink Attach (Drinks/Check)', formula: 'Beverage Items Sold ÷ Checks', target: '1.6–2.0+', why: 'Beverage carries highest margin. Second-round offers are free revenue.', levers: '"What are we drinking tonight?", feature one cocktail, half-empty = offer.' },
-    { name: 'Food Cost %', formula: 'Cost of Goods Sold ÷ Net Food Sales × 100', target: '26–30%', why: 'Second biggest controllable. 1pt over on $100K/week = $1K lost.', levers: 'Daily line check, prep to 90th percentile, waste log at close.' },
-    { name: 'Schedule Variance', formula: 'Actual Hours Worked − Scheduled Hours', target: '< 3 hrs', why: 'Measures scheduling discipline. High variance = shadow labor and lack of accountability.', levers: 'Clock-in alerts, MOD owns the cut list, review weekly with team.' },
-    { name: 'Health Score', formula: 'Weighted composite: Labor (35%) + Sales (30%) + Efficiency (20%) + Culture (15%)', target: '80+', why: 'Single number summarizing operational health. Tracks trajectory, not just snapshots.', levers: 'Focus on the biggest gap each week — one move at a time.' },
+    { name: 'Labor %', formula: 'Total Labor Cost Ã· Net Sales Ã 100', target: '22â28%', why: 'The single biggest controllable expense. Every point over target is pure margin loss.', levers: 'Schedule backwards from projected sales, 4PM checkpoint, cut before rush.' },
+    { name: 'SPLH (Sales Per Labor Hour)', formula: 'Net Sales Ã· Total Labor Hours', target: '$45â$70+', why: 'Measures revenue efficiency of every hour worked. Higher = leaner operation.', levers: 'Increase PPA (sales lever), tighten scheduling, reduce side-work overlap.' },
+    { name: 'GPLH (Guests Per Labor Hour)', formula: 'Guest Count Ã· FOH Labor Hours', target: '1.8â2.4', why: 'Real-time staffing gauge. Below 1.8 = overstaffed. Above 2.4 = stretched thin.', levers: 'Merge sections, stagger cuts, pre-bus aggressively.' },
+    { name: 'PPA (Per Person Average)', formula: 'Net Sales Ã· Guest Count', target: '$28â$36+', why: 'Every $1 of PPA Ã guest count = weekly revenue lift with zero added labor.', levers: 'Starter offer before drinks, dessert at 60 seconds, upgrade prompts.' },
+    { name: 'Starter Attach %', formula: 'Tables with Starter Ã· Total Tables Ã 100', target: '35â45%', why: 'Highest-margin course. Drives PPA, ticket time, and perceived value.', levers: 'Offer before drink order, one specific item at pre-shift, post by server.' },
+    { name: 'Drink Attach (Drinks/Check)', formula: 'Beverage Items Sold Ã· Checks', target: '1.6â2.0+', why: 'Beverage carries highest margin. Second-round offers are free revenue.', levers: '"What are we drinking tonight?", feature one cocktail, half-empty = offer.' },
+    { name: 'Food Cost %', formula: 'Cost of Goods Sold Ã· Net Food Sales Ã 100', target: '26â30%', why: 'Second biggest controllable. 1pt over on $100K/week = $1K lost.', levers: 'Daily line check, prep to 90th percentile, waste log at close.' },
+    { name: 'Schedule Variance', formula: 'Actual Hours Worked â Scheduled Hours', target: '< 3 hrs', why: 'Measures scheduling discipline. High variance = shadow labor and lack of accountability.', levers: 'Clock-in alerts, MOD owns the cut list, review weekly with team.' },
+    { name: 'Health Score', formula: 'Weighted composite: Labor (35%) + Sales (30%) + Efficiency (20%) + Culture (15%)', target: '80+', why: 'Single number summarizing operational health. Tracks trajectory, not just snapshots.', levers: 'Focus on the biggest gap each week â one move at a time.' },
   ];
   root.innerHTML = '<div class="page-inner"><div class="home-hero" style="padding-top:16px"><div class="home-eyebrow">KPI Reference</div><div class="home-title">Know your <span>numbers.</span></div><div class="home-sub">Every metric Pulse tracks, how it\'s calculated, and what moves it.</div></div>' +
     kpis.map(k => '<div class="panel" style="margin-bottom:12px"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px"><div style="font-size:15px;font-weight:700">' + k.name + '</div><span class="tag badge-accent">' + k.target + '</span></div><div style="font-size:12px;color:var(--muted);margin-bottom:8px"><strong style="color:var(--t2)">Formula:</strong> ' + k.formula + '</div><div style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:8px">' + k.why + '</div><div style="font-size:12px;color:var(--muted)"><strong style="color:var(--accent)">Levers:</strong> ' + k.levers + '</div></div>').join('') +
     '</div>';
 }
 
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // NAV & UI
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function navTo(page, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + page)?.classList.add('active');
@@ -2088,51 +2088,24 @@ function showToast(type, msg) {
   setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-// ════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // INIT
-// ════════════════════════════════════════════════════════════════
-// Timeout fallback: if auth never fires in 5s, show sign-in
-const _authTimer = setTimeout(() => {
-  if (document.getElementById('loading').style.display !== 'none') {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('auth-screen').style.display = 'flex';
-  }
-}, 5000);
-
-_sb.auth.onAuthStateChange(async (event, session) => {
-  clearTimeout(_authTimer);
-  document.getElementById('loading').style.display = 'none';
-  if (session?.user) {
-    S.user = session.user;
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    document.getElementById('user-email').textContent = session.user.email;
-    const meta = session.user.user_metadata;
-    document.getElementById('user-name').textContent = meta?.restaurant_name || session.user.email.split('@')[0];
-    await loadData();
-    document.getElementById('m-date').value = new Date().toISOString().split('T')[0];
-    staffCalc();
-  } else {
-    S.user = null;
-    document.getElementById('app').style.display = 'none';
-    document.getElementById('auth-screen').style.display = 'flex';
-  }
-});
-
-// Check for unconfigured Supabase (demo mode)
-if (PULSE_CONFIG.supabaseUrl === 'YOUR_SUPABASE_URL') {
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── DIRECT INIT — no auth required ──
+(async () => {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
-  S.locations = CHOMP_DEFAULTS.locations;
-  S.weeks = CHOMP_DEFAULTS.weeks;
-  document.getElementById('user-name').textContent = 'Chomp Kitchen';
-  document.getElementById('user-email').textContent = 'Demo Mode';
-  buildLocSelect(); populateManualLoc(); renderLocSettings(); renderAll();
-  document.getElementById('m-date').value = new Date().toISOString().split('T')[0];
-  staffCalc();
-  showToast('info', 'Running in demo mode. Add Supabase credentials to config.js to enable login.');
-}
+  window.S = window.S || {};
+  window.S.user = { id: '9931de3f-119e-47f7-af85-9bc2f7022acf', email: 'sam@chompri.com' };
+  document.getElementById('user-name').textContent = 'Chomp';
+  document.getElementById('user-email').textContent = 'sam@chompri.com';
+  if (typeof loadData === 'function') await loadData();
+  const d = document.getElementById('m-date');
+  if (d) d.value = new Date().toISOString().split('T')[0];
+  if (typeof staffCalc === 'function') staffCalc();
+})();
+
 </script>
 
   <div id="brief-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
@@ -2142,7 +2115,7 @@ if (PULSE_CONFIG.supabaseUrl === 'YOUR_SUPABASE_URL') {
           <div style="font-size:14px;font-weight:700;color:var(--text)" id="brief-modal-title">Weekly CEO Brief</div>
           <div style="font-size:11px;color:var(--muted)" id="brief-modal-sub"></div>
         </div>
-        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px">×</button>
+        <button onclick="closeBriefModal()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px">Ã</button>
       </div>
       <div id="brief-modal-body" style="padding:20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)"></div>
       <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
