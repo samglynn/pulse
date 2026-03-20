@@ -2154,7 +2154,7 @@ function renderDashboard() {
   const wb = getWeeklyBlended(filtered);
 
   // Populate week filter dropdown
-  const weekSelect = document.getElementById('week-filter');
+  const weekSelect = document.getElementById('day-chip-row');
   const currentWeekVal = S.weekFilter || 'latest';
   let weekHtml = '<option value="all">All Days (Trend View)</option>';
   weekHtml += '<option value="latest">Latest Day</option>';
