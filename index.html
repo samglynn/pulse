@@ -369,7 +369,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
       <div class="top-bar">
         <div class="top-bar-left">
           <div id="loc-toggles" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none"></div>
-          <select id="week-filter" onchange="applyWeekFilter()" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;background:var(--surface-2);color:var(--text);border:1px solid var(--border);cursor:pointer;font-family:inherit;min-width:160px">
+          <select id="week-filter" onchange="applyWeekFilter()" title="Filter by service day" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;background:var(--surface-2);color:var(--text);border:1px solid var(--border);cursor:pointer;font-family:inherit;min-width:160px">
             <option value="all">All Weeks</option>
           </select>
           <div id="week-range-label" style="font-size:11px;color:var(--text-2)"></div>
@@ -1387,7 +1387,7 @@ const { data: weeks, error } = await sb.from('weeks_full').select('*').order('da
 
     // Store for merging with uploaded data
     S.historicalRows = rows;
-    console.log('Loaded ' + rows.length + ' historical weeks from Supabase');
+    console.log('Loaded ' + rows.length + ' daily service rows from Supabase');
   } catch (e) {
     console.error('Historical load error:', e);
   }
@@ -2150,14 +2150,14 @@ function renderDashboard() {
   // Populate week filter dropdown
   const weekSelect = document.getElementById('week-filter');
   const currentWeekVal = S.weekFilter || 'latest';
-  let weekHtml = '<option value="all">All Weeks (Trend View)</option>';
-  weekHtml += '<option value="latest">Latest Week</option>';
-  // Add each week as an option (most recent first)
+  let weekHtml = '<option value="all">All Days (Trend View)</option>';
+  weekHtml += '<option value="latest">Latest Day</option>';
+  // Add each day as an option (most recent first)
   const weeksCopy = [...wb].reverse();
   weeksCopy.forEach(w => {
     const d = new Date(w.weekFull + 'T00:00:00');
-    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    weekHtml += `<option value="${w.weekFull}">Week of ${label}</option>`;
+    const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    weekHtml += `<option value="${w.weekFull}">${label}</option>`;
   });
   weekSelect.innerHTML = weekHtml;
   weekSelect.value = currentWeekVal;
@@ -2167,21 +2167,21 @@ function renderDashboard() {
   if (currentWeekVal === 'all') {
     displayWeek = wb[wb.length-1]||{};
     prevWeek = wb[wb.length-2]||{};
-    weekRangeText = wb.length > 0 ? `${wb[0].weekFull} → ${wb[wb.length-1].weekFull} (${wb.length} weeks)` : '';
+    weekRangeText = wb.length > 0 ? `${wb[0].weekFull} → ${wb[wb.length-1].weekFull} (${wb.length} days)` : '';
   } else if (currentWeekVal === 'latest' || !currentWeekVal) {
     displayWeek = wb[wb.length-1]||{};
     prevWeek = wb[wb.length-2]||{};
-    weekRangeText = displayWeek.weekFull ? `Showing latest week: ${displayWeek.weekFull}` : '';
+    weekRangeText = displayWeek.weekFull ? `Showing latest day: ${displayWeek.weekFull}` : '';
   } else {
     const idx = wb.findIndex(w => w.weekFull === currentWeekVal);
     displayWeek = idx >= 0 ? wb[idx] : wb[wb.length-1]||{};
     prevWeek = idx > 0 ? wb[idx-1] : {};
     const d = new Date(currentWeekVal + 'T00:00:00');
-    weekRangeText = `Showing: Week of ${d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+    weekRangeText = `Showing: ${d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`;
   }
 
   document.getElementById('week-range-label').textContent = weekRangeText;
-  document.getElementById('scorecard-label').textContent = `${S.fileName || 'Rai'} — ${displayWeek.weekFull||'—'} · ${filtered.length} rows · ${S.locations.length} locations`;
+  document.getElementById('scorecard-label').textContent = `${S.fileName || 'Rai'} — ${displayWeek.weekFull||'—'} · ${filtered.length} days · ${S.locations.length} location`;
 
   const wow = (c,p) => p?((c-p)/Math.abs(p||1))*100:null;
 
@@ -2264,8 +2264,8 @@ function renderDashboard() {
     });
     const allWeeks = [...new Set(S.rows.map(r=>r.week_ending||r.date))].sort();
     fHtml += `<select class="btn btn-sm" onchange="S.weekFilter=this.value;renderDashboard()" style="flex-shrink:0;font-family:inherit;appearance:none;padding-right:16px">`;
-    fHtml += `<option value="latest" ${S.weekFilter==='latest'?'selected':''}>Latest</option>`;
-    fHtml += `<option value="all" ${S.weekFilter==='all'?'selected':''}>All Weeks</option>`;
+    fHtml += `<option value="latest" ${S.weekFilter==='latest'?'selected':''}>Latest Day</option>`;
+    fHtml += `<option value="all" ${S.weekFilter==='all'?'selected':''}>All Days</option>`;
     allWeeks.forEach(w => { fHtml += `<option value="${w}" ${S.weekFilter===w?'selected':''}>${w.slice(5)}</option>`; });
     fHtml += '</select>';
     mf.innerHTML = fHtml;
@@ -2778,7 +2778,7 @@ SKILL GAP vs EFFORT GAP: When diagnosing manager or team issues, always distingu
 FORMAT — every Weekly Ops Review uses these exact sections:
 
 ## 📊 Executive Summary
-3 sentences max. Overall health, biggest win, biggest risk. No bullet points — prose only.
+3 sentences max. Note that data is stored as individual daily service rows (not weekly rollups). Overall health, biggest win, biggest risk. No bullet points — prose only.
 
 ## 📍 Location Scorecards
 For each location, one paragraph covering: Sales vs prior week, labor %, top KPI wins, top KPI gaps, one coaching directive for the GM.
@@ -2860,7 +2860,7 @@ async function runCoaching() {
     const latestRows = S.rows.filter(r => (r.week_ending || r.date) === latestWeek);
 
     let d = `== WEEKLY SALES & OPERATIONS DATA ==\n`;
-    d += `Report Week: ${l.weekFull || latestWeek || 'Latest'}\n`;
+    d += `Latest Data Date: ${l.weekFull || latestWeek || 'Latest'} (${wb.length} days loaded)\n`;
     d += `Filter: ${S.locFilter === 'all' ? 'All Locations Combined' : S.locFilter}\n\n`;
 
     // Blended summary
@@ -3690,7 +3690,7 @@ function buildDataContext() {
   });
 
   // Per-location per-week detail
-  ctx += `\nPER-LOCATION WEEKLY DETAIL:\n`;
+  ctx += `\nPER-LOCATION DAILY DETAIL:\n`;
   S.rows.forEach(r => {
     const d = r.week_ending || r.date;
     ctx += `${d} ${r.location}: Sales $${Math.round(r.net_sales||0).toLocaleString()}, Guests ${r.guests||0}, PPA $${(r.ppa||0).toFixed(2)}, SPLH $${(r.splh||0).toFixed(2)}, GPLH ${(r.gplh||0).toFixed(2)}, FPLH ${(r.fplh||0).toFixed(1)}, Labor ${(r.labor_pct||0).toFixed(1)}%, Starter ${(r.starter_attach||0).toFixed(0)}%, Drinks ${(r.drink_attach||0).toFixed(2)}, Food Cost ${(r.food_cost||0).toFixed(1)}%, Cocktail ${(r.cocktail_attach||0).toFixed(0)}%, Burger ${(r.burger_attach||0).toFixed(0)}%, Hrs ${(r.labor_hrs||0).toFixed(0)}\n`;
