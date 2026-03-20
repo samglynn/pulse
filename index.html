@@ -2156,7 +2156,7 @@ function renderDashboard() {
   const weeksCopy = [...wb].reverse();
   weeksCopy.forEach(w => {
     const d = new Date(w.weekFull + 'T00:00:00');
-    const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
     weekHtml += `<option value="${w.weekFull}">${label}</option>`;
   });
   weekSelect.innerHTML = weekHtml;
