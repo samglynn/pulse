@@ -1321,7 +1321,7 @@ async function loadHistoricalData() {
   // Auto-load from Supabase on page load
   if (!sb) return;
   try {
-    const { data: weeks, error } = await sb.from('weeks').select('*').order('date', { ascending: true });
+const { data: weeks, error } = await sb.from('weeks_full').select('*').order('date', { ascending: true });
     if (error) { console.error('Supabase load error:', error.message); return; }
     if (!weeks || !weeks.length) return;
 
@@ -1398,7 +1398,7 @@ async function loadHistoricalData() {
 async function connectSupabase() {
   if (!sb) return;
   try {
-    const { data: weeks } = await sb.from('weeks').select('*').order('date', { ascending: true });
+const { data: weeks } = await sb.from('weeks_full').select('*').order('date', { ascending: true });
     if (!weeks || !weeks.length) { alert('No weeks data found in Supabase.'); return; }
     const rows = weeks.map(w => ({
       week_ending: w.date, location: w.location,
