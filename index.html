@@ -369,7 +369,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
       <div class="top-bar">
         <div class="top-bar-left">
           <div id="loc-toggles" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none"></div>
-          <div id="day-chip-row" style="display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;padding-bottom:1px;flex-shrink:1;min-width:0"></div>
+          <div id="day-chip-row" style="display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;flex-shrink:1;max-width:100%;align-items:center"></div>
           <div id="week-range-label" style="font-size:11px;color:var(--text-2)"></div>
         </div>
         <div class="top-bar-right">
@@ -2193,8 +2193,12 @@ function renderDashboard() {
 
   // Location toggles
   let tHtml = `<button class="btn btn-sm ${S.locFilter==='all'?'btn-active':''}" onclick="setLoc('all')">All</button>`;
-  var _lwd=[...new Set(S.rows.map(function(r){return r.location;}).filter(Boolean))];
-  _lwd.forEach(function(l){var _a=S.locFilter===l?' btn-active':'';tHtml+='<button class="btn btn-sm'+_a+'" onclick="setLoc(\"'+l+'\")" style="text-transform:capitalize;min-height:36px;padding:6px 14px">'+l+'</button>';});
+  var locsWithData=[...new Set(S.rows.map(function(r){return r.location;}).filter(Boolean))]; 
+  locsWithData.forEach(function(l){
+    var isAct=(S.locFilter===l);
+    var st=isAct?'background:var(--accent);color:#fff;border-color:var(--accent)':'';
+    tHtml+='<button class="btn btn-sm" onclick="setLoc(\''+l+'\')" style="text-transform:capitalize;min-height:38px;padding:6px 18px;font-size:12px;'+st+'">'+l+'</button>';
+  });
   document.getElementById('loc-toggles').innerHTML = tHtml;
 
   // KPI Row 1 — uses selected week
@@ -2266,8 +2270,9 @@ function renderDashboard() {
   const mf = document.getElementById('mobile-filters');
   if (mf) {
     let fHtml = `<button class="btn btn-sm ${S.locFilter==='all'?'btn-active':''}" onclick="setLoc('all')" style="flex-shrink:0">All</button>`;
-    var _lwd2=[...new Set(S.rows.map(function(r){return r.location;}).filter(Boolean))];
-    _lwd2.forEach(function(l){var _a=S.locFilter===l?' btn-active':'';fHtml+='<button class="btn btn-sm'+_a+'" onclick="setLoc(\"'+l+'\")" style="flex-shrink:0;text-transform:capitalize;min-height:36px;padding:6px 14px">'+l+'</button>';});
+    S.locations.forEach(l => {
+      fHtml += `<button class="btn btn-sm ${S.locFilter===l?'btn-active':''}" onclick="setLoc('${l}')" style="flex-shrink:0;text-transform:capitalize">${l}</button>`;
+    });
     const allWeeks = [...new Set(S.rows.map(r=>r.week_ending||r.date))].sort();
     fHtml += `<select class="btn btn-sm" onchange="S.weekFilter=this.value;renderDashboard()" style="flex-shrink:0;font-family:inherit;appearance:none;padding-right:16px">`;
     fHtml += `<option value="latest" ${S.weekFilter==='latest'?'selected':''}>Latest Day</option>`;
@@ -2278,28 +2283,41 @@ function renderDashboard() {
   }
 }
 
-function applyWeekFilter(){renderDashboard();}
-function toggleDay(date){if(!S.selectedDays)S.selectedDays=[];var i=S.selectedDays.indexOf(date);if(i>=0)S.selectedDays.splice(i,1);else S.selectedDays.push(date);renderDashboard();}
-function selectAllDays(){S.selectedDays=[];renderDashboard();}
-function renderDayChips(){
-  var el=document.getElementById('day-chip-row');if(!el)return;
-  var all=[...new Set(S.rows.map(function(r){return r.week_ending||r.date;}).filter(Boolean))].sort().reverse();
-  var sel=S.selectedDays||[];
-  var bs='flex-shrink:0;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;min-height:32px;font-family:inherit;white-space:nowrap;border:1px solid ';
-  var on=bs+'#6366F1;background:#6366F1;color:#fff';
-  var off=bs+'#252839;background:#1A1D27;color:#B0B4C8';
-  var html='<button data-ca=1 style="'+(sel.length===0?on:off)+'">All</button>';
+function applyWeekFilter() { renderDashboard(); }
+
+function toggleDay(date) {
+  if (!S.selectedDays) S.selectedDays = [];
+  var idx = S.selectedDays.indexOf(date);
+  if (idx >= 0) { S.selectedDays.splice(idx,1); } else { S.selectedDays.push(date); }
+  renderDashboard();
+}
+
+function selectAllDays() { S.selectedDays=[]; renderDashboard(); }
+
+function renderDayChips() {
+  var el = document.getElementById('day-chip-row');
+  if (!el) return;
+  var all = [...new Set(S.rows.map(function(r){return r.week_ending||r.date;}).filter(Boolean))].sort().reverse();
+  var sel = S.selectedDays || [];
+  var html = '';
+  var allAct = sel.length===0;
+  var aOn  = 'flex-shrink:0;padding:5px 12px;border-radius:16px;font-size:11px;font-weight:700;cursor:pointer;min-height:30px;font-family:inherit;white-space:nowrap;border:1.5px solid #6366F1;background:#6366F1;color:#fff;';
+  var aOff = 'flex-shrink:0;padding:5px 12px;border-radius:16px;font-size:11px;font-weight:700;cursor:pointer;min-height:30px;font-family:inherit;white-space:nowrap;border:1.5px solid #252839;background:#1A1D27;color:#B0B4C8;';
+  html += '<button data-ca=1 style="'+(allAct?aOn:aOff)+'">All</button>';
   all.forEach(function(date){
-    var d=new Date(date+'T12:00:00');
-    var lbl=d.toLocaleDateString('en-US',{weekday:'short',month:'numeric',day:'numeric'});
-    var act=sel.indexOf(date)>=0;
-    var rows=S.rows.filter(function(r){return(r.week_ending||r.date)===date;});
-    var sales=rows.reduce(function(s,r){return s+(r.net_sales||0);},0);
-    var ss=sales>0?' '+Math.round(sales/1000)+'K':'';
-    html+='<button data-cd="'+date+'" style="'+(act?on:off)+'">'+lbl+ss+'</button>';
+    var d = new Date(date+'T12:00:00');
+    var lbl = d.toLocaleDateString('en-US',{weekday:'short',month:'numeric',day:'numeric'});
+    var act = sel.indexOf(date)>=0;
+    var rows = S.rows.filter(function(r){return (r.week_ending||r.date)===date;});
+    var sales = rows.reduce(function(s,r){return s+(r.net_sales||0);},0);
+    var ss = sales>0?' '+Math.round(sales/1000)+'K':'';
+    html += '<button data-cd="'+date+'" style="'+(act?aOn:aOff)+'">'+lbl+ss+'</button>';
   });
-  el.innerHTML=html;
-  el.onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.ca)selectAllDays();else if(b.dataset.cd)toggleDay(b.dataset.cd);};
+  el.innerHTML = html;
+  el.onclick = function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.ca){ selectAllDays(); } else if(b.dataset.cd){ toggleDay(b.dataset.cd); }
+  };
 }
 
 // ══════════════════════════════════════════════
