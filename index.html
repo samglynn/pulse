@@ -372,7 +372,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
           <select id="week-filter" onchange="applyWeekFilter()" title="Filter by service day" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;background:var(--surface-2);color:var(--text);border:1px solid var(--border);cursor:pointer;font-family:inherit;min-width:160px">
             <option value="all">All Weeks</option>
           </select>
-          <div id="week-range-label" style="font-size:11px;color:var(--text-2)"></div>
+          <div id="week-range-label" style="font-size:11px;color:var(--text-2);white-space:nowrap"></div>
         </div>
         <div class="top-bar-right">
           <div style="position:relative">
@@ -1186,6 +1186,7 @@ let S = {
   charts: {},
   historicalRows: [],
   weekFilter: 'latest',
+  selectedDays: [],
 };
 
 const COACHING_MODES = {
@@ -2003,7 +2004,13 @@ function handleFile(f) { handleFiles([f]); }
 // ══════════════════════════════════════════════
 // AGGREGATION
 // ══════════════════════════════════════════════
-function getFiltered() { return S.locFilter==='all' ? S.rows : S.rows.filter(r=>r.location===S.locFilter); }
+function getFiltered() {
+  let rows = S.locFilter === 'all' ? S.rows : S.rows.filter(r => r.location === S.locFilter);
+  if (S.selectedDays && S.selectedDays.length > 0) {
+    rows = rows.filter(r => S.selectedDays.includes(r.week_ending || r.date));
+  }
+  return rows;
+}
 
 function getWeeklyBlended(rows) {
   const map = {};
@@ -2147,39 +2154,25 @@ function renderDashboard() {
   const filtered = getFiltered();
   const wb = getWeeklyBlended(filtered);
 
-  // Populate week filter dropdown
-  const weekSelect = document.getElementById('week-filter');
-  const currentWeekVal = S.weekFilter || 'latest';
-  let weekHtml = '<option value="all">All Days (Trend View)</option>';
-  weekHtml += '<option value="latest">Latest Day</option>';
-  // Add each day as an option (most recent first)
-  const weeksCopy = [...wb].reverse();
-  weeksCopy.forEach(w => {
-    const d = new Date(w.weekFull + 'T00:00:00');
-    const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-    weekHtml += `<option value="${w.weekFull}">${label}</option>`;
-  });
-  weekSelect.innerHTML = weekHtml;
-  weekSelect.value = currentWeekVal;
+  // Populate day filter options
+  renderDayFilterOptions();
+  updateDayFilterLabel();
 
-  // Determine which week to show in KPI cards
-  let displayWeek, prevWeek, weekRangeText;
-  if (currentWeekVal === 'all') {
-    displayWeek = wb[wb.length-1]||{};
-    prevWeek = wb[wb.length-2]||{};
-    weekRangeText = wb.length > 0 ? `${wb[0].weekFull} → ${wb[wb.length-1].weekFull} (${wb.length} days)` : '';
-  } else if (currentWeekVal === 'latest' || !currentWeekVal) {
-    displayWeek = wb[wb.length-1]||{};
-    prevWeek = wb[wb.length-2]||{};
-    weekRangeText = displayWeek.weekFull ? `Showing latest day: ${displayWeek.weekFull}` : '';
+  // Determine display week for KPI cards — use aggregated filtered data
+  const displayWeek = wb[wb.length-1] || {};
+  const prevWeek = wb[wb.length-2] || {};
+  let weekRangeText = '';
+  if (S.selectedDays && S.selectedDays.length > 0) {
+    if (S.selectedDays.length === 1) {
+      const d = new Date(S.selectedDays[0] + 'T12:00:00');
+      weekRangeText = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    } else {
+      const sorted = [...S.selectedDays].sort();
+      weekRangeText = S.selectedDays.length + ' days selected · ' + sorted[0] + ' → ' + sorted[sorted.length-1];
+    }
   } else {
-    const idx = wb.findIndex(w => w.weekFull === currentWeekVal);
-    displayWeek = idx >= 0 ? wb[idx] : wb[wb.length-1]||{};
-    prevWeek = idx > 0 ? wb[idx-1] : {};
-    const d = new Date(currentWeekVal + 'T00:00:00');
-    weekRangeText = `Showing: ${d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`;
+    weekRangeText = wb.length > 0 ? wb.length + ' days · ' + wb[0].weekFull + ' → ' + wb[wb.length-1].weekFull : '';
   }
-
   document.getElementById('week-range-label').textContent = weekRangeText;
   document.getElementById('scorecard-label').textContent = `${S.fileName || 'Rai'} — ${displayWeek.weekFull||'—'} · ${filtered.length} days · ${S.locations.length} location`;
 
@@ -2273,9 +2266,2685 @@ function renderDashboard() {
 }
 
 function applyWeekFilter() {
-  S.weekFilter = document.getElementById('week-filter').value;
   renderDashboard();
 }
+
+function toggleDayFilter() {
+  const dd = document.getElementById('day-filter-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+function selectAllDays() {
+  S.selectedDays = [];
+  updateDayFilterLabel();
+  renderDashboard();
+}
+
+function selectLatestDay() {
+  const allDates = [...new Set(S.rows.map(r => r.week_ending || r.date))].sort();
+  S.selectedDays = allDates.length ? [allDates[allDates.length - 1]] : [];
+  updateDayFilterLabel();
+  renderDayFilterOptions();
+  renderDashboard();
+}
+
+function clearDayFilter() {
+  S.selectedDays = [];
+  updateDayFilterLabel();
+  renderDayFilterOptions();
+  renderDashboard();
+}
+
+function toggleDay(date) {
+  if (!S.selectedDays) S.selectedDays = [];
+  const idx = S.selectedDays.indexOf(date);
+  if (idx >= 0) S.selectedDays.splice(idx, 1);
+  else S.selectedDays.push(date);
+  updateDayFilterLabel();
+  renderDashboard();
+}
+
+function updateDayFilterLabel() {
+  const el = document.getElementById('day-filter-label');
+  if (!el) return;
+  if (!S.selectedDays || S.selectedDays.length === 0) {
+    el.textContent = 'All Days';
+  } else if (S.selectedDays.length === 1) {
+    const d = new Date(S.selectedDays[0] + 'T12:00:00');
+    el.textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  } else {
+    el.textContent = S.selectedDays.length + ' days selected';
+  }
+  const btn = document.getElementById('day-filter-btn');
+  if (btn) btn.style.borderColor = S.selectedDays && S.selectedDays.length > 0 ? 'var(--accent)' : 'var(--border)';
+}
+
+function renderDayFilterOptions() {
+  const el = document.getElementById('day-filter-options');
+  if (!el) return;
+  const allDates = [...new Set(S.rows.map(r => r.week_ending || r.date))].filter(Boolean).sort().reverse();
+  const selected = S.selectedDays || [];
+  el.innerHTML = allDates.map(date => {
+    const d = new Date(date + 'T12:00:00');
+    const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    const isSelected = selected.includes(date);
+    const locRows = S.rows.filter(r => (r.week_ending || r.date) === date);
+    const sales = locRows.reduce((s, r) => s + (r.net_sales || 0), 0);
+    const salesLabel = sales > 0 ? ' · 
+
+// ══════════════════════════════════════════════
+// DATA COMPLETENESS TRACKER
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// HEALTH PULSE SCORE
+// ══════════════════════════════════════════════
+function calcPulseScore(row, targets) {
+  // Score 0-100 based on how many KPIs hit or exceed target
+  // Each KPI gets 0-10 points: 10 if at/above target, scaled down proportionally
+  const checks = [
+    { val: row.ppa, target: targets.ppa?.target, weight: 15 },
+    { val: row.splh, target: targets.splh?.target, weight: 15 },
+    { val: row.gplh, target: targets.gplh?.target, weight: 10 },
+    { val: row.labor_pct, target: targets.labor_pct?.target, weight: 15, invert: true },
+    { val: row.food_cost, target: targets.food_cost?.target, weight: 10, invert: true },
+    { val: row.starter_attach, target: targets.starter_attach?.target, weight: 10 },
+    { val: row.drink_attach, target: targets.drink_attach?.target, weight: 10 },
+    { val: row.fplh, target: targets.fplh?.target, weight: 5 },
+    { val: row.cocktail_attach, target: targets.cocktail_attach?.target, weight: 5 },
+    { val: row.beer_attach, target: targets.beer_attach?.target, weight: 5 },
+    { val: row.burger_attach, target: targets.burger_attach?.target, weight: 5 },
+  ];
+
+  let totalWeight = 0;
+  let totalScore = 0;
+
+  checks.forEach(c => {
+    if (!c.target || c.target === 0) return; // skip if no target
+    if (c.val === undefined || c.val === null || c.val === 0) return; // skip missing data
+    totalWeight += c.weight;
+    let ratio;
+    if (c.invert) {
+      // Lower is better: at target = 100%, double target = 0%
+      ratio = c.val <= c.target ? 1 : Math.max(0, 1 - (c.val - c.target) / c.target);
+    } else {
+      // Higher is better: at target = 100%, 0 = 0%
+      ratio = c.val >= c.target ? 1 : c.val / c.target;
+    }
+    totalScore += ratio * c.weight;
+  });
+
+  return totalWeight > 0 ? Math.round((totalScore / totalWeight) * 100) : 0;
+}
+
+function renderPulseScores(wb) {
+  const el = document.getElementById('pulse-scores');
+  if (!el) return;
+
+  const latest = wb[wb.length - 1] || {};
+  const prev = wb[wb.length - 2] || {};
+
+  // Calculate per-location scores for the latest week
+  const latestWeek = latest.weekFull;
+  if (!latestWeek) { el.innerHTML = ''; return; }
+
+  const locRows = S.rows.filter(r => (r.week_ending || r.date) === latestWeek);
+  const prevWeek = prev.weekFull;
+  const prevLocRows = prevWeek ? S.rows.filter(r => (r.week_ending || r.date) === prevWeek) : [];
+
+  let html = '';
+
+  // Per-location scores
+  locRows.forEach(r => {
+    const locTargets = locationTargets[r.location] ? buildTargetsObj(locationTargets[r.location]) : TARGETS;
+    const score = calcPulseScore(r, locTargets);
+    const prevRow = prevLocRows.find(p => p.location === r.location);
+    const prevScore = prevRow ? calcPulseScore(prevRow, locTargets) : null;
+    const delta = prevScore !== null ? score - prevScore : null;
+
+    const color = score >= 85 ? 'var(--green)' : score >= 65 ? 'var(--yellow)' : 'var(--red)';
+    const grade = score >= 90 ? 'A' : score >= 80 ? 'B+' : score >= 70 ? 'B' : score >= 60 ? 'C+' : score >= 50 ? 'C' : 'D';
+    const emoji = score >= 85 ? '💚' : score >= 65 ? '💛' : '❤️';
+
+    html += `<div style="flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;border-top:3px solid ${color}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">${emoji} <span style="text-transform:capitalize">${r.location}</span></div>
+        <div style="font-size:11px;font-weight:800;color:${color};background:${color}15;padding:2px 8px;border-radius:6px">${grade}</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <div style="font-size:32px;font-weight:800;color:${color};line-height:1">${score}</div>
+        <div style="font-size:13px;color:var(--text-muted)">/100</div>
+      </div>
+      ${delta !== null ? `<div style="font-size:11px;margin-top:4px;color:${delta>=0?'var(--green)':'var(--red)'}">
+        ${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta)} pts WoW</div>` : ''}
+    </div>`;
+  });
+
+  // Blended score
+  const blendedTargets = getActiveTargets();
+  const blendedScore = calcPulseScore(latest, blendedTargets);
+  const prevBlended = prev ? calcPulseScore(prev, blendedTargets) : null;
+  const blendedDelta = prevBlended !== null ? blendedScore - prevBlended : null;
+  const bColor = blendedScore >= 85 ? 'var(--green)' : blendedScore >= 65 ? 'var(--yellow)' : 'var(--red)';
+  const bGrade = blendedScore >= 90 ? 'A' : blendedScore >= 80 ? 'B+' : blendedScore >= 70 ? 'B' : blendedScore >= 60 ? 'C+' : blendedScore >= 50 ? 'C' : 'D';
+
+  const blendedHtml = `<div style="flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;border-top:3px solid ${bColor}">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">⚡ All Locations</div>
+      <div style="font-size:11px;font-weight:800;color:${bColor};background:${bColor}15;padding:2px 8px;border-radius:6px">${bGrade}</div>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:6px">
+      <div style="font-size:32px;font-weight:800;color:${bColor};line-height:1">${blendedScore}</div>
+      <div style="font-size:13px;color:var(--text-muted)">/100</div>
+    </div>
+    ${blendedDelta !== null ? `<div style="font-size:11px;margin-top:4px;color:${blendedDelta>=0?'var(--green)':'var(--red)'}">
+      ${blendedDelta >= 0 ? '▲' : '▼'} ${Math.abs(blendedDelta)} pts WoW</div>` : ''}
+  </div>`;
+
+  el.innerHTML = blendedHtml + html;
+}
+
+function toggleNotifications() {
+  const dd = document.getElementById('notif-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+function renderDataGaps() {
+  const badge = document.getElementById('notif-badge');
+  const list = document.getElementById('notif-list');
+  if (!badge || !list) return;
+
+  const allWeeks = [...new Set(S.rows.map(r => r.week_ending || r.date))].sort();
+  const allLocs = [...new Set(S.rows.map(r => r.location).filter(Boolean))];
+  if (allWeeks.length === 0 || allLocs.length < 2) { badge.style.display = 'none'; list.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px;text-align:center">No data gaps found</div>'; return; }
+
+  const checks = [
+    { key: 'net_sales', label: 'Sales', icon: '💰' },
+    { key: 'guests', label: 'Guests', icon: '👥' },
+    { key: 'labor_hrs', label: 'Labor Hrs', icon: '⏱️' },
+    { key: 'labor_pct', label: 'Labor %', icon: '📊' },
+    { key: 'fplh', label: 'FPLH', icon: '🍔' },
+    { key: 'food_cost', label: 'Food Cost', icon: '🧾' },
+    { key: 'starter_attach', label: 'Starter %', icon: '🥗' },
+  ];
+
+  const lookup = {};
+  S.rows.forEach(r => { lookup[(r.week_ending||r.date)+'|'+r.location] = r; });
+
+  const gaps = [];
+  for (const week of allWeeks) {
+    const locsWithData = allLocs.filter(loc => lookup[week+'|'+loc]);
+    const locsMissing = allLocs.filter(loc => !lookup[week+'|'+loc]);
+    locsMissing.forEach(loc => { gaps.push({ week, location:loc, type:'missing', label:'No data uploaded', severity:'high' }); });
+    for (const loc of locsWithData) {
+      const row = lookup[week+'|'+loc];
+      for (const check of checks) {
+        const val = row[check.key];
+        if (val !== undefined && val !== null && val !== 0 && val !== '0') continue;
+        const othersHave = locsWithData.some(o => o!==loc && lookup[week+'|'+o] && lookup[week+'|'+o][check.key] && lookup[week+'|'+o][check.key] !== 0);
+        if (othersHave) gaps.push({ week, location:loc, type:'zero', label:check.label+' missing', icon:check.icon, severity:'medium' });
+      }
+    }
+  }
+
+  if (gaps.length === 0) {
+    badge.style.display = 'none';
+    list.innerHTML = '<div style="padding:12px;color:var(--green);font-size:12px;text-align:center">✓ All data complete across locations</div>';
+    return;
+  }
+
+  badge.style.display = 'inline-block';
+  badge.textContent = gaps.length;
+
+  let html = '';
+  const highGaps = gaps.filter(g => g.severity === 'high');
+  const medGaps = gaps.filter(g => g.severity === 'medium');
+
+  if (highGaps.length > 0) {
+    html += '<div style="padding:4px 12px 2px;font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.05em">Missing Data</div>';
+    highGaps.forEach(g => {
+      const d = new Date(g.week+'T00:00:00');
+      const wk = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      html += `<div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px">🚨</span>
+        <div><div style="font-size:12px;font-weight:600;color:var(--text);text-transform:capitalize">${g.location} — Week of ${wk}</div>
+        <div style="font-size:11px;color:var(--red)">${g.label}</div></div></div>`;
+    });
+  }
+  if (medGaps.length > 0) {
+    html += '<div style="padding:8px 12px 2px;font-size:10px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.05em">Incomplete KPIs</div>';
+    medGaps.forEach(g => {
+      const d = new Date(g.week+'T00:00:00');
+      const wk = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      html += `<div style="padding:6px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px">${g.icon||'⚠️'}</span>
+        <div><div style="font-size:12px;font-weight:600;color:var(--text);text-transform:capitalize">${g.location} · ${wk}</div>
+        <div style="font-size:11px;color:var(--yellow)">${g.label}</div></div></div>`;
+    });
+  }
+  list.innerHTML = html;
+}
+
+function renderKPI(k) {
+  const isNoData = (k.value === 0 || k.value === '0') && k.label !== 'Net Sales' && k.label !== 'Guest Count';
+  const good = k.target==null || isNoData ? true : k.invert ? k.value<=k.target : k.value>=k.target;
+  const color = isNoData ? 'var(--text-muted)' : k.target==null ? 'var(--accent)' : good ? 'var(--green)' : 'var(--red)';
+  const fmtVal = isNoData ? '—' : k.unit==='$'&&k.value>=1000 ? '$'+(k.value/1000).toFixed(1)+'K' : k.unit==='$' ? '$'+k.value.toFixed(2) : k.unit==='%' ? k.value.toFixed(1)+'%' : k.value.toFixed(2);
+  let badges = '';
+  if (isNoData && k.dbKey) {
+    badges += `<span class="kpi-badge" style="color:var(--yellow);background:rgba(249,168,38,.1);cursor:pointer" onclick="promptManualKPI('${k.dbKey}','${k.label}')">⚠️ Enter manually</span>`;
+  } else if (isNoData) {
+    badges += `<span class="kpi-badge" style="color:var(--yellow);background:rgba(249,168,38,.1)">⚠️ No data</span>`;
+  } else {
+    if (k.target!=null) badges += `<span class="kpi-badge" style="color:${color};background:${color}18">${good?'✓':'✗'} Target: ${k.unit==='$'?'$'+k.target:k.unit==='%'?k.target+'%':k.target}</span>`;
+    if (k.trend!=null) {
+      const tc = k.trend>=0 ? (k.invert?'var(--red)':'var(--green)') : (k.invert?'var(--green)':'var(--red)');
+      badges += `<span class="kpi-trend" style="color:${tc}">${k.trend>=0?'▲':'▼'} ${Math.abs(k.trend).toFixed(1)}% WoW</span>`;
+    }
+  }
+  return `<div class="kpi"><div class="kpi-bar" style="background:${color}"></div><div class="kpi-label">${k.label}</div><div class="kpi-desc">${k.desc}</div><div class="kpi-value" style="color:${isNoData?'var(--text-muted)':'var(--text)'}">${fmtVal}</div><div class="kpi-badges">${badges}</div></div>`;
+}
+
+async function promptManualKPI(dbKey, label) {
+  const val = prompt('Enter ' + label + ' value:');
+  if (val === null || val === '') return;
+  const num = parseFloat(val);
+  if (isNaN(num)) { alert('Please enter a valid number'); return; }
+
+  // Determine which weeks/locations to update
+  const filtered = getFiltered();
+  const wb = getWeeklyBlended(filtered);
+  const weekFilter = S.weekFilter || 'latest';
+  let targetWeek;
+  if (weekFilter === 'latest' || !weekFilter) targetWeek = wb[wb.length-1]?.weekFull;
+  else if (weekFilter === 'all') targetWeek = wb[wb.length-1]?.weekFull;
+  else targetWeek = weekFilter;
+
+  if (!targetWeek) { alert('No week selected'); return; }
+
+  // Get rows to update
+  const rowsToUpdate = filtered.filter(r => (r.week_ending||r.date) === targetWeek);
+  if (rowsToUpdate.length === 0) { alert('No data found for this week'); return; }
+
+  for (const row of rowsToUpdate) {
+    // Update local state
+    row[dbKey] = num;
+    // Update Supabase
+    if (sb) {
+      const { error } = await sb.from('weeks').update({ [dbKey]: num })
+        .eq('date', targetWeek).eq('location', row.location);
+      if (error) console.error('Manual update error:', error);
+      else console.log('✓ Updated ' + dbKey + '=' + num + ' for ' + row.location + ' ' + targetWeek);
+    }
+  }
+
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════════
+function renderCharts(wb) {
+  Object.values(S.charts).forEach(c => c.destroy());
+  S.charts = {};
+  const labels = wb.map(w => w.week);
+  const locData = getLocAgg();
+  const hasMultiLoc = locData.length > 1;
+  const PALETTE = ['#14B8A6','#6366F1','#E8505B','#F9A826','#A78BFA','#EC4899'];
+
+  // Overview tab
+  let ovHtml = '<div class="chart-card span-2"><div class="chart-title">Net Sales & Guest Count Trend</div><div class="chart-wrap"><canvas id="ch-sales"></canvas></div></div>';
+  if (hasMultiLoc) {
+    ovHtml += '<div class="chart-card"><div class="chart-title">Location — Net Sales</div><div class="chart-wrap"><canvas id="ch-loc"></canvas></div></div>';
+    ovHtml += '<div class="chart-card"><div class="chart-title">Location KPI Comparison</div><div style="overflow-x:auto"><table class="loc-table"><thead><tr><th>Location</th><th>PPA</th><th>SPLH</th><th>GPLH</th><th>Labor</th></tr></thead><tbody>' + locData.map(l=>'<tr><td style="font-weight:600">'+l.name+'</td><td style="color:'+(l.ppa>=TARGETS.ppa.target?'var(--green)':'var(--red)')+'">$'+l.ppa+'</td><td style="color:'+(l.splh>=TARGETS.splh.target?'var(--green)':'var(--red)')+'">$'+l.splh+'</td><td style="color:'+(l.gplh>=TARGETS.gplh.target?'var(--green)':'var(--red)')+'">'+l.gplh+'</td><td style="color:'+(l.labor<=TARGETS.labor_pct.target?'var(--green)':'var(--red)')+'">'+l.labor+'%</td></tr>').join('') + '</tbody></table></div></div>';
+  }
+  document.getElementById('chart-grid-overview').innerHTML = ovHtml;
+
+  // Sales tab
+  let sHtml = '<div class="chart-card span-2"><div class="chart-title">Net Sales & Guest Count Trend</div><div class="chart-wrap"><canvas id="ch-sales2"></canvas></div></div>';
+  sHtml += '<div class="chart-card"><div class="chart-title">PPA vs $'+TARGETS.ppa.target+' Target</div><div class="chart-wrap"><canvas id="ch-ppa"></canvas></div></div>';
+  sHtml += '<div class="chart-card"><div class="chart-title">Drinks Per Check</div><div class="chart-wrap"><canvas id="ch-drinks"></canvas></div></div>';
+  document.getElementById('chart-grid-sales').innerHTML = sHtml;
+
+  // Menu tab
+  document.getElementById('chart-grid-menu').innerHTML = '<div class="chart-card span-2"><div class="chart-title">Attach Rates Over Time</div><div class="chart-wrap"><canvas id="ch-attach"></canvas></div></div>';
+
+  // Labor tab
+  let lHtml = '<div class="chart-card"><div class="chart-title">SPLH & GPLH Trend</div><div class="chart-wrap"><canvas id="ch-labor"></canvas></div></div>';
+  lHtml += '<div class="chart-card"><div class="chart-title">FPLH — Food Items Per Line Cook Hour</div><div class="chart-wrap"><canvas id="ch-fplh"></canvas></div></div>';
+  document.getElementById('chart-grid-labor').innerHTML = lHtml;
+
+  const base = { responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#7B8094',font:{size:11,family:'DM Sans'}}},tooltip:{backgroundColor:'#1A1D27',borderColor:'#252839',borderWidth:1,titleFont:{family:'DM Sans'},bodyFont:{family:'DM Sans'},titleColor:'#EFF1F5',bodyColor:'#B0B4C8',cornerRadius:10}}, scales:{x:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}},y:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}}} };
+  const lineOpts = (yLeft,yRight) => ({...base,scales:{...base.scales,y:{...base.scales.y,position:'left',ticks:{...base.scales.y.ticks,callback:yLeft}},y1:{position:'right',ticks:{color:'#6B7085',font:{size:10}},grid:{display:false}}}});
+
+  S.charts.sales = new Chart(document.getElementById('ch-sales'), { type:'line', data:{labels, datasets:[{label:'Net Sales',data:wb.map(w=>w.net_sales),borderColor:'#6366F1',backgroundColor:'#6366F120',fill:true,tension:.3,pointRadius:3,borderWidth:2.5,yAxisID:'y'},{label:'Guests',data:wb.map(w=>w.guests),borderColor:'#14B8A6',backgroundColor:'#14B8A620',fill:true,tension:.3,pointRadius:3,borderWidth:2,yAxisID:'y1'}]}, options:lineOpts(v=>v>=1000?(v/1000).toFixed(0)+'K':v) });
+  if (hasMultiLoc) S.charts.loc = new Chart(document.getElementById('ch-loc'), { type:'bar', data:{labels:locData.map(l=>l.name), datasets:[{label:'Net Sales',data:locData.map(l=>l.sales),backgroundColor:locData.map((_,i)=>PALETTE[i%PALETTE.length]),borderRadius:6}]}, options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>'$'+(v>=1000?(v/1000).toFixed(0)+'K':v)}}}} });
+  S.charts.sales2 = new Chart(document.getElementById('ch-sales2'), { type:'line', data:{labels, datasets:[{label:'Net Sales',data:wb.map(w=>w.net_sales),borderColor:'#6366F1',backgroundColor:'#6366F120',fill:true,tension:.3,pointRadius:3,borderWidth:2.5,yAxisID:'y'},{label:'Guests',data:wb.map(w=>w.guests),borderColor:'#14B8A6',backgroundColor:'#14B8A620',fill:true,tension:.3,pointRadius:3,borderWidth:2,yAxisID:'y1'}]}, options:lineOpts(v=>v>=1000?(v/1000).toFixed(0)+'K':v) });
+  S.charts.ppa = new Chart(document.getElementById('ch-ppa'), { type:'bar', data:{labels, datasets:[{label:'PPA',data:wb.map(w=>w.ppa),backgroundColor:wb.map(w=>w.ppa>=TARGETS.ppa.target?'#14B8A6':'#E8505B'),borderRadius:5}]}, options:{...base,scales:{...base.scales,y:{...base.scales.y,min:30,max:38,ticks:{...base.scales.y.ticks,callback:v=>'$'+v}}}} });
+  S.charts.drinks = new Chart(document.getElementById('ch-drinks'), { type:'bar', data:{labels, datasets:[{label:'Drinks/Check',data:wb.map(w=>w.drink_attach),backgroundColor:wb.map(w=>w.drink_attach>=TARGETS.drink_attach.target?'#14B8A6':'#E8505B'),borderRadius:5}]}, options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v.toFixed(1)}}}} });
+  S.charts.attach = new Chart(document.getElementById('ch-attach'), { type:'line', data:{labels, datasets:[{label:'Starter %',data:wb.map(w=>w.starter_attach),borderColor:'#E8505B',backgroundColor:'#E8505B15',fill:true,tension:.3,pointRadius:2,borderWidth:2},{label:'Cocktail %',data:wb.map(w=>w.cocktail_attach),borderColor:'#A78BFA',backgroundColor:'#A78BFA15',fill:true,tension:.3,pointRadius:2,borderWidth:2},{label:'Beer %',data:wb.map(w=>w.beer_attach),borderColor:'#22D3EE',backgroundColor:'#22D3EE15',fill:true,tension:.3,pointRadius:2,borderWidth:2},{label:'Burger %',data:wb.map(w=>w.burger_attach),borderColor:'#F9A826',backgroundColor:'#F9A82615',fill:true,tension:.3,pointRadius:2,borderWidth:2}]}, options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v+'%'}}}} });
+  S.charts.labor = new Chart(document.getElementById('ch-labor'), { type:'line', data:{labels, datasets:[{label:'SPLH ($)',data:wb.map(w=>w.splh),borderColor:'#6366F1',tension:.3,pointRadius:3,borderWidth:2.5,yAxisID:'y'},{label:'GPLH',data:wb.map(w=>w.gplh),borderColor:'#14B8A6',tension:.3,pointRadius:3,borderWidth:2.5,yAxisID:'y1'}]}, options:lineOpts(v=>'$'+v) });
+  const ft = TARGETS.fplh ? TARGETS.fplh.target : 8;
+  S.charts.fplh = new Chart(document.getElementById('ch-fplh'), { type:'bar', data:{labels, datasets:[{label:'FPLH',data:wb.map(w=>w.fplh),backgroundColor:wb.map(w=>w.fplh>=ft?'#14B8A6':'#E8505B'),borderRadius:5}]}, options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v+' items/hr'}}}} });
+
+  // Revenue Mix section
+  renderRevenueMix(wb);
+  // Top Sellers section
+  renderTopSellers();
+  // Drink Mix section
+  renderDrinkMix();
+}
+
+function renderRevenueMix(wb) {
+  const el = document.getElementById('revenue-mix');
+  if (!el) return;
+  const latest = wb[wb.length-1] || {};
+  if (!latest.dinner_sales && !latest.delivery_orders) { el.innerHTML = ''; return; }
+
+  const dinein = latest.net_sales - (latest.delivery_sales||0) - (latest.takeout_sales||0);
+  const total = latest.net_sales || 1;
+  const dinePct = Math.round(dinein / total * 100);
+  const delivPct = Math.round((latest.delivery_sales||0) / total * 100);
+  const takePct = Math.round((latest.takeout_sales||0) / total * 100);
+  const lunchPct = latest.dinner_sales ? Math.round((latest.lunch_sales||0) / (latest.lunch_sales + latest.dinner_sales) * 100) : 0;
+  const dinnerPct = 100 - lunchPct;
+
+  let html = `<div class="resp-grid">`;
+
+  // Channel Mix
+  html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px">📦 Channel Mix</div>
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Dine-In</span><span style="font-weight:700">$${Math.round(dinein).toLocaleString()} (${dinePct}%)</span></div>
+      <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${dinePct}%;background:var(--green);border-radius:4px"></div></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Delivery (${latest.delivery_orders||0} orders)</span><span style="font-weight:700">$${Math.round(latest.delivery_sales||0).toLocaleString()} (${delivPct}%)</span></div>
+      <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${delivPct}%;background:var(--accent);border-radius:4px"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Takeout (${latest.takeout_orders||0} orders)</span><span style="font-weight:700">$${Math.round(latest.takeout_sales||0).toLocaleString()} (${takePct}%)</span></div>
+      <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${takePct}%;background:var(--yellow);border-radius:4px"></div></div>
+    </div>
+  </div>`;
+
+  // Daypart Split
+  if (latest.dinner_sales) {
+    html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px">🕐 Daypart Split</div>
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Lunch</span><span style="font-weight:700">$${Math.round(latest.lunch_sales||0).toLocaleString()} (${lunchPct}%)</span></div>
+        <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${lunchPct}%;background:var(--cyan);border-radius:4px"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Dinner</span><span style="font-weight:700">$${Math.round(latest.dinner_sales||0).toLocaleString()} (${dinnerPct}%)</span></div>
+        <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${dinnerPct}%;background:var(--purple);border-radius:4px"></div></div>
+      </div>
+    </div>`;
+  }
+
+  // Revenue Breakdown
+  if (latest.tips || latest.gross_sales) {
+    html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px">💵 Revenue Breakdown</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--text-2)">Net Sales</td><td style="padding:6px 0;text-align:right;font-weight:700">$${Math.round(latest.net_sales||0).toLocaleString()}</td></tr>
+        ${latest.tips ? '<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--text-2)">Tips</td><td style="padding:6px 0;text-align:right;font-weight:700">$'+Math.round(latest.tips).toLocaleString()+'</td></tr>' : ''}
+        ${latest.void_pct ? '<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--text-2)">Void %</td><td style="padding:6px 0;text-align:right;font-weight:600;color:'+(latest.void_pct>1?'var(--red)':'var(--green)')+'">'+latest.void_pct.toFixed(1)+'%</td></tr>' : ''}
+        ${latest.gross_sales ? '<tr><td style="padding:6px 0;color:var(--text-2)">Gross Total</td><td style="padding:6px 0;text-align:right;font-weight:800;color:var(--green)">$'+Math.round(latest.gross_sales).toLocaleString()+'</td></tr>' : ''}
+      </table>
+    </div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function renderTopSellers() {
+  const el = document.getElementById('top-sellers');
+  if (!el) return;
+
+  // Get latest week rows for selected location(s)
+  const allWeeks = [...new Set(S.rows.map(r => r.week_ending || r.date))].sort();
+  const latestWeek = allWeeks[allWeeks.length-1];
+  if (!latestWeek) { el.innerHTML = ''; return; }
+
+  const latestRows = S.rows.filter(r => (r.week_ending||r.date) === latestWeek);
+  const locations = S.locFilter === 'all' ? S.locations : [S.locFilter];
+  const relevantRows = latestRows.filter(r => locations.includes(r.location));
+  const hasItems = relevantRows.some(r => r.top_items && r.top_items.length > 0);
+  if (!hasItems) { el.innerHTML = ''; return; }
+
+  let html = `<div class="resp-grid">`;
+  relevantRows.forEach(r => {
+    if (!r.top_items || r.top_items.length === 0) return;
+    html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;text-transform:capitalize">🏅 Top Sellers — ${r.location}</div>`;
+    r.top_items.slice(0, 8).forEach((item, i) => {
+      const barWidth = r.top_items[0].qty > 0 ? Math.round(item.qty / r.top_items[0].qty * 100) : 0;
+      const color = i === 0 ? 'var(--yellow)' : i < 3 ? 'var(--green)' : 'var(--accent)';
+      html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="width:20px;font-size:11px;font-weight:700;color:var(--text-muted);text-align:right">${i+1}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px">
+            <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</span>
+            <span style="font-weight:700;color:var(--text);flex-shrink:0;margin-left:8px">${item.qty}</span>
+          </div>
+          <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${barWidth}%;background:${color};border-radius:2px"></div></div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function renderDrinkMix() {
+  const el = document.getElementById('drink-mix');
+  if (!el) return;
+
+  const allWeeks = [...new Set(S.rows.map(r => r.week_ending || r.date))].sort();
+  const latestWeek = allWeeks[allWeeks.length-1];
+  if (!latestWeek) { el.innerHTML = ''; return; }
+
+  const locations = S.locFilter === 'all' ? S.locations : [S.locFilter];
+  const latestRows = S.rows.filter(r => (r.week_ending||r.date) === latestWeek && locations.includes(r.location));
+  const hasData = latestRows.some(r => r.total_alc_drinks > 0);
+  if (!hasData) { el.innerHTML = ''; return; }
+
+  let html = `<div class="resp-grid">`;
+
+  latestRows.forEach(r => {
+    if (!r.total_alc_drinks) return;
+    const total = r.total_alc_drinks;
+    const cats = [
+      { label: 'Cocktails', qty: r.cocktail_qty, color: 'var(--accent)', icon: '🍸' },
+      { label: 'Beer', qty: r.beer_qty, color: 'var(--yellow)', icon: '🍺' },
+      { label: 'Spirits', qty: r.spirit_qty, color: 'var(--red)', icon: '🥃' },
+      { label: 'Wine', qty: r.wine_qty, color: 'var(--purple)', icon: '🍷' },
+    ];
+
+    // Drink category breakdown
+    html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;text-transform:capitalize">🍹 Drink Mix — ${r.location}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${total} alcoholic drinks</div>
+      </div>
+      <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin-bottom:12px">
+        ${cats.map(c => `<div style="width:${c.qty/total*100}%;background:${c.color}" title="${c.label}: ${c.qty}"></div>`).join('')}
+      </div>`;
+    cats.forEach(c => {
+      const pct = Math.round(c.qty / total * 100);
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px">
+        <div style="display:flex;align-items:center;gap:6px"><span>${c.icon}</span><span>${c.label}</span></div>
+        <div><span style="font-weight:700">${c.qty}</span> <span style="color:var(--text-muted)">(${pct}%)</span></div>
+      </div>`;
+    });
+    html += '</div>';
+
+    // Top drinks for this location
+    if (r.top_drinks && r.top_drinks.length > 0) {
+      html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;text-transform:capitalize">🏅 Top Drinks — ${r.location}</div>`;
+      r.top_drinks.slice(0, 8).forEach((item, i) => {
+        const barWidth = r.top_drinks[0].qty > 0 ? Math.round(item.qty / r.top_drinks[0].qty * 100) : 0;
+        const color = i === 0 ? 'var(--yellow)' : i < 3 ? 'var(--accent)' : 'var(--purple)';
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="width:20px;font-size:11px;font-weight:700;color:var(--text-muted);text-align:right">${i+1}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px">
+              <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</span>
+              <span style="font-weight:700;flex-shrink:0;margin-left:8px">${item.qty}</span>
+            </div>
+            <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${barWidth}%;background:${color};border-radius:2px"></div></div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+  });
+
+  html += '</div>';
+  el.innerHTML = html;
+}// ══════════════════════════════════════════════
+// COACHING
+// ══════════════════════════════════════════════
+const COACHING_SYSTEM = `You are Rai — the senior operations analyst and coach for Chomp Kitchen & Drinks, a multi-unit casual dining group with three locations: Providence, Warren, and Newport (Rhode Island).
+
+IDENTITY & PHILOSOPHY:
+- You think like a restaurant CEO: you see the full P&L, the people behind every number, and the cultural cost of every decision.
+- People first, metrics second. Danny Meyer hospitality-first: a server who builds the check is hosting, not upselling. Never say "upsell."
+- 51/49 Rule: 51% emotional intelligence, 49% skill. Coaching precedes policy.
+- Sales leverage before labor cuts. Drive revenue first; cutting hours is always a last resort.
+- Pattern over noise: flag systemic trends, not one-week anomalies.
+- Culture protection is non-negotiable. Any recommendation that trades morale for margin must be explicit.
+
+KPI OWNERSHIP:
+- SALES KPIs (FOH team coaching): PPA, starter attach, drink attach, cocktail attach, beer attach, IPC, menu mix
+- MANAGEMENT KPIs (GM accountability): Labor %, SPLH, GPLH, FPLH, schedule variance, food cost
+- KITCHEN KPIs (BOH accountability): Avg ticket time, IPLH, over-15-min %, over-20-min %
+
+TARGETS (use these to score performance):
+PPA $35 | GPLH 2.1 | SPLH $77 | FPLH 8.0 | Labor% 28% | Food Cost 30%
+Starter Attach 40% | Drinks/Check 1.8 | Cocktail Attach 65% | Beer Attach 45% | Burger Attach 95%
+Kitchen: Avg Ticket ≤12 min | Over-15-min <15% | IPLH target 8.0
+
+SKILL GAP vs EFFORT GAP: When diagnosing manager or team issues, always distinguish between skill gaps (need training) and effort gaps (need accountability).
+
+FORMAT — every Weekly Ops Review uses these exact sections:
+
+## 📊 Executive Summary
+3 sentences max. Note that data is stored as individual daily service rows (not weekly rollups). Overall health, biggest win, biggest risk. No bullet points — prose only.
+
+## 📍 Location Scorecards
+For each location, one paragraph covering: Sales vs prior week, labor %, top KPI wins, top KPI gaps, one coaching directive for the GM.
+
+## 💰 Sales Intelligence
+PPA trend, attach rate breakdown (starter/drinks/cocktail/beer/burger), top-selling items, channel mix (dine-in vs off-premise), alcohol mix %. Dollar impact of closing the biggest gap.
+
+## ⏱ Labor & Efficiency
+SPLH, GPLH, FPLH, labor % vs target. Hours variance. Which location is most efficient? Least efficient? If the worst location matched the best, what's the dollar savings? 2-3 specific scheduling actions.
+
+## 🔥 Kitchen Operations
+Avg ticket time, over-15-min %, over-20-min %, peak hour, server ranking by ticket time. BOH staffing vs ideal at peak. If kitchen data is unavailable for a location, say so explicitly.
+
+## 👥 Team & Culture Pulse
+Payroll analysis: BOH vs FOH split, overtime risk, any red flags in individual hours. One coaching brief per GM — skill gap or effort gap? Firm, calm, supportive tone.
+
+## 🎯 Top 3 Moves This Week
+Ranked by revenue impact. WHO does WHAT by WHEN. Specific enough that a manager can act on it in the next shift.
+
+## 💬 GM Slack Message
+Ready to copy-paste. 4-6 lines. One metric, one behavior, one action per line. Direct, warm, no corporate speak.
+
+RULES:
+- Every section must use actual numbers from the data provided
+- Compare all three locations wherever data allows
+- Call out missing data explicitly — do not fabricate
+- Dollar-quantify every gap and win where possible
+- Under 800 words total`;
+
+function renderCoachingModes() {
+  let html = '';
+  Object.entries(COACHING_MODES).forEach(([k,m]) => {
+    html += `<button class="btn btn-sm ${S.coachingMode===k?'btn-active':''}" onclick="setCoachingMode('${k}')" style="display:flex;align-items:center;gap:5px"><span>${m.icon}</span> ${m.label}</button>`;
+  });
+  document.getElementById('coaching-modes').innerHTML = html;
+  document.getElementById('mode-desc').textContent = COACHING_MODES[S.coachingMode].desc;
+
+  const wb = getWeeklyBlended(getFiltered());
+  const latest = wb[wb.length-1]||{};
+  document.getElementById('coaching-icon').textContent = COACHING_MODES[S.coachingMode].icon;
+  document.getElementById('coaching-prompt-text').innerHTML = `Analyze your <strong>${S.locFilter==='all'?'blended':S.locFilter}</strong> data for week ending <strong>${latest.weekFull||'—'}</strong> and generate coaching notes.`;
+
+  if (!S.coachingResult) {
+    document.getElementById('coaching-empty').style.display = 'block';
+    document.getElementById('coaching-result').style.display = 'none';
+  }
+}
+
+function setCoachingMode(m) { S.coachingMode=m; S.coachingResult=null; renderCoachingModes(); document.getElementById('coaching-result').style.display='none'; document.getElementById('coaching-empty').style.display='block'; document.getElementById('coaching-loading').style.display='none'; document.getElementById('coaching-error').style.display='none'; }
+
+async function runCoaching() {
+  document.getElementById('coaching-empty').style.display = 'none';
+  document.getElementById('coaching-result').style.display = 'none';
+  document.getElementById('coaching-error').style.display = 'none';
+  document.getElementById('coaching-loading').style.display = 'block';
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const token = session?.access_token || '';
+    const uid = session?.user?.id;
+
+    // ── Pull all data in parallel ─────────────────────────────────────────
+    const [payrollRes, kitchenRes, locRes] = await Promise.all([
+      sb.from('payroll_entries').select('*').eq('user_id', uid).order('week_ending', { ascending: false }).limit(200),
+      sb.from('kitchen_tickets').select('service_date,location,expediter_level,fulfillment_secs,server_name,fired_at').eq('user_id', uid).order('fired_at', { ascending: false }).limit(5000),
+      sb.from('locations').select('*').eq('user_id', uid),
+    ]);
+
+    const payrollRows = payrollRes.data || [];
+    const kitchenRows = kitchenRes.data || [];
+    const locTargets = locRes.data || [];
+
+    // ── Build WEEKS data section ─────────────────────────────────────────
+    const wb = getWeeklyBlended(getFiltered());
+    const l = wb[wb.length-1] || {}, p = wb[wb.length-2] || {};
+    const locData = getLocAgg();
+    const wow = (c, pr) => pr ? (((c - pr) / Math.abs(pr || 1)) * 100).toFixed(1) : 'N/A';
+    const latestWeek = [...new Set(S.rows.map(r => r.week_ending || r.date))].sort().pop();
+    const latestRows = S.rows.filter(r => (r.week_ending || r.date) === latestWeek);
+
+    let d = `== WEEKLY SALES & OPERATIONS DATA ==\n`;
+    d += `Latest Data Date: ${l.weekFull || latestWeek || 'Latest'} (${wb.length} days loaded)\n`;
+    d += `Filter: ${S.locFilter === 'all' ? 'All Locations Combined' : S.locFilter}\n\n`;
+
+    // Blended summary
+    d += `BLENDED SUMMARY:\n`;
+    d += `Net Sales: $${(l.net_sales||0).toLocaleString()} (WoW: ${wow(l.net_sales, p.net_sales)}%)\n`;
+    d += `Guests: ${(l.guests||0).toLocaleString()} (WoW: ${wow(l.guests, p.guests)}%)\n`;
+    d += `PPA: $${(l.ppa||0).toFixed(2)} vs target $35 (WoW: ${wow(l.ppa, p.ppa)}%)\n`;
+    d += `SPLH: $${(l.splh||0).toFixed(2)} vs target $77 | GPLH: ${(l.gplh||0).toFixed(2)} vs 2.1 | FPLH: ${(l.fplh||0).toFixed(1)} vs 8.0\n`;
+    d += `Labor%: ${(l.labor_pct||0).toFixed(1)}% vs target 28% | Food Cost: ${(l.food_cost||0).toFixed(1)}% vs 30%\n`;
+    d += `Starter: ${(l.starter_attach||0).toFixed(0)}% vs 40% | Drinks/Check: ${(l.drink_attach||0).toFixed(2)} vs 1.8\n`;
+    d += `Cocktail: ${(l.cocktail_attach||0).toFixed(0)}% vs 65% | Beer: ${(l.beer_attach||0).toFixed(0)}% vs 45% | Burger: ${(l.burger_attach||0).toFixed(0)}% vs 95%\n`;
+    d += `Alcohol Mix: ${(l.alcohol_mix_pct||0).toFixed(1)}% | Off-Premise: ${(l.off_premise_pct||0).toFixed(1)}%\n\n`;
+
+    // Per-location detail
+    d += `PER-LOCATION BREAKDOWN:\n`;
+    latestRows.forEach(r => {
+      const tgt = locTargets.find(t => t.slug === r.location) || {};
+      d += `\n${(r.location||'').toUpperCase()}:\n`;
+      d += `  Sales: $${Math.round(r.net_sales||0).toLocaleString()} | Guests: ${r.guests||0} | PPA: $${(r.ppa||0).toFixed(2)} (target: $${tgt.target_ppa||35})\n`;
+      d += `  SPLH: $${(r.splh||0).toFixed(0)} (target: $${tgt.target_splh||77}) | GPLH: ${(r.gplh||0).toFixed(2)} (target: ${tgt.target_gplh||2.1}) | FPLH: ${(r.fplh||0).toFixed(1)} (target: ${tgt.target_fplh||8})\n`;
+      d += `  Labor%: ${(r.labor_pct||0).toFixed(1)}% (target: ${tgt.target_labor_pct||28}%) | Hours: ${(r.labor_hrs||0).toFixed(1)} | Kitchen Hrs: ${(r.kitchen_labor_hrs||0).toFixed(1)}\n`;
+      d += `  Food Cost: ${(r.food_cost||0).toFixed(1)}% (target: ${tgt.target_food_cost||30}%)\n`;
+      d += `  Starter: ${(r.starter_attach||0).toFixed(0)}% | Drinks/Check: ${(r.drink_attach||0).toFixed(2)} | Cocktail: ${(r.cocktail_attach||0).toFixed(0)}% | Beer: ${(r.beer_attach||0).toFixed(0)}% | Burger: ${(r.burger_attach||0).toFixed(0)}%\n`;
+      d += `  Alcohol Mix: ${(r.alcohol_mix_pct||0).toFixed(1)}% | Alcohol Sales: $${Math.round(r.alcohol_sales||0).toLocaleString()} | Food Sales: $${Math.round(r.food_sales||0).toLocaleString()}\n`;
+      d += `  Dine-In Orders: ${r.dine_in_orders||0} | Delivery: ${r.delivery_orders||0} | Takeout: ${r.takeout_orders||0}\n`;
+      if (r.top_items?.length) d += `  Top Food Items: ${r.top_items.slice(0,6).map(i=>i.name+' ('+i.qty+')').join(', ')}\n`;
+      if (r.top_drinks?.length) d += `  Top Drinks: ${r.top_drinks.slice(0,5).map(i=>i.name+' ('+i.qty+')').join(', ')}\n`;
+      if (r.total_alc_drinks) d += `  Drink Mix: ${r.cocktail_qty||0} cocktails | ${r.beer_qty||0} beer | ${r.spirit_qty||0} spirits | ${r.wine_qty||0} wine\n`;
+    });
+
+    // Multi-week trend
+    if (wb.length > 1) {
+      d += `\nMULTI-WEEK TREND (newest first):\n`;
+      wb.slice().reverse().forEach(w => {
+        d += `${w.weekFull}: Sales $${(w.net_sales||0).toLocaleString()} | PPA $${(w.ppa||0).toFixed(2)} | SPLH $${(w.splh||0).toFixed(0)} | Labor ${(w.labor_pct||0).toFixed(1)}% | Starter ${(w.starter_attach||0).toFixed(0)}% | Drinks ${(w.drink_attach||0).toFixed(2)}\n`;
+      });
+    }
+
+    // ── PAYROLL section ───────────────────────────────────────────────────
+    d += `\n== PAYROLL DATA ==\n`;
+    if (payrollRows.length) {
+      const latestPayWeek = payrollRows[0].week_ending;
+      const weekPay = payrollRows.filter(r => r.week_ending === latestPayWeek);
+      d += `Week Ending: ${latestPayWeek}\n`;
+
+      const byLoc = {};
+      weekPay.forEach(r => {
+        if (!byLoc[r.location]) byLoc[r.location] = { boh: [], foh: [], salaried: [] };
+        if (r.is_salaried) byLoc[r.location].salaried.push(r);
+        else if (r.is_boh) byLoc[r.location].boh.push(r);
+        else byLoc[r.location].foh.push(r);
+      });
+
+      Object.entries(byLoc).forEach(([loc, groups]) => {
+        const allStaff = [...groups.boh, ...groups.foh, ...groups.salaried];
+        const totalPay = allStaff.reduce((s,r) => s + (r.total_pay||0), 0);
+        const totalHrs = allStaff.reduce((s,r) => s + (r.regular_hours||0) + (r.overtime_hours||0), 0);
+        const otHrs = allStaff.reduce((s,r) => s + (r.overtime_hours||0), 0);
+        const bohPay = groups.boh.reduce((s,r) => s + (r.total_pay||0), 0);
+        const fohPay = groups.foh.reduce((s,r) => s + (r.total_pay||0), 0);
+        d += `\n${loc.toUpperCase()} PAYROLL:\n`;
+        d += `  Staff: ${allStaff.length} total (${groups.boh.length} BOH hourly, ${groups.foh.length} FOH, ${groups.salaried.length} salaried)\n`;
+        d += `  Total Pay: $${totalPay.toFixed(2)} | Total Hours: ${totalHrs.toFixed(1)} | OT Hours: ${otHrs.toFixed(1)}\n`;
+        d += `  BOH Labor: $${bohPay.toFixed(2)} | FOH Labor: $${fohPay.toFixed(2)}\n`;
+        if (otHrs > 5) d += `  ⚠️ OT FLAG: ${otHrs.toFixed(1)} overtime hours\n`;
+        // Top earners / OT risk
+        const otWorkers = allStaff.filter(r => (r.overtime_hours||0) > 0).map(r => r.employee_name + ' (' + r.overtime_hours + ' OT hrs)');
+        if (otWorkers.length) d += `  OT Workers: ${otWorkers.slice(0,5).join(', ')}\n`;
+      });
+    } else {
+      d += `No payroll data available for this period.\n`;
+    }
+
+    // ── KITCHEN section ───────────────────────────────────────────────────
+    d += `\n== KITCHEN OPERATIONS DATA ==\n`;
+    if (kitchenRows.length) {
+      const avg = a => a.length ? a.reduce((s,v) => s+v, 0)/a.length : 0;
+      const kitLocs = [...new Set(kitchenRows.map(r => r.location))].filter(Boolean);
+      const kitDates = [...new Set(kitchenRows.map(r => r.service_date))].filter(Boolean).sort();
+      const dateRange = kitDates.length ? `${kitDates[0]} to ${kitDates[kitDates.length-1]}` : 'unknown';
+      d += `Date Range: ${dateRange} | Total Tickets: ${kitchenRows.length} | Locations: ${kitLocs.join(', ')}\n`;
+
+      kitLocs.forEach(loc => {
+        const locRows = kitchenRows.filter(r => r.location === loc && r.expediter_level === 1 && (r.fulfillment_secs||0) > 0);
+        if (!locRows.length) { d += `\n${loc.toUpperCase()} KITCHEN: No level-1 ticket data\n`; return; }
+        const secs = locRows.map(r => r.fulfillment_secs||0);
+        const avgMin = avg(secs)/60;
+        const medMin = [...secs].sort((a,b)=>a-b)[Math.floor(secs.length/2)]/60;
+        const over15 = secs.filter(s => s > 900).length;
+        const over20 = secs.filter(s => s > 1200).length;
+        const maxMin = Math.max(...secs)/60;
+
+        // By date
+        const byDate = {};
+        locRows.forEach(r => { if(!byDate[r.service_date])byDate[r.service_date]=[]; byDate[r.service_date].push(r.fulfillment_secs); });
+
+        // By server
+        const byServer = {};
+        locRows.forEach(r => { if(!byServer[r.server_name])byServer[r.server_name]=[]; byServer[r.server_name].push(r.fulfillment_secs); });
+        const serverRank = Object.entries(byServer).filter(([,v])=>v.length>=3).map(([name,vals])=>({name:name.split(' ')[0],avg:(avg(vals)/60).toFixed(1),tickets:vals.length})).sort((a,b)=>b.avg-a.avg);
+
+        d += `\n${loc.toUpperCase()} KITCHEN (${locRows.length} tickets):\n`;
+        d += `  Avg Ticket: ${avgMin.toFixed(1)} min | Median: ${medMin.toFixed(1)} min | Longest: ${maxMin.toFixed(1)} min\n`;
+        d += `  Over 15 min: ${over15} (${Math.round(over15/secs.length*100)}%) | Over 20 min: ${over20} (${Math.round(over20/secs.length*100)}%)\n`;
+        if (serverRank.length) d += `  Server Ticket Times (slowest first): ${serverRank.slice(0,5).map(s=>`${s.name} ${s.avg}m/${s.tickets}tix`).join(' | ')}\n`;
+        // Daily breakdown
+        Object.entries(byDate).sort((a,b)=>a[0]>b[0]?1:-1).forEach(([date, vals]) => {
+          d += `  ${date}: ${vals.length} tickets, avg ${(avg(vals)/60).toFixed(1)} min\n`;
+        });
+      });
+    } else {
+      d += `No kitchen ticket data available.\n`;
+    }
+
+    // ── KNOWLEDGE section ─────────────────────────────────────────────────
+    const knowledgeCtx = typeof getKnowledgeContext === 'function' ? getKnowledgeContext() : '';
+
+    // ── MODE-SPECIFIC INSTRUCTION ─────────────────────────────────────────
+    const modeInstructions = {
+      weekly: 'Using ALL the data provided (sales, payroll, kitchen operations), produce a full Weekly Ops Review following your exact format. Every section must use real numbers. Compare all three locations. Quantify every gap and win in dollars.',
+      trends: 'Analyze TRENDS across multiple weeks. Identify which KPIs are improving, deteriorating, or flat. Use the kitchen data to add operational context. Predict 4-week trajectory for the top 3 KPIs.',
+      preshift: 'Generate two pre-shift briefings using the sales data:\n## 🍽 FOH Pre-Shift (2 min)\nPPA, attach rates, top-selling items, one script servers can use tonight.\n## 🔥 BOH Pre-Shift (1 min)\nFPLH, avg ticket time, one kitchen focus. Direct, like a GM who cares.',
+      labor: 'Deep dive on labor using payroll data + sales data. Calculate: SPLH by location, labor % by location, OT risk, BOH vs FOH labor split. If one location matched the best SPLH, how many hours saved? Dollar impact? 3 specific scheduling actions with exact positions and hour windows.',
+      beverage: 'Produce a comprehensive Beverage Report. Use the per-location drink data to analyze cocktail vs beer vs spirit vs wine mix, top sellers, attach rates, and margin opportunities. Reference specific drinks by name. 3 specific bar program actions with exact scripts.',
+      food: 'Produce a comprehensive Food Report. Analyze top-selling items by location, attach rates, kitchen efficiency (FPLH + avg ticket time), food cost by location. Reference specific menu items by name. 3 specific kitchen actions with dollar impact.',
+    };
+
+    const instruction = modeInstructions[S.coachingMode] || modeInstructions.weekly;
+
+    const res = await fetch(SUPABASE_URL + '/functions/v1/ai-coaching', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': SUPABASE_ANON },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1800,
+        system: COACHING_SYSTEM + knowledgeCtx,
+        messages: [{ role: 'user', content: `${instruction}\n\n${d}` }]
+      })
+    });
+
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `API error ${res.status}`); }
+    const json = await res.json();
+    const text = json.content?.map(b => b.text || '').join('\n') || 'No response';
+    S.coachingResult = text;
+
+    document.getElementById('coaching-loading').style.display = 'none';
+    const el = document.getElementById('coaching-result');
+    el.style.display = 'block';
+    el.innerHTML = `<div class="coaching-content">${renderMarkdown(text)}</div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="runCoaching()">🔄 Regenerate</button>
+        <button class="btn btn-sm" onclick="navigator.clipboard.writeText(document.querySelector('#coaching-result .coaching-content').innerText).then(()=>this.textContent='✓ Copied').catch(()=>this.textContent='Copy failed')">📋 Copy</button>
+      </div>`;
+  } catch (err) {
+    document.getElementById('coaching-loading').style.display = 'none';
+    document.getElementById('coaching-error').style.display = 'block';
+    document.getElementById('coaching-error').innerHTML = err.message + '<br><button class="btn btn-sm" onclick="runCoaching()" style="margin-top:10px">Retry</button>';
+  }
+}
+
+function nextMode() {
+  const keys = Object.keys(COACHING_MODES);
+  const i = (keys.indexOf(S.coachingMode)+1) % keys.length;
+  setCoachingMode(keys[i]);
+}
+
+function renderMarkdown(text) {
+  return text.split('\n').map(line => {
+    if (line.startsWith('## ')) return `<h3>${line.slice(3)}</h3>`;
+    if (line.startsWith('- ')||line.startsWith('* ')) return `<li>${boldify(line.slice(2))}</li>`;
+    if (line.trim()) return `<p>${boldify(line)}</p>`;
+    return '';
+  }).join('').replace(/(<li>.*?<\/li>)+/g, m => `<ul>${m}</ul>`);
+}
+
+function boldify(t) { return t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'); }
+
+// ══════════════════════════════════════════════
+// KPI REFERENCE
+// ══════════════════════════════════════════════
+function renderReference() {
+  const el = document.getElementById('ref-grid');
+  if (!el) return;
+  el.innerHTML = Object.entries(TARGETS).map(([k,t]) => {
+    const isMgmt = MGMT_KPIS.includes(k);
+    return `<div class="ref-card ${isMgmt?'mgmt':'sales'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span class="ref-label">${t.label}</span>
+        <span class="ref-tag" style="background:${isMgmt?'rgba(99,102,241,.1)':'rgba(20,184,166,.1)'};color:${isMgmt?'var(--accent)':'var(--green)'}">${isMgmt?'MANAGEMENT':'SALES'}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${t.desc}</div>
+      <div style="font-size:12px;font-weight:600">Target: ${t.unit==='$'?'$'+t.target:t.unit==='%'?t.target+'%':t.target} ${t.invert?'(lower is better)':''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// NAV & UTILS
+// ══════════════════════════════════════════════
+function switchTab(el) { /* legacy compat */ }
+
+// Sidebar navigation
+// ── Sidebar group navigation ─────────────────────────────────────────────────
+const PAGE_GROUPS = {
+  sales:'performance', menu:'performance', labor:'performance',
+  savings:'performance', scoreboard:'performance',
+  kitchen:'kitchen', kitchenlabor:'kitchen',
+  preshift:'ai', coaching:'ai', chat:'ai',
+  settings:'settings-group', knowledge:'settings-group',
+};
+const GROUP_IDS = { performance:'performance', kitchen:'kitchen', ai:'ai', 'settings-group':'settings' };
+
+function navTo(page) {
+  const allPages = ['dashboard','performance','laborhub','kitchen','scoreboard','ai','kitchenlabor',
+                    'sales','menu','labor','savings','preshift','chat','coaching','settings','knowledge'];
+  const titles = {
+    dashboard:'Overview',performance:'Performance',laborhub:'Labor',kitchen:'Kitchen',
+    scoreboard:'Scoreboard',ai:'Rai AI',settings:'Targets',knowledge:'Knowledge'
+  };
+  const hubMap = {
+    sales:'performance',menu:'performance',savings:'performance',labor:'laborhub',
+    kitchenlabor:'laborhub',preshift:'ai',chat:'ai',coaching:'ai'
+  };
+
+  // Hide all pages
+  allPages.forEach(p => {
+    const el = document.getElementById('tab-'+p);
+    if (el) el.style.display = 'none';
+  });
+
+  // Determine hub vs legacy
+  const hub = hubMap[page];
+  const activePage = hub || page;
+
+  // Show the hub or the direct page
+  const showEl = document.getElementById('tab-'+activePage);
+  if (showEl) showEl.style.display = 'block';
+
+  // Highlight nav
+  document.querySelectorAll('.nav-item[data-page]').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === activePage);
+  });
+
+  const mTitle = document.getElementById('mobile-page-title');
+  if (mTitle) mTitle.textContent = titles[activePage] || activePage.charAt(0).toUpperCase()+activePage.slice(1);
+
+  // Route to correct sub-tab
+  if (activePage === 'performance' || hub === 'performance') {
+    const subTab = page === 'menu' ? 'menu' : page === 'savings' ? 'profit' : 'sales';
+    perfTab(subTab);
+  }
+  if (activePage === 'laborhub' || hub === 'laborhub') {
+    laborTab(page === 'kitchenlabor' ? 'intel' : 'kpi');
+  }
+  if (activePage === 'kitchen') {
+    initKitchenPage();
+    kitchenTab('ops');
+  }
+  if (activePage === 'scoreboard') renderScoreboard();
+  if (activePage === 'ai' || hub === 'ai') {
+    const subTab = page === 'coaching' ? 'coaching' : page === 'chat' ? 'chat' : 'preshift';
+    aiTab(subTab);
+  }
+  if (activePage === 'settings') renderTargetsEditor();
+  if (activePage === 'knowledge') loadKnowledge();
+
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  window.scrollTo(0,0);
+}
+
+// ── Sub-tab switchers ──────────────────────────────────────────────────────────
+function perfTab(t) {
+  ['sales','menu','profit'].forEach(s => {
+    const el = document.getElementById('perf-'+s);
+    const btn = document.getElementById('perf-tab-'+s);
+    if (el) el.style.display = s===t ? 'block':'none';
+    if (btn) btn.className = 'btn btn-sm'+(s===t?' btn-active':'');
+  });
+  if (t==='profit') renderSavings();
+}
+
+function laborTab(t) {
+  ['kpi','intel'].forEach(s => {
+    const el = document.getElementById('lab-'+s);
+    const btn = document.getElementById('lab-tab-'+s);
+    if (el) el.style.display = s===t ? 'block':'none';
+    if (btn) btn.className = 'btn btn-sm'+(s===t?' btn-active':'');
+  });
+  if (t==='intel') {
+    const slot = document.getElementById('laborhub-intel-content');
+    if (slot && !slot.dataset.hydrated) {
+      slot.dataset.hydrated = '1';
+      renderLaborIntelligenceInto(slot);
+    } else if (slot) {
+      window._laborContainer = slot; // update active container
+    }
+    initLaborPage();
+  }
+}
+
+function kitchenTab(t) {
+  const opsWrap = document.getElementById('kit-ops-wrap');
+  const trendsWrap = document.getElementById('kitchen-trends');
+  const laborWrap = document.getElementById('kit-labor-wrap');
+  if (opsWrap) opsWrap.style.display = t==='ops'?'block':'none';
+  if (trendsWrap) trendsWrap.style.display = t==='trends'?'block':'none';
+  if (laborWrap) laborWrap.style.display = t==='labor'?'block':'none';
+  const toggle = document.getElementById('kitchen-view-toggle');
+  if (toggle) toggle.style.display = 'none';
+  ['ops','trends','labor'].forEach(s => {
+    const btn = document.getElementById('kit-tab-'+s);
+    if (btn) btn.className = 'btn btn-sm'+(s===t?' btn-active':'');
+  });
+  if (t==='trends') renderKitchenTrends();
+  if (t==='labor') {
+    const slot = document.getElementById('kit-labor-content');
+    if (slot && !slot.dataset.hydrated) {
+      slot.dataset.hydrated = '1';
+      renderLaborIntelligenceInto(slot);
+    } else if (slot) {
+      window._laborContainer = slot; // update active container
+    }
+    initLaborPage();
+  }
+}
+
+function aiTab(t) {
+  ['preshift','coaching','chat'].forEach(s => {
+    const el = document.getElementById('ai-'+s+'-wrap');
+    const btn = document.getElementById('ai-tab-'+s);
+    if (el) el.style.display = s===t?'block':'none';
+    if (btn) btn.className = 'btn btn-sm'+(s===t?' btn-active':'');
+  });
+  if (t==='preshift') {
+    const wrap = document.getElementById('ai-preshift-wrap');
+    if (wrap && !wrap.dataset.hydrated) {
+      wrap.dataset.hydrated='1';
+      const src = document.getElementById('tab-preshift');
+      if (src) wrap.innerHTML = src.innerHTML;
+    }
+  }
+  if (t==='coaching') {
+    const wrap = document.getElementById('ai-coaching-wrap');
+    if (wrap && !wrap.dataset.hydrated) {
+      wrap.dataset.hydrated='1';
+      const src = document.getElementById('tab-coaching');
+      if (src) { wrap.innerHTML = src.innerHTML; renderCoachingModes(); }
+    }
+  }
+  if (t==='chat') {
+    const wrap = document.getElementById('ai-chat-wrap');
+    if (wrap && !wrap.dataset.hydrated) {
+      wrap.dataset.hydrated='1';
+      const src = document.getElementById('tab-chat');
+      if (src) wrap.innerHTML = src.innerHTML;
+    }
+  }
+}
+
+function renderLaborIntelligenceInto(container) {
+  // Track active container for renderLaborIntelligence to query into
+  window._laborContainer = container;
+  // Build Labor Intelligence HTML inline rather than cloning the hidden page
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <div id="labor-loc-tabs2" style="display:flex;gap:4px"></div>
+      <div id="labor-day-tabs2" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+    </div>
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text-2)" id="labor-file-label">No payroll loaded — upload to enable hour-by-hour staffing analysis</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Payroll auto-loads if previously uploaded. Drop a new file to refresh.</div>
+      </div>
+      <label class="btn btn-sm btn-primary" style="cursor:pointer;position:relative;flex-shrink:0">Upload Payroll CSV<input type="file" accept=".csv" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="loadPayrollFile(this.files[0])"></label>
+    </div>
+    <div id="labor-no-kitchen" style="display:none;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;font-size:13px;color:var(--text-muted)">⚠️ No kitchen ticket data for this location/day. Upload Kitchen Details CSV in the Kitchen tab first.</div>
+    <div class="kpi-row" id="labor-kpis" style="margin-bottom:16px"></div>
+    <div class="chart-grid" style="margin-bottom:16px">
+      <div class="chart-card span-2">
+        <div class="chart-title" id="labor-chart-title">📊 Hourly Ticket Volume vs BOH Headcount</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="ch-labor-overlay"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-grid" style="margin-bottom:16px">
+      <div class="chart-card span-2">
+        <div class="chart-title">⚡ IPLH by Hour — Target: 8.0</div>
+        <div class="chart-wrap"><canvas id="ch-labor-iplh"></canvas></div>
+      </div>
+    </div>
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px">
+      <div class="chart-title" style="margin-bottom:8px">🎯 Staffing Recommendation</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">Optimal BOH by hour based on ticket demand and 8.0 IPLH target.</div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse" id="labor-rec-table"></table></div>
+    </div>
+    <div class="chart-grid" style="margin-bottom:16px">
+      <div class="chart-card"><div class="chart-title">👨‍🍳 BOH Roster</div><div id="labor-boh-roster" style="margin-top:4px"></div></div>
+      <div class="chart-card"><div class="chart-title">💰 Cost Analysis</div><div id="labor-cost-panel" style="margin-top:4px"></div></div>
+    </div>
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="chart-title" style="margin-bottom:0">🧠 Staffing Intelligence Brief</div>
+        <button class="btn btn-primary btn-sm" onclick="runLaborAI()">Generate</button>
+      </div>
+      <div id="labor-ai-loading" style="display:none;padding:20px;text-align:center;color:var(--text-muted);font-size:13px">Analyzing...</div>
+      <div id="labor-ai-result" style="font-size:13px;line-height:1.7;color:var(--text-2)"></div>
+    </div>`;
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+
+// ══════════════════════════════════════════════
+// KNOWLEDGE BASE
+// ══════════════════════════════════════════════
+let knowledgeItems = [];
+
+function showAddKnowledge() {
+  document.getElementById('knowledge-form').style.display = 'block';
+  document.getElementById('knowledge-title').value = '';
+  document.getElementById('knowledge-content').value = '';
+  document.getElementById('knowledge-title').focus();
+}
+
+async function saveKnowledge() {
+  const title = document.getElementById('knowledge-title').value.trim();
+  const content = document.getElementById('knowledge-content').value.trim();
+  const category = document.getElementById('knowledge-category').value;
+  if (!title || !content) { alert('Title and content are required'); return; }
+  if (!sb) return;
+  const { data: { user } } = await sb.auth.getUser();
+  const { error } = await sb.from('knowledge').insert({ user_id: user?.id, title, content, category });
+  if (error) { alert('Error: ' + error.message); return; }
+  document.getElementById('knowledge-form').style.display = 'none';
+  loadKnowledge();
+}
+
+async function deleteKnowledge(id) {
+  if (!confirm('Delete this knowledge item?')) return;
+  if (!sb) return;
+  await sb.from('knowledge').delete().eq('id', id);
+  loadKnowledge();
+}
+
+async function loadKnowledge() {
+  if (!sb) return;
+  const { data, error } = await sb.from('knowledge').select('*').order('created_at', { ascending: false });
+  if (error) { console.error('Knowledge load error:', error); return; }
+  knowledgeItems = data || [];
+  const el = document.getElementById('knowledge-list');
+  if (!knowledgeItems.length) {
+    el.innerHTML = '<div style="text-align:center;padding:28px;color:var(--text-muted);font-size:13px">No knowledge items yet. Add SOPs, brand standards, or training notes to give the AI more context.</div>';
+    return;
+  }
+  const catColors = { sop:'var(--green)', brand:'var(--accent)', training:'var(--purple)', strategy:'var(--yellow)', competitive:'var(--red)', general:'var(--text-muted)' };
+  const catLabels = { sop:'SOP', brand:'Brand', training:'Training', strategy:'Strategy', competitive:'Intel', general:'General' };
+  el.innerHTML = knowledgeItems.map(k => {
+    const c = catColors[k.category] || 'var(--text-muted)';
+    const label = catLabels[k.category] || k.category;
+    const date = new Date(k.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;border-left:3px solid ${c}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;font-weight:700">${k.title}</span>
+          <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;background:${c}18;color:${c}">${label}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;color:var(--text-muted)">${date}</span>
+          <button class="btn btn-sm" onclick="deleteKnowledge('${k.id}')" style="color:var(--red);padding:2px 6px;font-size:10px">✕</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-2);line-height:1.5;white-space:pre-wrap;max-height:100px;overflow:hidden">${k.content.substring(0, 300)}${k.content.length > 300 ? '...' : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+// Include knowledge in AI context
+function getKnowledgeContext() {
+  if (!knowledgeItems.length) return '';
+  return '\n\nOPERATOR KNOWLEDGE BASE:\n' + knowledgeItems.map(k => `[${k.category.toUpperCase()}] ${k.title}:\n${k.content}`).join('\n\n');
+}
+
+// ══════════════════════════════════════════════
+// TARGETS EDITOR
+// ══════════════════════════════════════════════
+let editingTargetLoc = null;
+
+function renderTargetsEditor() {
+  const locs = Object.keys(locationTargets);
+  if (!locs.length) {
+    document.getElementById('targets-form').innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px 0;text-align:center">No locations found. Upload data or pull from Supabase first.</div>';
+    return;
+  }
+
+  if (!editingTargetLoc || !locationTargets[editingTargetLoc]) editingTargetLoc = locs[0];
+
+  // Location tabs
+  let tabsHtml = '';
+  locs.forEach(slug => {
+    const name = locationTargets[slug]._name || slug;
+    tabsHtml += `<button class="btn btn-sm ${editingTargetLoc===slug?'btn-active':''}" onclick="editingTargetLoc='${slug}';renderTargetsEditor()" style="text-transform:capitalize">${name}</button>`;
+  });
+  document.getElementById('target-loc-tabs').innerHTML = tabsHtml;
+
+  // Targets form
+  const t = locationTargets[editingTargetLoc];
+  const isMgmt = k => MGMT_KPIS.includes(k);
+
+  let formHtml = `<div style="font-size:13px;font-weight:700;margin-bottom:14px;text-transform:capitalize">${t._name || editingTargetLoc} — KPI Targets</div>`;
+  formHtml += '<div style="display:grid;gap:12px" class="resp-grid">';
+
+  // Group by section
+  const groups = {};
+  Object.entries(TARGET_META).forEach(([k, meta]) => {
+    const g = meta.group || 'Other';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push([k, meta]);
+  });
+
+  const groupColors = {
+    Sales: 'var(--green)', Attach: 'var(--cyan)', Labor: 'var(--accent)',
+    Cost: 'var(--yellow)', Kitchen: 'var(--red)', Other: 'var(--text-muted)'
+  };
+  const groupIcons = { Sales:'💰', Attach:'🍽', Labor:'⏱', Cost:'📉', Kitchen:'🔥', Other:'📊' };
+
+  Object.entries(groups).forEach(([groupName, fields]) => {
+    const gc = groupColors[groupName] || 'var(--text-2)';
+    formHtml += '<div style="margin-bottom:20px">';
+    formHtml += '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:'+gc+';margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">' + (groupIcons[groupName]||'') + ' ' + groupName + ' KPIs</div>';
+    formHtml += '<div style="display:grid;gap:10px" class="resp-grid">';
+    fields.forEach(([k, meta]) => {
+      const val = t[k] ?? DEFAULT_TARGETS[k] ?? 0;
+      const isKitchen = groupName === 'Kitchen';
+      formHtml += '<div style="background:var(--surface);border-radius:10px;padding:14px;border-left:3px solid '+gc+'">';
+      formHtml += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">';
+      formHtml += '<label style="font-size:12px;font-weight:700;color:var(--text)">'+meta.label+'</label>';
+      formHtml += '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:'+gc+'22;color:'+gc+'">'+groupName.toUpperCase()+'</span>';
+      formHtml += '</div>';
+      formHtml += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:7px">'+meta.desc+'</div>';
+      formHtml += '<div style="display:flex;align-items:center;gap:6px">';
+      if (meta.unit === '$') formHtml += '<span style="color:var(--text-muted);font-size:13px">$</span>';
+      formHtml += '<input type="number" step="any" id="target-'+k+'" value="'+val+'" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-weight:600;font-family:inherit;box-sizing:border-box" />';
+      if (meta.unit === '%') formHtml += '<span style="color:var(--text-muted);font-size:13px">%</span>';
+      if (meta.unit === 'min') formHtml += '<span style="color:var(--text-muted);font-size:13px">min</span>';
+      formHtml += '</div>';
+      if (meta.invert) formHtml += '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">⬇ Lower is better</div>';
+      formHtml += '</div>';
+    });
+    formHtml += '</div></div>';
+  });
+
+  formHtml += '</div>';
+  document.getElementById('targets-form').innerHTML = formHtml;
+}
+
+async function saveCurrentTargets() {
+  if (!editingTargetLoc) return;
+  const values = {};
+  Object.keys(TARGET_META).forEach(k => {
+    const input = document.getElementById('target-' + k);
+    values[k] = input ? parseFloat(input.value) || 0 : 0;
+  });
+
+  document.getElementById('btn-save-targets').textContent = 'Saving...';
+  await saveTargetsToSupabase(editingTargetLoc, values);
+  document.getElementById('btn-save-targets').textContent = 'Save Targets';
+
+  const status = document.getElementById('target-save-status');
+  status.style.display = 'inline';
+  setTimeout(() => { status.style.display = 'none'; }, 3000);
+}
+
+// ══════════════════════════════════════════════
+// SAVINGS CALCULATOR — "Profit Center"
+// ══════════════════════════════════════════════
+function calcLocationSavings(rows, locTargets, locName) {
+  if (!rows.length) return null;
+  // Average the latest week for this location
+  const sorted = [...rows].sort((a,b) => (a.week_ending||a.date).localeCompare(b.week_ending||b.date));
+  const latest = sorted[sorted.length - 1];
+  const sales = latest.net_sales || 0;
+  const guests = latest.guests || 0;
+  const hrs = latest.labor_hrs || 0;
+  const ppa = latest.ppa || 0;
+  const laborPct = latest.labor_pct || 0;
+  const splh = latest.splh || 0;
+  const starterAtt = latest.starter_attach || 0;
+  const drinkAtt = latest.drink_attach || 0;
+  const foodCost = latest.food_cost || 0;
+
+  const t = locTargets;
+  const avgStarterPrice = 14;
+  const avgDrinkPrice = 12;
+  const avgHourlyRate = 18;
+
+  const gaps = [];
+
+  // PPA gap
+  if (ppa < t.ppa?.target && guests > 0) {
+    const w = (t.ppa.target - ppa) * guests;
+    gaps.push({ label:'PPA Gap', icon:'💰', actual:'$'+ppa.toFixed(2), target:'$'+t.ppa.target, weekly:w, desc:'Every $1 in PPA lift = $'+guests+'/week in revenue.', action:'Pre-shift: genuine starter and drink recs on every table before entrée order.' });
+  }
+
+  // Labor % gap
+  if (laborPct > t.labor_pct?.target && sales > 0) {
+    const w = (laborPct - t.labor_pct.target) / 100 * sales;
+    gaps.push({ label:'Labor Overspend', icon:'⏱️', actual:laborPct.toFixed(1)+'%', target:t.labor_pct.target+'%', weekly:w, desc:'Each labor % point on $'+Math.round(sales).toLocaleString()+' = $'+Math.round(sales/100)+'/week.', action:'Pull daypart breakdown. Cut from the weakest daypart — not across the board.' });
+  }
+
+  // SPLH efficiency
+  if (splh < t.splh?.target && sales > 0 && hrs > 0) {
+    const idealHrs = sales / t.splh.target;
+    const excess = hrs - idealHrs;
+    if (excess > 0) {
+      const w = excess * avgHourlyRate;
+      gaps.push({ label:'SPLH Efficiency', icon:'📊', actual:'$'+splh.toFixed(0), target:'$'+t.splh.target, weekly:w, desc:Math.round(excess)+' excess hours/week at $'+avgHourlyRate+'/hr. Ideal: '+Math.round(idealHrs)+' hrs.', action:'Match schedule to sales forecast, not last week\'s schedule.' });
+    }
+  }
+
+  // Food Cost gap
+  if (foodCost > t.food_cost?.target && sales > 0 && foodCost > 0) {
+    const w = (foodCost - t.food_cost.target) / 100 * sales;
+    gaps.push({ label:'Food Cost', icon:'🧾', actual:foodCost.toFixed(1)+'%', target:t.food_cost.target+'%', weekly:w, desc:'Each food cost point = $'+Math.round(sales/100)+'/week.', action:'Waste audit + portion consistency check on top 5 sellers.' });
+  }
+
+  // Drinks/Check gap
+  if (drinkAtt < t.drink_attach?.target && guests > 0) {
+    const w = (t.drink_attach.target - drinkAtt) * guests * avgDrinkPrice;
+    gaps.push({ label:'Drink Attach', icon:'🍺', actual:drinkAtt.toFixed(2), target:t.drink_attach.target.toString(), weekly:w, desc:'Closing gap adds '+(Math.round((t.drink_attach.target-drinkAtt)*guests))+' drinks/week at $'+avgDrinkPrice+' avg.', action:'"Can I start you with our [seasonal cocktail]?" — not "anything to drink?"' });
+  }
+
+  // Starter attach gap
+  if (starterAtt < t.starter_attach?.target && guests > 0) {
+    const gapPct = (t.starter_attach.target - starterAtt) / 100;
+    const w = gapPct * guests * avgStarterPrice;
+    gaps.push({ label:'Starter Attach', icon:'🥗', actual:starterAtt.toFixed(0)+'%', target:t.starter_attach.target+'%', weekly:w, desc:'Closing gap adds '+Math.round(gapPct*guests)+' starters/week at $'+avgStarterPrice+' avg.', action:'Describe the starter, don\'t just list it. "The rangoons are crispy and shareable — perfect while you decide."' });
+  }
+
+  const totalWeekly = gaps.reduce((s,g) => s + g.weekly, 0);
+  return { location: locName, sales, guests, latest, gaps, totalWeekly, totalMonthly: totalWeekly * 4.33, totalAnnual: totalWeekly * 52 };
+}
+
+function renderSavings() {
+  const el = document.getElementById('savings-content');
+  if (!el) return;
+
+  // Get latest week data per location
+  const allWeeks = [...new Set(S.rows.map(r => r.week_ending || r.date))].sort();
+  const latestWeek = allWeeks[allWeeks.length - 1];
+  if (!latestWeek) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No data loaded</div>'; return; }
+
+  const locations = [...new Set(S.rows.map(r => r.location).filter(Boolean))];
+  const locResults = [];
+
+  locations.forEach(loc => {
+    const locRows = S.rows.filter(r => r.location === loc && (r.week_ending||r.date) === latestWeek);
+    const targets = locationTargets[loc] ? buildTargetsObj(locationTargets[loc]) : getActiveTargets();
+    const result = calcLocationSavings(locRows, targets, loc);
+    if (result) locResults.push(result);
+  });
+
+  // All-locations blended
+  const filtered = getFiltered();
+  const wb = getWeeklyBlended(filtered);
+  const blendedLatest = wb[wb.length-1] || {};
+  const blendedTargets = getActiveTargets();
+  const allGaps = [];
+  const grandTotalWeekly = locResults.reduce((s,r) => s + r.totalWeekly, 0);
+  const grandTotalMonthly = grandTotalWeekly * 4.33;
+  const grandTotalAnnual = grandTotalWeekly * 52;
+
+  let html = '';
+
+  // ── Grand Total Hero Card ──
+  html += `<div style="background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(20,184,166,.06));border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:24px;text-align:center">
+    <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px">💵 TOTAL PROFIT CENTER</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:16px">Based on week of ${latestWeek} · ${locations.length} location${locations.length!==1?'s':''}</div>
+    <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap;margin-bottom:16px">
+      <div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:2px">Weekly</div>
+        <div style="font-size:36px;font-weight:800;color:var(--green);letter-spacing:-0.02em">$${Math.round(grandTotalWeekly).toLocaleString()}</div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:2px">Monthly</div>
+        <div style="font-size:36px;font-weight:800;color:var(--accent);letter-spacing:-0.02em">$${Math.round(grandTotalMonthly).toLocaleString()}</div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:2px">Annual</div>
+        <div style="font-size:36px;font-weight:800;color:var(--yellow);letter-spacing:-0.02em">$${Math.round(grandTotalAnnual).toLocaleString()}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted)">Real money recoverable through operational changes — no new revenue needed.</div>
+  </div>`;
+
+  // ── Per-Location Cards ──
+  html += '<div style="display:grid;gap:16px;margin-bottom:24px" class="resp-grid-lg">';
+  locResults.sort((a,b) => b.totalWeekly - a.totalWeekly).forEach(loc => {
+    const color = loc.totalWeekly > 2000 ? 'var(--red)' : loc.totalWeekly > 500 ? 'var(--yellow)' : 'var(--green)';
+    html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;border-top:3px solid ${color}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:800;text-transform:capitalize">${loc.location}</div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:800;color:var(--green)">$${Math.round(loc.totalWeekly).toLocaleString()}<span style="font-size:11px;color:var(--text-muted);font-weight:500">/wk</span></div>
+          <div style="font-size:12px;color:var(--text-2)">$${Math.round(loc.totalAnnual).toLocaleString()}/yr</div>
+        </div>
+      </div>`;
+
+    if (loc.gaps.length === 0) {
+      html += '<div style="text-align:center;padding:12px;color:var(--green);font-size:12px;font-weight:600">🎯 All KPIs at target</div>';
+    } else {
+      loc.gaps.sort((a,b) => b.weekly - a.weekly).forEach(gap => {
+        const pct = loc.totalWeekly > 0 ? Math.round(gap.weekly / loc.totalWeekly * 100) : 0;
+        html += `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-size:12px;font-weight:700">${gap.icon} ${gap.label}</div>
+            <div style="font-size:14px;font-weight:800;color:var(--green)">$${Math.round(gap.weekly).toLocaleString()}<span style="font-size:10px;color:var(--text-muted);font-weight:500"> (${pct}%)</span></div>
+          </div>
+          <div style="display:flex;gap:12px;font-size:11px;color:var(--text-muted)">
+            <span>Now: <span style="color:var(--red)">${gap.actual}</span></span>
+            <span>Target: <span style="color:var(--green)">${gap.target}</span></span>
+          </div>
+          <div style="font-size:11px;color:var(--text-2);margin-top:4px;line-height:1.4">${gap.desc}</div>
+        </div>`;
+      });
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // ── Detailed Projection Table ──
+  const allGapTypes = {};
+  locResults.forEach(loc => {
+    loc.gaps.forEach(g => {
+      if (!allGapTypes[g.label]) allGapTypes[g.label] = { icon: g.icon, locations: {}, action: g.action };
+      allGapTypes[g.label].locations[loc.location] = g.weekly;
+    });
+  });
+
+  html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+    <div style="font-size:14px;font-weight:800;margin-bottom:4px">📋 Full Breakdown — Weekly · Monthly · Annual</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:16px">If every location hit every target, here's what you'd recover.</div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
+      <thead><tr style="background:var(--surface)">
+        <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);color:var(--text-muted);font-size:10px;text-transform:uppercase">Gap</th>`;
+  locations.forEach(l => {
+    html += `<th style="text-align:right;padding:10px 12px;border-bottom:2px solid var(--border);color:var(--text-muted);font-size:10px;text-transform:uppercase;text-transform:capitalize">${l}</th>`;
+  });
+  html += `<th style="text-align:right;padding:10px 12px;border-bottom:2px solid var(--border);color:var(--text-muted);font-size:10px;text-transform:uppercase">TOTAL/WK</th>
+        <th style="text-align:right;padding:10px 12px;border-bottom:2px solid var(--border);color:var(--text-muted);font-size:10px;text-transform:uppercase">MONTHLY</th>
+        <th style="text-align:right;padding:10px 12px;border-bottom:2px solid var(--border);color:var(--text-muted);font-size:10px;text-transform:uppercase">ANNUAL</th>
+      </tr></thead><tbody>`;
+
+  Object.entries(allGapTypes).forEach(([label, data]) => {
+    const rowTotal = Object.values(data.locations).reduce((s,v) => s+v, 0);
+    html += `<tr>
+      <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-weight:600">${data.icon} ${label}</td>`;
+    locations.forEach(l => {
+      const val = data.locations[l] || 0;
+      html += `<td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;color:${val > 0 ? 'var(--text)' : 'var(--text-muted)'}">${val > 0 ? '$'+Math.round(val).toLocaleString() : '—'}</td>`;
+    });
+    html += `<td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;font-weight:700">$${Math.round(rowTotal).toLocaleString()}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:right">$${Math.round(rowTotal*4.33).toLocaleString()}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;color:var(--green)">$${Math.round(rowTotal*52).toLocaleString()}</td>
+    </tr>`;
+  });
+
+  // Totals row
+  html += `<tr style="background:rgba(20,184,166,.05)">
+    <td style="padding:12px 12px;font-size:13px;font-weight:800">TOTAL RECOVERABLE</td>`;
+  locations.forEach(l => {
+    const locTotal = locResults.find(r => r.location === l)?.totalWeekly || 0;
+    html += `<td style="padding:12px 12px;text-align:right;font-weight:800;font-size:13px;color:var(--green)">$${Math.round(locTotal).toLocaleString()}</td>`;
+  });
+  html += `<td style="padding:12px 12px;text-align:right;font-weight:800;font-size:14px;color:var(--green)">$${Math.round(grandTotalWeekly).toLocaleString()}</td>
+    <td style="padding:12px 12px;text-align:right;font-weight:800;font-size:14px;color:var(--accent)">$${Math.round(grandTotalMonthly).toLocaleString()}</td>
+    <td style="padding:12px 12px;text-align:right;font-weight:800;font-size:14px;color:var(--yellow)">$${Math.round(grandTotalAnnual).toLocaleString()}</td>
+  </tr></tbody></table></div>`;
+
+  // Action items
+  const topActions = Object.entries(allGapTypes).sort(([,a],[,b]) => {
+    const aTotal = Object.values(b.locations).reduce((s,v)=>s+v,0);
+    const bTotal = Object.values(a.locations).reduce((s,v)=>s+v,0);
+    return aTotal - bTotal;
+  }).slice(0,3);
+
+  if (topActions.length > 0) {
+    html += `<div style="margin-top:16px;padding:14px 16px;background:rgba(99,102,241,.05);border-radius:10px">
+      <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">🎯 Top 3 Actions This Week</div>`;
+    topActions.forEach(([label, data], i) => {
+      const total = Object.values(data.locations).reduce((s,v)=>s+v,0);
+      html += `<div style="font-size:12px;color:var(--text-2);margin-bottom:6px;line-height:1.4"><span style="font-weight:700;color:var(--text)">${i+1}. ${data.icon} ${label}</span> ($${Math.round(total).toLocaleString()}/wk): ${data.action}</div>`;
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+// ASK PULSE — CHAT WITH YOUR DATA
+// ══════════════════════════════════════════════
+let chatHistory = [];
+
+function buildDataContext() {
+  const filtered = getFiltered();
+  const wb = getWeeklyBlended(filtered);
+  const locAgg = getLocAgg();
+
+  let ctx = `RESTAURANT KPI DATA — ${S.locations.length} locations, ${wb.length} weeks loaded\n`;
+  ctx += `Locations: ${S.locations.join(', ')}\n`;
+  ctx += `Date range: ${wb[0]?.weekFull || '?'} to ${wb[wb.length-1]?.weekFull || '?'}\n\n`;
+
+  // Per-location targets
+  ctx += `TARGETS BY LOCATION:\n`;
+  Object.entries(locationTargets).forEach(([slug, t]) => {
+    ctx += `${t._name||slug}: PPA $${t.ppa}, SPLH $${t.splh}, GPLH ${t.gplh}, FPLH ${t.fplh}, Labor ${t.labor_pct}%, Food Cost ${t.food_cost}%, Starter ${t.starter_attach}%, Drinks/Check ${t.drink_attach}, Cocktail ${t.cocktail_attach}%, Burger ${t.burger_attach}%\n`;
+  });
+
+  // Weekly blended data
+  ctx += `\nWEEKLY BLENDED DATA (all locations combined):\n`;
+  wb.forEach(w => {
+    ctx += `${w.weekFull}: Sales $${Math.round(w.net_sales).toLocaleString()}, Guests ${w.guests}, PPA $${w.ppa.toFixed(2)}, SPLH $${w.splh.toFixed(2)}, GPLH ${w.gplh.toFixed(2)}, FPLH ${w.fplh.toFixed(1)}, Labor ${w.labor_pct.toFixed(1)}%, Starter ${w.starter_attach.toFixed(0)}%, Drinks ${w.drink_attach.toFixed(2)}, Food Cost ${w.food_cost.toFixed(1)}%, Cocktail ${w.cocktail_attach.toFixed(0)}%, Burger ${w.burger_attach.toFixed(0)}%\n`;
+  });
+
+  // Per-location per-week detail
+  ctx += `\nPER-LOCATION DAILY DETAIL:\n`;
+  S.rows.forEach(r => {
+    const d = r.week_ending || r.date;
+    ctx += `${d} ${r.location}: Sales $${Math.round(r.net_sales||0).toLocaleString()}, Guests ${r.guests||0}, PPA $${(r.ppa||0).toFixed(2)}, SPLH $${(r.splh||0).toFixed(2)}, GPLH ${(r.gplh||0).toFixed(2)}, FPLH ${(r.fplh||0).toFixed(1)}, Labor ${(r.labor_pct||0).toFixed(1)}%, Starter ${(r.starter_attach||0).toFixed(0)}%, Drinks ${(r.drink_attach||0).toFixed(2)}, Food Cost ${(r.food_cost||0).toFixed(1)}%, Cocktail ${(r.cocktail_attach||0).toFixed(0)}%, Burger ${(r.burger_attach||0).toFixed(0)}%, Hrs ${(r.labor_hrs||0).toFixed(0)}\n`;
+  });
+
+  // Location aggregates
+  ctx += `\nLOCATION AVERAGES:\n`;
+  locAgg.forEach(l => {
+    ctx += `${l.name}: Avg PPA $${l.ppa}, Avg SPLH $${l.splh}, Avg GPLH ${l.gplh}, Avg Labor ${l.labor}%, Total Sales $${l.sales.toLocaleString()}\n`;
+  });
+
+  return ctx;
+}
+
+const CHAT_SYSTEM = `You are Rai, an AI restaurant operations assistant built into the Rai platform. You have access to detailed weekly KPI data for a multi-unit casual dining restaurant group.
+
+Your personality:
+- Direct, actionable, no fluff — like a sharp GM who's seen the numbers
+- Use the 4-D Framework: Deconstruct (break down the data), Diagnose (identify root causes), Develop (create action plans), Deliver (specific next steps)
+- Reference Danny Meyer's hospitality-first philosophy when relevant
+- Always tie insights back to the operator's P&L impact
+- Use specific numbers from the data — never vague
+
+When answering:
+- Lead with the insight, not the caveat
+- Compare locations when relevant
+- Flag when data is missing (e.g., FPLH = 0 means no ProductMix data uploaded)
+- Suggest specific pre-shift talking points when discussing menu KPIs
+- Keep it conversational but packed with value`;
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Add user message to UI
+  const messagesEl = document.getElementById('chat-messages');
+  messagesEl.innerHTML += `<div style="background:var(--accent);color:#fff;border-radius:12px;padding:10px 14px;max-width:80%;align-self:flex-end;font-size:13px;line-height:1.5">${escapeHtml(msg)}</div>`;
+
+  // Add thinking indicator
+  const thinkingId = 'thinking-' + Date.now();
+  messagesEl.innerHTML += `<div id="${thinkingId}" style="display:flex;align-items:center;gap:8px;padding:8px 0"><div class="spinner" style="width:16px;height:16px;border-width:2px"></div><span style="font-size:12px;color:var(--text-muted)">Analyzing your data...</span></div>`;
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  // Build context and send
+  const dataCtx = buildDataContext();
+  chatHistory.push({ role: 'user', content: msg });
+
+  // Build messages with data context in first message
+  const apiMessages = [];
+  chatHistory.forEach((m, i) => {
+    if (i === 0) {
+      apiMessages.push({ role: 'user', content: `Here is my restaurant KPI data:\n\n${dataCtx}\n\nMy question: ${m.content}` });
+    } else {
+      apiMessages.push(m);
+    }
+  });
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const token = session?.access_token || '';
+
+    const res = await fetch(SUPABASE_URL + '/functions/v1/ai-coaching', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'apikey': SUPABASE_ANON,
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        system: CHAT_SYSTEM + (typeof getKnowledgeContext==='function'?getKnowledgeContext():''),
+        messages: apiMessages,
+      })
+    });
+
+    // Remove thinking indicator
+    const thinkEl = document.getElementById(thinkingId);
+    if (thinkEl) thinkEl.remove();
+
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e?.error?.message || `API error ${res.status}`);
+    }
+
+    const json = await res.json();
+    const text = json.content?.map(b => b.text || '').join('\n') || 'No response';
+
+    // Add to chat history
+    chatHistory.push({ role: 'assistant', content: text });
+
+    // Render assistant message
+    messagesEl.innerHTML += `<div style="background:var(--surface);border-radius:12px;padding:14px 16px;max-width:85%;font-size:13px;color:var(--text);line-height:1.6">${renderMarkdown(text)}</div>`;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  } catch (err) {
+    const thinkEl = document.getElementById(thinkingId);
+    if (thinkEl) thinkEl.remove();
+    messagesEl.innerHTML += `<div style="background:rgba(232,80,91,.1);border-radius:12px;padding:10px 14px;max-width:85%;font-size:12px;color:var(--red)">${err.message}</div>`;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ══════════════════════════════════════════════
+// SCOREBOARD — SportsCenter-style gamified KPI tracking
+// ══════════════════════════════════════════════
+function getStreakData() {
+  const kpiChecks = [
+    { key:'ppa', label:'PPA', tKey:'ppa', icon:'💰', unit:'$' },
+    { key:'splh', label:'SPLH', tKey:'splh', icon:'📊', unit:'$' },
+    { key:'labor_pct', label:'Labor %', tKey:'labor_pct', icon:'⏱️', invert:true, unit:'%' },
+    { key:'gplh', label:'GPLH', tKey:'gplh', icon:'👥' },
+    { key:'fplh', label:'FPLH', tKey:'fplh', icon:'🍔' },
+    { key:'starter_attach', label:'Starters', tKey:'starter_attach', icon:'🥗', unit:'%' },
+    { key:'drink_attach', label:'Drinks/Chk', tKey:'drink_attach', icon:'🍺' },
+    { key:'cocktail_attach', label:'Cocktails', tKey:'cocktail_attach', icon:'🍸', unit:'%' },
+    { key:'beer_attach', label:'Beer', tKey:'beer_attach', icon:'🍻', unit:'%' },
+    { key:'burger_attach', label:'Burgers', tKey:'burger_attach', icon:'🍔', unit:'%' },
+  ];
+
+  const allStreaks = [];
+  const locScores = {};
+
+  S.locations.forEach(loc => {
+    const locTargets = locationTargets[loc] ? buildTargetsObj(locationTargets[loc]) : TARGETS;
+    const locRows = S.rows.filter(r => r.location === loc).sort((a,b) => (a.week_ending||a.date).localeCompare(b.week_ending||b.date));
+    if (!locScores[loc]) locScores[loc] = { hits: 0, misses: 0, totalStreak: 0, hotKPIs: [], coldKPIs: [] };
+
+    kpiChecks.forEach(kpi => {
+      const target = locTargets[kpi.tKey]?.target;
+      if (!target) return;
+
+      let streak = 0;
+      let bestStreak = 0;
+      for (let i = locRows.length - 1; i >= 0; i--) {
+        const val = locRows[i][kpi.key] || 0;
+        if (val === 0) break;
+        const atTarget = kpi.invert ? val <= target : val >= target;
+        if (atTarget) { streak++; bestStreak = Math.max(bestStreak, streak); }
+        else break;
+      }
+
+      // Latest week status
+      const latestVal = locRows.length > 0 ? (locRows[locRows.length-1][kpi.key] || 0) : 0;
+      const latestHit = latestVal > 0 && (kpi.invert ? latestVal <= target : latestVal >= target);
+      if (latestVal > 0) {
+        if (latestHit) { locScores[loc].hits++; locScores[loc].hotKPIs.push(kpi.label); }
+        else { locScores[loc].misses++; locScores[loc].coldKPIs.push(kpi.label); }
+      }
+
+      locScores[loc].totalStreak += streak;
+      if (streak > 0 || !latestHit) {
+        allStreaks.push({ loc, label: kpi.label, icon: kpi.icon, streak, key: kpi.key, hit: latestHit, val: latestVal, target, unit: kpi.unit||'', invert: kpi.invert });
+      }
+    });
+  });
+
+  return { allStreaks, locScores, kpiChecks };
+}
+
+function renderScoreboard() {
+  const el = document.getElementById('scoreboard-content');
+  if (!el) return;
+  const { allStreaks, locScores } = getStreakData();
+
+  let html = '';
+
+  // ── MVP & POWER RANKINGS HEADER ──
+  const rankings = S.locations.map(loc => {
+    const sc = locScores[loc];
+    const total = sc.hits + sc.misses;
+    const pct = total > 0 ? Math.round(sc.hits / total * 100) : 0;
+    return { loc, hits: sc.hits, misses: sc.misses, pct, totalStreak: sc.totalStreak, hotKPIs: sc.hotKPIs, coldKPIs: sc.coldKPIs };
+  }).sort((a,b) => b.pct - a.pct || b.totalStreak - a.totalStreak);
+
+  // MVP of the week
+  const allWeeks = [...new Set(S.rows.map(r=>r.week_ending||r.date))].sort();
+  const latestWeek = allWeeks[allWeeks.length-1];
+  const prevWeek = allWeeks.length > 1 ? allWeeks[allWeeks.length-2] : null;
+  let mvpHtml = '';
+  if (latestWeek && prevWeek) {
+    const mvps = [];
+    S.rows.filter(r => (r.week_ending||r.date) === latestWeek).forEach(r => {
+      const prev = S.rows.find(p => p.location === r.location && (p.week_ending||p.date) === prevWeek);
+      if (!prev) return;
+      const checks = [
+        { kpi:'Sales', wow: prev.net_sales > 0 ? ((r.net_sales-prev.net_sales)/prev.net_sales*100) : 0 },
+        { kpi:'PPA', wow: prev.ppa > 0 ? ((r.ppa-prev.ppa)/prev.ppa*100) : 0 },
+        { kpi:'SPLH', wow: prev.splh > 0 ? ((r.splh-prev.splh)/prev.splh*100) : 0 },
+        { kpi:'Guests', wow: prev.guests > 0 ? ((r.guests-prev.guests)/prev.guests*100) : 0 },
+      ];
+      const best = checks.sort((a,b) => b.wow - a.wow)[0];
+      if (best.wow > 0) mvps.push({ loc: r.location, ...best });
+    });
+    if (mvps.length > 0) {
+      mvps.sort((a,b) => b.wow - a.wow);
+      const mvp = mvps[0];
+      mvpHtml = `<div style="flex:1;text-align:center;padding:20px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius)">
+        <div style="font-size:24px">⭐</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin:4px 0">MVP of the Week</div>
+        <div style="font-size:20px;font-weight:800;color:var(--green);text-transform:capitalize">${mvp.loc}</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:2px">${mvp.kpi} <span style="color:var(--green);font-weight:700">+${mvp.wow.toFixed(1)}%</span> WoW</div>
+      </div>`;
+    }
+  }
+
+  // Power Rankings strip
+  const medals = ['🥇','🥈','🥉'];
+  html += `<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">`;
+  rankings.forEach((r, i) => {
+    const barColor = i === 0 ? 'var(--yellow)' : i === 1 ? 'var(--text-muted)' : 'var(--accent)';
+    const barPct = r.pct;
+    html += `<div style="flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-top:3px solid ${barColor}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:20px">${medals[i]||''} <span style="font-size:15px;font-weight:800;text-transform:capitalize">${r.loc}</span></div>
+        <div style="font-size:22px;font-weight:800;color:var(--green)">${r.pct}%</div>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:6px">
+        <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:3px;transition:width .3s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted)">
+        <span>${r.hits} at target · ${r.misses} below</span>
+        <span>Streak pts: ${r.totalStreak}</span>
+      </div>
+    </div>`;
+  });
+  if (mvpHtml) html += mvpHtml;
+  html += '</div>';
+
+  // ── LOCATION REPORT CARDS ──
+  S.locations.forEach(loc => {
+    const locTargets = locationTargets[loc] ? buildTargetsObj(locationTargets[loc]) : TARGETS;
+    const locStreaks = allStreaks.filter(s => s.loc === loc);
+    const hot = locStreaks.filter(s => s.hit).sort((a,b) => b.streak - a.streak);
+    const cold = locStreaks.filter(s => !s.hit && s.val > 0);
+    const sc = locScores[loc];
+    const rank = rankings.findIndex(r => r.loc === loc);
+
+    html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:22px">${medals[rank]||'📍'}</span>
+          <div>
+            <div style="font-size:16px;font-weight:800;text-transform:capitalize">${loc}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${sc.hits} of ${sc.hits+sc.misses} KPIs at target</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:28px;font-weight:800;color:${sc.hits/(sc.hits+sc.misses)>=.7?'var(--green)':sc.hits/(sc.hits+sc.misses)>=.5?'var(--yellow)':'var(--red)'}">${rankings.find(r=>r.loc===loc)?.pct||0}%</div>
+        </div>
+      </div>`;
+
+    // KPI table for this location
+    html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="text-align:left;padding:8px 10px;color:var(--text-muted);font-size:10px;font-weight:700;text-transform:uppercase">KPI</th>
+        <th style="text-align:center;padding:8px 6px;color:var(--text-muted);font-size:10px;font-weight:700">Actual</th>
+        <th style="text-align:center;padding:8px 6px;color:var(--text-muted);font-size:10px;font-weight:700">Target</th>
+        <th style="text-align:center;padding:8px 6px;color:var(--text-muted);font-size:10px;font-weight:700">Status</th>
+        <th style="text-align:center;padding:8px 6px;color:var(--text-muted);font-size:10px;font-weight:700">Streak</th>
+      </tr></thead><tbody>`;
+
+    locStreaks.sort((a,b) => b.streak - a.streak).forEach(s => {
+      const fmtVal = s.val === 0 ? '—' : s.unit === '$' ? '$'+s.val.toFixed(2) : s.unit === '%' ? s.val.toFixed(1)+'%' : s.val.toFixed(2);
+      const fmtTarget = s.unit === '$' ? '$'+s.target : s.unit === '%' ? s.target+'%' : s.target;
+      const statusColor = s.val === 0 ? 'var(--text-muted)' : s.hit ? 'var(--green)' : 'var(--red)';
+      const statusIcon = s.val === 0 ? '—' : s.hit ? '✅' : '❌';
+      const streakDisplay = s.streak === 0 ? '<span style="color:var(--text-muted)">—</span>' :
+        s.streak >= 5 ? `<span style="color:var(--green);font-weight:800">🔥🔥🔥 ${s.streak}wk</span>` :
+        s.streak >= 4 ? `<span style="color:var(--green);font-weight:800">🔥🔥 ${s.streak}wk</span>` :
+        s.streak >= 3 ? `<span style="color:var(--green);font-weight:700">🔥 ${s.streak}wk</span>` :
+        s.streak >= 2 ? `<span style="color:var(--green);font-weight:600">✨ ${s.streak}wk</span>` :
+        `<span style="color:var(--green)">${s.streak}wk</span>`;
+
+      html += `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 10px;font-weight:600">${s.icon} ${s.label}</td>
+        <td style="padding:8px 6px;text-align:center;color:${statusColor};font-weight:600">${fmtVal}</td>
+        <td style="padding:8px 6px;text-align:center;color:var(--text-muted)">${fmtTarget}</td>
+        <td style="padding:8px 6px;text-align:center">${statusIcon}</td>
+        <td style="padding:8px 6px;text-align:center">${streakDisplay}</td>
+      </tr>`;
+    });
+
+    html += '</tbody></table></div></div>';
+  });
+
+  // ── STREAK LEADERBOARD ──
+  const topStreaks = allStreaks.filter(s => s.streak >= 2).sort((a,b) => b.streak - a.streak).slice(0, 10);
+  if (topStreaks.length > 0) {
+    html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px">🏅 Streak Leaderboard</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px">Longest active streaks across all locations. Don't break the chain.</div>`;
+
+    topStreaks.forEach((s, i) => {
+      const barWidth = Math.min(s.streak * 16, 100);
+      const fire = s.streak >= 5 ? '🔥🔥🔥 DOMINANT' : s.streak >= 4 ? '🔥🔥 ON FIRE' : s.streak >= 3 ? '🔥 HEATING UP' : '✨ BUILDING';
+      html += `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i < topStreaks.length-1 ? 'border-bottom:1px solid var(--border)' : ''}">
+        <div style="width:24px;font-size:14px;font-weight:800;color:var(--text-muted);text-align:center">${i+1}</div>
+        <div style="width:20px;text-align:center">${s.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="font-weight:700;text-transform:capitalize;font-size:13px">${s.loc}</span>
+            <span style="color:var(--text-2);font-size:12px">${s.label}</span>
+          </div>
+          <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${barWidth}%;background:linear-gradient(90deg,var(--green),var(--accent));border-radius:4px"></div>
+          </div>
+        </div>
+        <div style="text-align:right;white-space:nowrap">
+          <div style="font-size:18px;font-weight:800;color:var(--green)">${s.streak}<span style="font-size:10px;color:var(--text-muted)">wk</span></div>
+          <div style="font-size:9px;color:var(--text-muted)">${fire}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+// PRE-SHIFT BRIEFING
+// ══════════════════════════════════════════════
+async function generatePreShift() {
+  const locSelect = document.getElementById('preshift-location');
+  const loc = locSelect ? locSelect.value : 'all';
+  const contentEl = document.getElementById('preshift-content');
+  if (!contentEl) return;
+
+  contentEl.innerHTML = '<div style="text-align:center;padding:32px 0"><div class="spinner"></div><div style="font-size:13px;color:var(--text-muted)">Building tonight\'s briefing...</div></div>';
+
+  // Build context
+  const filtered = loc === 'all' ? S.rows : S.rows.filter(r => r.location === loc);
+  const wb = getWeeklyBlended(filtered);
+  const latest = wb[wb.length - 1] || {};
+  const prev = wb[wb.length - 2] || {};
+  const locName = loc === 'all' ? 'All Locations' : loc.charAt(0).toUpperCase() + loc.slice(1);
+  const targets = loc !== 'all' && locationTargets[loc] ? buildTargetsObj(locationTargets[loc]) : getActiveTargets();
+
+  let dataStr = `Location: ${locName}\nWeek: ${latest.weekFull || 'latest'}\n`;
+  dataStr += `Net Sales: $${Math.round(latest.net_sales||0).toLocaleString()} | Guests: ${latest.guests||0}\n`;
+  dataStr += `PPA: $${(latest.ppa||0).toFixed(2)} (target: $${targets.ppa?.target||35}) | Drinks/Check: ${(latest.drink_attach||0).toFixed(2)} (target: ${targets.drink_attach?.target||1.8})\n`;
+  dataStr += `Starter Attach: ${(latest.starter_attach||0).toFixed(0)}% (target: ${targets.starter_attach?.target||40}%) | Beer Attach: ${(latest.beer_attach||0).toFixed(0)}% | Cocktail Attach: ${(latest.cocktail_attach||0).toFixed(0)}%\n`;
+  dataStr += `Burger Attach: ${(latest.burger_attach||0).toFixed(0)}% | SPLH: $${(latest.splh||0).toFixed(0)} (target: $${targets.splh?.target||77})\n`;
+  if (prev.ppa) dataStr += `Last week PPA: $${prev.ppa.toFixed(2)} | Last week Drinks: ${prev.drink_attach.toFixed(2)} | Last week Starter: ${prev.starter_attach.toFixed(0)}%\n`;
+
+  const systemPrompt = `You are a GM writing tonight's pre-shift briefing. This will be READ ALOUD to servers and bartenders in under 60 seconds.
+
+FORMAT (use these exact headers with emojis):
+🎯 TONIGHT'S FOCUS
+One sentence: the single most important thing the team needs to do tonight based on the data.
+
+🍽️ MENU PUSH (2-3 items)
+Specific menu items to recommend. Include the EXACT words servers should say. Use quotes.
+
+🍺 DRINK PLAY
+The specific drink recommendation strategy. Include the opener line in quotes.
+
+📊 THE NUMBER
+One KPI the team can rally around tonight. Make it concrete and achievable.
+
+💬 CLOSER
+One motivating sentence to end the briefing.
+
+RULES:
+- Be specific. Use actual menu item names from a burger/craft beer casual dining restaurant.
+- Every recommendation needs a script in quotes.
+- Reference the actual data — if PPA is below target, the push should address PPA.
+- Keep total length under 200 words.
+- No corporate speak. Talk like a real GM who cares.`;
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const token = session?.access_token || '';
+    const knowledgeCtx = typeof getKnowledgeContext === 'function' ? getKnowledgeContext() : '';
+
+    const res = await fetch(SUPABASE_URL + '/functions/v1/ai-coaching', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': SUPABASE_ANON },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        system: systemPrompt + knowledgeCtx,
+        messages: [{ role: 'user', content: `Generate tonight's pre-shift briefing.\n\nDATA:\n${dataStr}` }]
+      })
+    });
+
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    const json = await res.json();
+    const text = json.content?.map(b => b.text || '').join('\n') || 'No response';
+
+    contentEl.innerHTML = `<div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">📍 ${locName} · ${latest.weekFull || 'Latest Week'}</div>
+      <div class="coaching-content" style="font-size:14px;line-height:1.7">${renderMarkdown(text)}</div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="generatePreShift()">🔄 Regenerate</button>
+        <button class="btn btn-sm" onclick="navigator.clipboard.writeText(document.querySelector('#preshift-content .coaching-content').innerText).then(()=>this.textContent='✓ Copied')">📋 Copy to Clipboard</button>
+      </div>`;
+  } catch (err) {
+    contentEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red)">${err.message}<br><button class="btn btn-sm" onclick="generatePreShift()" style="margin-top:10px">Retry</button></div>`;
+  }
+}
+
+function setLoc(l) { S.locFilter=l; S.coachingResult=null; TARGETS=getActiveTargets(); renderDashboard(); }
+
+function renderEmptyDashboard() {
+  // Show dashboard shell with a friendly no-data state on the overview tab
+  navTo('dashboard');
+  const overviewTab = document.getElementById('tab-dashboard');
+  if (overviewTab) {
+    overviewTab.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;gap:16px">
+        <div style="font-size:48px">📊</div>
+        <div style="font-size:18px;font-weight:800;letter-spacing:-0.02em">No data yet</div>
+        <div style="font-size:13px;color:var(--text-2);max-width:380px;line-height:1.6">
+          Your dashboard will populate automatically once weekly data is uploaded.<br>
+          Check back after the next upload cycle.
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin-top:4px">
+          Signed in as <strong style="color:var(--text)">${currentUser?.email||'—'}</strong>
+        </div>
+      </div>`;
+  }
+}
+
+function resetDashboard() {
+  document.getElementById('screen-upload').style.display = 'block';
+  document.getElementById('screen-dashboard').style.display = 'none';
+  Object.values(S.charts).forEach(c=>c.destroy());
+  S.charts = {};
+}
+
+// ══════════════════════════════════════════════
+// KITCHEN OPS CENTER
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// KITCHEN OPS — Supabase-backed, multi-location, historic trends
+// ══════════════════════════════════════════════
+let KS = { loc: null, day: '__all__', rows: [], summary: null, view: 'day', allRows: [] };
+
+function parseKitchenSeconds(s) {
+  if (!s) return 0;
+  let t = 0;
+  const m = s.match(/(\d+)\s+minute/); const sec = s.match(/(\d+)\s+second/);
+  if (m) t += parseInt(m[1]) * 60;
+  if (sec) t += parseInt(sec[1]);
+  return t;
+}
+
+function parseKitchenRow(r) {
+  r._secs = parseKitchenSeconds(r['Fulfillment Time']);
+  r._level = parseInt(r['Expediter Level']) || 0;
+  r._isOnline = (r['Server'] || '').includes('Online');
+  r._server = (r['Server'] || '').trim().replace(/\s+/g, ' ');
+  r.location = (r['Location'] || '').trim().toLowerCase();
+  try {
+    const d = new Date(r['Fired Date'].trim());
+    r._hour = d.getHours();
+    r._timeKey = String(d.getHours()).padStart(2,'0') + ':' + String(Math.floor(d.getMinutes()/15)*15).padStart(2,'0');
+    r._displayTime = (d.getHours()%12||12) + ':' + String(Math.floor(d.getMinutes()/15)*15).padStart(2,'0') + ' ' + (d.getHours()>=12?'PM':'AM');
+    r._firedAt = d.toISOString();
+    r.daySort = d.toISOString().split('T')[0];
+    r.day = d.toLocaleDateString('en-US', { weekday:'short', month:'numeric', day:'numeric' });
+    r._dayOfWeek = d.toLocaleDateString('en-US', { weekday:'long' });
+    r._fulfilledAt = r['Fulfilled Date'] ? new Date(r['Fulfilled Date'].trim()).toISOString() : null;
+  } catch(e) { r._hour = null; r.day = 'Unknown'; r.daySort = ''; }
+  return r;
+}
+
+async function kitchenSaveToSupabase(parsedRows) {
+  if (!sb) return;
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  const uid = session.user.id;
+
+  // Deduplicate: delete existing rows for same location+date combos before inserting
+  const combos = [...new Set(parsedRows.map(r => r.location + '|' + r.daySort))];
+  for (const combo of combos) {
+    const [loc, date] = combo.split('|');
+    await sb.from('kitchen_tickets').delete()
+      .eq('user_id', uid).eq('location', loc).eq('service_date', date);
+  }
+
+  // Batch insert in chunks of 500
+  const records = parsedRows.map(r => ({
+    user_id: uid,
+    location: r.location,
+    server_name: r._server,
+    check_num: r['Check #'] || null,
+    table_num: r['Table'] || null,
+    station: r['Station'] || null,
+    expediter_level: r._level,
+    fired_at: r._firedAt || null,
+    fulfilled_at: r._fulfilledAt || null,
+    fulfillment_secs: r._secs,
+    fulfilled_by: (r['Fulfilled By'] || '').trim(),
+    is_online: r._isOnline,
+    day_of_week: r._dayOfWeek || null,
+    service_date: r.daySort || null,
+  }));
+
+  for (let i = 0; i < records.length; i += 500) {
+    const { error } = await sb.from('kitchen_tickets').insert(records.slice(i, i+500));
+    if (error) console.error('Kitchen insert error:', error.message);
+  }
+}
+
+async function kitchenLoadFromSupabase() {
+  if (!sb) return [];
+  const { data, error } = await sb.from('kitchen_tickets')
+    .select('*').order('fired_at', { ascending: true }).limit(10000);
+  if (error || !data) return [];
+
+  // Map DB rows back to the shape renderKitchenDashboard expects
+  return data.map(r => {
+    const d = r.fired_at ? new Date(r.fired_at) : null;
+    // Timestamps are now true UTC — use local getHours() to display in user's timezone
+    const h = d ? d.getHours() : null;
+    const m = d ? d.getMinutes() : null;
+    const qm = m != null ? Math.floor(m/15)*15 : 0;
+    return {
+      ...r,
+      _secs: r.fulfillment_secs || 0,
+      _level: r.expediter_level || 0,
+      _isOnline: r.is_online || false,
+      _server: r.server_name || '',
+      _hour: h,
+      _timeKey: h != null ? String(h).padStart(2,'0')+':'+String(qm).padStart(2,'0') : null,
+      _displayTime: h != null ? (h%12||12)+':'+String(qm).padStart(2,'0')+' '+(h>=12?'PM':'AM') : null,
+      _firedAt: r.fired_at,
+      _fulfilledAt: r.fulfilled_at,
+      _dayOfWeek: r.day_of_week,
+      day: r.service_date ? (() => { const sd = new Date(r.service_date+'T12:00:00'); return sd.toLocaleDateString('en-US',{weekday:'short',month:'numeric',day:'numeric'}); })() : 'Unknown',
+      daySort: r.service_date || '',
+      location: r.location,
+      'Server': r.server_name,
+      'Check #': r.check_num,
+      'Table': r.table_num,
+      'Fired Date': r.fired_at,
+      'Fulfilled Date': r.fulfilled_at,
+    };
+  });
+}
+
+async function initKitchenPage() {
+  document.getElementById('kitchen-empty').style.display = 'none';
+  document.getElementById('kitchen-record-count').textContent = 'Loading...';
+  KS.allRows = await kitchenLoadFromSupabase();
+  if (!KS.allRows.length) {
+    document.getElementById('kitchen-empty').style.display = 'block';
+    document.getElementById('kitchen-dashboard').style.display = 'none';
+    document.getElementById('kitchen-trends').style.display = 'none';
+    document.getElementById('kitchen-view-toggle').style.display = 'none';
+    document.getElementById('kitchen-record-count').textContent = '';
+    return;
+  }
+  document.getElementById('kitchen-view-toggle').style.display = 'block';
+  await renderKitchenControls();
+  kitchenShowView(KS.view || 'day');
+  renderKitchenSnapshot(); // refresh overview snapshot
+}
+
+async function kitchenAddFiles(files) {
+  document.getElementById('kitchen-record-count').textContent = 'Uploading...';
+  for (const file of files) {
+    await new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = async e => {
+        const lines = e.target.result.trim().split('\n');
+        const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g,'').trim());
+        const rows = lines.slice(1).map(line => {
+          const vals = line.split(',').map(v => v.replace(/^"|"$/g,'').trim());
+          const obj = {}; headers.forEach((h,i) => obj[h] = vals[i]||'');
+          return parseKitchenRow(obj);
+        }).filter(r => r['Server'] && r._secs >= 0);
+        await kitchenSaveToSupabase(rows);
+        res();
+      };
+      reader.readAsText(file);
+    });
+  }
+  KS.allRows = await kitchenLoadFromSupabase();
+  document.getElementById('kitchen-empty').style.display = 'none';
+  document.getElementById('kitchen-view-toggle').style.display = 'block';
+  await renderKitchenControls();
+  kitchenShowView(KS.view || 'day');
+}
+
+async function kitchenClearAll() {
+  if (!confirm('Delete all kitchen data from your account? This cannot be undone.')) return;
+  if (!sb) return;
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  await sb.from('kitchen_tickets').delete().eq('user_id', session.user.id);
+  KS = { loc: null, day: null, rows: [], summary: null, view: 'day', allRows: [] };
+  document.getElementById('kitchen-empty').style.display = 'block';
+  document.getElementById('kitchen-dashboard').style.display = 'none';
+  document.getElementById('kitchen-trends').style.display = 'none';
+  document.getElementById('kitchen-view-toggle').style.display = 'none';
+  document.getElementById('kitchen-record-count').textContent = '';
+  document.getElementById('kitchen-loc-tabs').innerHTML = '';
+  document.getElementById('kitchen-day-tabs').innerHTML = '';
+}
+
+async function renderKitchenControls() {
+  const all = KS.allRows;
+  const locs = [...new Set(all.map(r => r.location))].filter(Boolean).sort();
+  const locDays = {};
+  locs.forEach(l => {
+    locDays[l] = [...new Set(all.filter(r=>r.location===l).map(r=>r.day))].filter(d=>d!=='Unknown');
+    locDays[l].sort((a,b)=>{
+      const ar=all.find(r=>r.location===l&&r.day===a); const br=all.find(r=>r.location===l&&r.day===b);
+      return (ar?.daySort||'')>(br?.daySort||'')?1:-1;
+    });
+  });
+  if (!KS.loc || !locs.includes(KS.loc)) KS.loc = locs[0];
+  const days = locDays[KS.loc] || [];
+  if (!KS.day || (!days.includes(KS.day) && KS.day !== '__all__')) KS.day = '__all__';
+
+  const lc = {'warren':'var(--accent)','newport':'var(--cyan)','providence':'var(--green)'};
+  document.getElementById('kitchen-loc-tabs').innerHTML = locs.map(l =>
+    `<button class="btn btn-sm" onclick="kitchenSetLoc('${l}')"
+      style="${l===KS.loc?'background:'+(lc[l]||'var(--accent)')+';border-color:'+(lc[l]||'var(--accent)')+';color:#000':''}">
+      ${l.charAt(0).toUpperCase()+l.slice(1)}</button>`).join('');
+
+  // "All" button + individual days
+  const allBtn = `<button class="btn btn-sm ${KS.day==='__all__'?'btn-active':''}" onclick="kitchenSetDay('__all__')">All</button>`;
+  document.getElementById('kitchen-day-tabs').innerHTML = allBtn + days.map(d =>
+    `<button class="btn btn-sm ${d===KS.day?'btn-active':''}" onclick="kitchenSetDay('${d.replace(/'/g,"\'")}')">${d}</button>`).join('');
+
+  const total = all.filter(r=>r.location===KS.loc).length;
+  const dates = [...new Set(all.filter(r=>r.location===KS.loc).map(r=>r.daySort))].filter(Boolean);
+  document.getElementById('kitchen-record-count').textContent = `${total.toLocaleString()} tickets · ${dates.length} dates`;
+}
+
+function kitchenSetLoc(loc) { KS.loc = loc; KS.day = null; renderKitchenControls().then(()=>kitchenShowView(KS.view)); }
+function kitchenSetDay(day) { KS.day = day; renderKitchenControls().then(()=>kitchenShowView(KS.view)); }
+
+function kitchenShowView(v) {
+  KS.view = v;
+  document.getElementById('kitchen-dashboard').style.display = v==='day'?'block':'none';
+  document.getElementById('kitchen-trends').style.display = v==='trend'?'block':'none';
+  // view buttons now handled by kitchenTab()
+  if (v === 'day') {
+    KS.rows = KS.day==='__all__' ? KS.allRows.filter(r => r.location===KS.loc) : KS.allRows.filter(r => r.location===KS.loc && r.day===KS.day);
+    renderKitchenDashboard(KS.rows);
+  } else if (v === 'trend') {
+    renderKitchenTrends();
+  } else if (v === 'labor') {
+    renderLaborIntelligence();
+  }
+}
+
+function renderKitchenTrends() {
+  const all = KS.allRows;
+  const avg = a => a.length ? a.reduce((s,v)=>s+v,0)/a.length : 0;
+  const CO = { responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#7B8094',font:{size:11}}},tooltip:{backgroundColor:'#1A1D27',borderColor:'#252839',borderWidth:1,titleColor:'#EFF1F5',bodyColor:'#B0B4C8',cornerRadius:10}}, scales:{x:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}},y:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}}} };
+
+  // 1. Trend line — avg ticket time per date per location
+  const locs = [...new Set(all.map(r=>r.location))].filter(Boolean).sort();
+  const dates = [...new Set(all.map(r=>r.daySort))].filter(Boolean).sort();
+  const LOC_COLORS = {'warren':'#6366F1','newport':'#22D3EE','providence':'#14B8A6'};
+
+  const trendDatasets = locs.map(loc => {
+    const data = dates.map(d => {
+      const rows = all.filter(r=>r.location===loc&&r.daySort===d&&r._level===1&&r._secs>0);
+      return rows.length ? +(avg(rows.map(r=>r._secs))/60).toFixed(1) : null;
+    });
+    return { label:loc.charAt(0).toUpperCase()+loc.slice(1), data, borderColor:LOC_COLORS[loc]||'#6366F1', backgroundColor:(LOC_COLORS[loc]||'#6366F1')+'20', tension:.3, pointRadius:5, borderWidth:2.5, spanGaps:true };
+  });
+
+  document.getElementById('kitchen-trend-title').textContent = '📈 Avg Ticket Time Over Time — All Locations';
+  if (S.charts['k-trend']) S.charts['k-trend'].destroy();
+  S.charts['k-trend'] = new Chart(document.getElementById('ch-kitchen-trend'), {
+    type:'line', data:{ labels:dates.map(d=>{ const dt=new Date(d+'T12:00:00'); return dt.toLocaleDateString('en-US',{weekday:'short',month:'numeric',day:'numeric'}); }), datasets:trendDatasets },
+    options:{ ...CO, scales:{ ...CO.scales, y:{ ...CO.scales.y, ticks:{...CO.scales.y.ticks,callback:v=>v+'m'}, min:0 } } }
+  });
+
+  // Add 12-min target line annotation (manual)
+  // (done via dataset)
+  trendDatasets.push({ label:'Target (12m)', data:dates.map(()=>12), borderColor:'rgba(239,68,68,.5)', borderDash:[6,3], borderWidth:1.5, pointRadius:0, spanGaps:true });
+  S.charts['k-trend'].data.datasets = trendDatasets;
+  S.charts['k-trend'].update();
+
+  // 2. Day-of-week heatmap — avg per DOW for selected location
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const locRows = all.filter(r=>r.location===KS.loc&&r._level===1&&r._secs>0);
+  const dowData = DAYS.map(dow => {
+    const rows = locRows.filter(r=>r._dayOfWeek===dow);
+    return rows.length ? +(avg(rows.map(r=>r._secs))/60).toFixed(1) : 0;
+  });
+  if (S.charts['k-dow']) S.charts['k-dow'].destroy();
+  S.charts['k-dow'] = new Chart(document.getElementById('ch-kitchen-dow'), {
+    type:'bar', data:{ labels:DAYS.map(d=>d.slice(0,3)), datasets:[{ label:'Avg Ticket (min)', data:dowData, backgroundColor:dowData.map(v=>v>15?'rgba(232,80,91,.8)':v>12?'rgba(249,168,38,.8)':v>0?'rgba(20,184,166,.8)':'rgba(100,100,100,.3)'), borderRadius:5 }] },
+    options:{ ...CO, scales:{ ...CO.scales, y:{ ...CO.scales.y, ticks:{...CO.scales.y.ticks,callback:v=>v+'m'} } } }
+  });
+
+  // 3. Location comparison bar — latest shared date
+  const latestDate = dates[dates.length-1];
+  const locAvgs = locs.map(loc => {
+    const rows = all.filter(r=>r.location===loc&&r.daySort===latestDate&&r._level===1&&r._secs>0);
+    return rows.length ? +(avg(rows.map(r=>r._secs))/60).toFixed(1) : 0;
+  });
+  if (S.charts['k-locs']) S.charts['k-locs'].destroy();
+  S.charts['k-locs'] = new Chart(document.getElementById('ch-kitchen-locs'), {
+    type:'bar', data:{ labels:locs.map(l=>l.charAt(0).toUpperCase()+l.slice(1)), datasets:[{ label:'Avg Ticket (min) — Latest Date', data:locAvgs, backgroundColor:locs.map(l=>LOC_COLORS[l]||'var(--accent)'), borderRadius:6 }] },
+    options:{ ...CO, scales:{ ...CO.scales, y:{ ...CO.scales.y, ticks:{...CO.scales.y.ticks,callback:v=>v+'m'} } } }
+  });
+
+  // 4. History summary table
+  const rows = [];
+  dates.forEach(d => {
+    locs.forEach(loc => {
+      const r = all.filter(x=>x.location===loc&&x.daySort===d&&x._level===1&&x._secs>0);
+      if (!r.length) return;
+      const a = avg(r.map(x=>x._secs))/60;
+      const over15 = r.filter(x=>x._secs>900).length;
+      const dt = new Date(d+'T12:00:00');
+      rows.push({ date:d, displayDate:dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}), loc, avg:a.toFixed(1), tickets:r.length, over15, over15pct:Math.round(over15/r.length*100) });
+    });
+  });
+  rows.sort((a,b)=>b.date.localeCompare(a.date));
+
+  document.getElementById('kitchen-history-table').innerHTML =
+    '<thead><tr style="border-bottom:1px solid var(--border)">' +
+    ['Date','Location','Avg Time','Tickets','>15 Min','Status'].map(h=>`<th style="padding:6px 10px;font-size:10px;font-weight:700;color:var(--accent);text-align:left">${h}</th>`).join('') +
+    '</tr></thead><tbody>' +
+    rows.map(r => {
+      const ok = parseFloat(r.avg)<=12;
+      const badge = ok ? '<span style="color:var(--green);font-size:11px;font-weight:700">✓ On Target</span>' : parseFloat(r.avg)<=15 ? '<span style="color:var(--yellow);font-size:11px;font-weight:700">⚠ Watch</span>' : '<span style="color:var(--red);font-size:11px;font-weight:700">✗ Over</span>';
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:6px 10px;font-size:12px;font-weight:600">${r.displayDate}</td>
+        <td style="padding:6px 10px;font-size:12px;text-transform:capitalize">${r.loc}</td>
+        <td style="padding:6px 10px;font-size:13px;font-weight:800;color:${parseFloat(r.avg)>15?'var(--red)':parseFloat(r.avg)>12?'var(--yellow)':'var(--green)'}">${r.avg}m</td>
+        <td style="padding:6px 10px;font-size:12px;color:var(--text-2)">${r.tickets}</td>
+        <td style="padding:6px 10px;font-size:12px;color:var(--text-2)">${r.over15} (${r.over15pct}%)</td>
+        <td style="padding:6px 10px">${badge}</td>
+      </tr>`;
+    }).join('') + '</tbody>';
+}
+
+function renderKitchenDashboard(rows) {
+  const avg = a => a.length ? a.reduce((s,v)=>s+v,0)/a.length : 0;
+  const lvl1 = rows.filter(r => r._level === 1 && r._secs > 0);
+  const lvl2 = rows.filter(r => r._level === 2 && r._secs > 0);
+
+  if (!lvl1.length) {
+    document.getElementById('kitchen-kpis').innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px">No Level 1 data for this selection.</div>';
+    return;
+  }
+
+  const secs = lvl1.map(r=>r._secs).filter(s=>s>0);
+  const avgMin = secs.length ? avg(secs)/60 : 0;
+  const medSecs = secs.length ? [...secs].sort((a,b)=>a-b)[Math.floor(secs.length/2)] : 0;
+  const medMin = medSecs/60;
+  const over12 = lvl1.filter(r=>r._secs>720).length;
+  const over15 = lvl1.filter(r=>r._secs>900).length;
+  const over20 = lvl1.filter(r=>r._secs>1200).length;
+  const maxSec = secs.length ? Math.max(...secs) : 0;
+  const under8 = lvl1.filter(r=>r._secs>0&&r._secs<=480).length;
+
+  // Day label for header
+  const dayLabel = KS.day==='__all__' ? 'All Days' : KS.day;
+
+  const kpis = [
+    {label:'Avg Ticket',value:secs.length?avgMin.toFixed(1)+'m':'—',target:'≤12m',ok:avgMin<=12&&secs.length>0,icon:'⏱'},
+    {label:'Median Ticket',value:secs.length?medMin.toFixed(1)+'m':'—',target:'≤10m',ok:medMin<=10&&secs.length>0,icon:'📊'},
+    {label:'Total Tickets',value:lvl1.length,target:'—',ok:true,icon:'🎫'},
+    {label:'≤8 Min',value:secs.length?under8+' ('+Math.round(under8/lvl1.length*100)+'%)':'—',target:'>50%',ok:under8/Math.max(1,lvl1.length)>0.5,icon:'✅'},
+    {label:'>12 Min',value:secs.length?over12+' ('+Math.round(over12/lvl1.length*100)+'%)':'—',target:'<30%',ok:over12/Math.max(1,lvl1.length)<0.30,icon:'⚠️'},
+    {label:'>15 Min',value:secs.length?over15+' ('+Math.round(over15/lvl1.length*100)+'%)':'—',target:'<15%',ok:over15/Math.max(1,lvl1.length)<0.15,icon:'🚨'},
+    {label:'>20 Min',value:secs.length?over20+' ('+Math.round(over20/lvl1.length*100)+'%)':'—',target:'<5%',ok:over20/Math.max(1,lvl1.length)<0.05,icon:'🔴'},
+    {label:'Longest',value:secs.length?(maxSec/60).toFixed(1)+'m':'—',target:'<25m',ok:maxSec<1500,icon:'📍'},
+  ];
+  document.getElementById('kitchen-kpis').innerHTML = kpis.map(k=>`
+    <div class="kpi" style="flex:1 1 120px;min-width:110px">
+      <div class="kpi-bar" style="background:${k.ok?'var(--green)':'var(--red)'}"></div>
+      <div class="kpi-label">${k.icon} ${k.label}</div>
+      <div class="kpi-value" style="color:${k.ok?'var(--green)':'var(--red)'}">${k.value}</div>
+      <div class="kpi-badges"><span class="kpi-badge" style="background:${k.ok?'rgba(20,184,166,.15)':'rgba(232,80,91,.15)'};color:${k.ok?'var(--green)':'var(--red)'}">Target ${k.target}</span></div>
+    </div>`).join('');
+
+  const CO = {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7B8094',font:{size:11}}},tooltip:{backgroundColor:'#1A1D27',borderColor:'#252839',borderWidth:1,titleColor:'#EFF1F5',bodyColor:'#B0B4C8',cornerRadius:10}},scales:{x:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}},y:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}}}};
+
+  const byH={}; lvl1.forEach(r=>{if(r._hour!=null){if(!byH[r._hour])byH[r._hour]=[];byH[r._hour].push(r._secs);}});
+  const hK=Object.keys(byH).map(Number).sort((a,b)=>a-b);
+  const hAvgs=hK.map(h=>+(avg(byH[h])/60).toFixed(1));
+  document.getElementById('kitchen-hourly-title').textContent='Avg Ticket Time — '+KS.loc.charAt(0).toUpperCase()+KS.loc.slice(1)+' · '+dayLabel;
+  if(S.charts['k-hourly'])S.charts['k-hourly'].destroy();
+  S.charts['k-hourly']=new Chart(document.getElementById('ch-kitchen-hourly'),{
+    type:'bar',data:{labels:hK.map(h=>(h%12||12)+(h>=12?'PM':'AM')),datasets:[
+      {label:'Avg (min)',data:hAvgs,backgroundColor:hAvgs.map(v=>v>15?'rgba(232,80,91,.8)':v>12?'rgba(249,168,38,.8)':'rgba(20,184,166,.8)'),borderRadius:5,yAxisID:'y'},
+      {label:'Tickets',data:hK.map(h=>byH[h].length),type:'line',borderColor:'#6366F1',backgroundColor:'#6366F120',tension:.3,pointRadius:4,borderWidth:2,yAxisID:'y1'}
+    ]},options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,ticks:{...CO.scales.y.ticks,callback:v=>v+'m'}},y1:{position:'right',ticks:{color:'#6B7085',font:{size:10}},grid:{display:false}}}}
+  });
+
+  const bkts={}; lvl1.forEach(r=>{if(!r._timeKey)return;if(!bkts[r._timeKey])bkts[r._timeKey]={count:0,total:0,label:r._displayTime};bkts[r._timeKey].count++;bkts[r._timeKey].total+=r._secs;});
+  document.getElementById('kitchen-heatmap').innerHTML=Object.keys(bkts).sort().map(k=>{
+    const b=bkts[k];const a=(b.total/b.count/60).toFixed(1);
+    const bg=b.count>=15?'var(--red)':b.count>=10?'#F97316':b.count>=5?'var(--yellow)':'var(--surface-3)';
+    const tc=b.count>=5?'#000':'var(--text-2)';
+    return `<div title="${b.label}: ${b.count} tickets, avg ${a}min" style="background:${bg};color:${tc};border-radius:6px;padding:6px 8px;text-align:center;min-width:68px;cursor:default;border:1px solid var(--border)"><div style="font-size:10px;font-weight:700">${b.label}</div><div style="font-size:16px;font-weight:800">${b.count}</div><div style="font-size:9px;opacity:.8">${a}m</div></div>`;
+  }).join('');
+
+  const bySrv={}; lvl1.forEach(r=>{if(!bySrv[r._server])bySrv[r._server]=[];bySrv[r._server].push(r._secs);});
+  const sE=Object.entries(bySrv).filter(([,v])=>v.length>=2).sort((a,b)=>avg(b[1])-avg(a[1]));
+  if(S.charts['k-server'])S.charts['k-server'].destroy();
+  S.charts['k-server']=new Chart(document.getElementById('ch-kitchen-server'),{
+    type:'bar',data:{labels:sE.map(([k])=>k.split(' ').filter(Boolean)[0]),datasets:[{label:'Avg (min)',data:sE.map(([,v])=>+(avg(v)/60).toFixed(1)),backgroundColor:sE.map(([,v])=>{const a=avg(v)/60;return a>14?'rgba(232,80,91,.8)':a>11?'rgba(249,168,38,.8)':'rgba(20,184,166,.8)'}),borderRadius:5}]},
+    options:{...CO,indexAxis:'y',scales:{y:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}},x:{ticks:{color:'#6B7085',font:{size:10},callback:v=>v+'m'},grid:{color:'#25283944'}}}}
+  });
+
+  const dIn=lvl1.filter(r=>!r._isOnline); const onl=lvl1.filter(r=>r._isOnline);
+  if(S.charts['k-channel'])S.charts['k-channel'].destroy();
+  S.charts['k-channel']=new Chart(document.getElementById('ch-kitchen-channel'),{
+    type:'bar',data:{labels:['Dine-In ('+dIn.length+')','Online ('+onl.length+')'],datasets:[{label:'Avg Ticket (min)',data:[+(avg(dIn.map(r=>r._secs))/60).toFixed(1),+(avg(onl.map(r=>r._secs))/60).toFixed(1)],backgroundColor:['rgba(99,102,241,.8)','rgba(249,168,38,.8)'],borderRadius:8}]},
+    options:{...CO,scales:{x:{ticks:{color:'#6B7085',font:{size:11}},grid:{color:'#25283944'}},y:{ticks:{color:'#6B7085',font:{size:10},callback:v=>v+'m'},grid:{color:'#25283944'}}}}
+  });
+
+  const outliers=lvl1.filter(r=>r._secs>900).sort((a,b)=>b._secs-a._secs).slice(0,20);
+  document.getElementById('kitchen-outliers').innerHTML='<thead><tr style="border-bottom:1px solid var(--border)">'+['Server','Check #','Table','Fired','Fulfilled','Time','Status'].map(h=>`<th style="padding:6px 10px;font-size:10px;font-weight:700;color:var(--accent);text-align:left">${h}</th>`).join('')+'</tr></thead><tbody>'+outliers.map(r=>{
+    const mins=r._secs/60;
+    const badge=mins>20?'<span style="background:rgba(232,80,91,.2);color:var(--red);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">CRITICAL</span>':'<span style="background:rgba(249,168,38,.2);color:var(--yellow);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">SLOW</span>';
+    const ft=r['Fired Date']?new Date(r['Fired Date']).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'—';
+    const flt=r['Fulfilled Date']?new Date(r['Fulfilled Date']).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'—';
+    return `<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 10px;font-size:12px;font-weight:600">${r._isOnline?'📦 Online':r._server.split(' ')[0]}</td><td style="padding:6px 10px;font-size:12px;color:var(--text-2)">#${r['check_num']||r['Check #']}</td><td style="padding:6px 10px;font-size:12px;color:var(--text-2)">${r['table_num']||r['Table']||'—'}</td><td style="padding:6px 10px;font-size:12px;color:var(--text-muted)">${ft}</td><td style="padding:6px 10px;font-size:12px;color:var(--text-muted)">${flt}</td><td style="padding:6px 10px;font-size:12px;font-weight:700;color:${mins>20?'var(--red)':'var(--yellow)'}">${mins.toFixed(1)}m</td><td style="padding:6px 10px">${badge}</td></tr>`;
+  }).join('')+'</tbody>';
+
+  const byExp={}; lvl2.forEach(r=>{if(!byExp[r._server])byExp[r._server]=[];byExp[r._server].push(r._secs);});
+  document.getElementById('kitchen-expo').innerHTML=Object.entries(byExp).filter(([,v])=>v.length>=2).sort((a,b)=>avg(b[1])-avg(a[1])).map(([s,scs])=>{
+    const a=avg(scs)/60;const col=a>3?'var(--red)':a>1.5?'var(--yellow)':'var(--green)';
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;min-width:130px"><div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:4px">${s.includes('Online')?'📦 Online':s.split(' ')[0]}</div><div style="font-size:22px;font-weight:800;color:${col}">${a.toFixed(1)}<span style="font-size:12px">m</span></div><div style="font-size:10px;color:var(--text-muted)">${scs.length} pickups</div></div>`;
+  }).join('')||'<div style="color:var(--text-muted);font-size:13px">No Level 2 data.</div>';
+
+  const ph=hK.length?hK[hAvgs.indexOf(Math.max(...hAvgs))]:null;
+  KS.summary={avgMin:avgMin.toFixed(1),totalTickets:lvl1.length,over15pct:Math.round(over15/lvl1.length*100),over20,loc:KS.loc,day:KS.day,peakHour:ph,
+    serverRankings:sE.map(([k,v])=>({name:k,avg:(avg(v)/60).toFixed(1),tickets:v.length})),
+    onlineAvg:onl.length?(avg(onl.map(r=>r._secs))/60).toFixed(1):null,
+    dineInAvg:dIn.length?(avg(dIn.map(r=>r._secs))/60).toFixed(1):null,
+    peakWindows:Object.entries(bkts).sort((a,b)=>b[1].count-a[1].count).slice(0,3).map(([k,v])=>({time:v.label,count:v.count,avg:(v.total/v.count/60).toFixed(1)}))
+  };
+}
+
+// ══════════════════════════════════════════════
+// LABOR INTELLIGENCE
+// ══════════════════════════════════════════════
+let LP = { payroll: [], location: null, week: null, analysis: null, loc: null, day: null };
+
+async function initLaborPage() {
+  // Load kitchen data if not already loaded
+  if (!KS.allRows.length) KS.allRows = await kitchenLoadFromSupabase();
+
+  // Build loc + day selectors from kitchen data
+  const locs = [...new Set(KS.allRows.map(r=>r.location))].filter(Boolean).sort();
+  const days = locs.length ? [...new Set(KS.allRows.filter(r=>r.location===(LP.loc||locs[0])).map(r=>r.day))].filter(d=>d!=='Unknown').sort((a,b)=>{
+    const ar=KS.allRows.find(r=>r.day===a); const br=KS.allRows.find(r=>r.day===b);
+    return (ar?.daySort||'')>(br?.daySort||'')?1:-1;
+  }) : [];
+
+  if (!LP.loc || !locs.includes(LP.loc)) LP.loc = locs[0] || null;
+  if (!LP.day || !days.includes(LP.day)) LP.day = days[days.length-1] || null;
+
+  const lc = {'warren':'var(--accent)','newport':'var(--cyan)','providence':'var(--green)'};
+  const locEl = document.getElementById('labor-loc-tabs');
+  const dayEl = document.getElementById('labor-day-tabs');
+  if (locEl) locEl.innerHTML = locs.map(l=>`<button class="btn btn-sm" onclick="laborSetLoc('${l}')" style="${l===LP.loc?'background:'+(lc[l]||'var(--accent)')+';border-color:'+(lc[l]||'var(--accent)')+';color:#000':''}">${l.charAt(0).toUpperCase()+l.slice(1)}</button>`).join('');
+  if (dayEl) dayEl.innerHTML = days.map(d=>`<button class="btn btn-sm ${d===LP.day?'btn-active':''}" onclick="laborSetDay('${d.replace(/'/g,"\\'")}')"> ${d}</button>`).join('');
+
+  // Sync KS selection to LP selection for renderLaborIntelligence
+  if (LP.loc) KS.loc = LP.loc;
+  if (LP.day) KS.day = LP.day;
+
+  renderLaborIntelligence();
+}
+
+function laborSetLoc(loc) {
+  LP.loc = loc; LP.day = null;
+  KS.loc = loc;
+  initLaborPage();
+}
+function laborSetDay(day) {
+  LP.day = day; KS.day = day;
+  initLaborPage();
+}
+
+const BOH_ROLES_SET = new Set(['sous','chef','line cook','prep cook','dish washer','dishwasher','expo','kitchen manager','line cook/prep']);
+const SALARIED_ROLES_SET = new Set(['sous','chef','kitchen manager']);
+const TARGET_IPLH = 8.0;
+const MIN_BOH = 2;
+
+function loadPayrollFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g,'').trim());
+    const rows = lines.slice(1).map(line => {
+      const vals = []; let cur = ''; let inQ = false;
+      for (const ch of line) {
+        if (ch === '"') { inQ = !inQ; }
+        else if (ch === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+        else cur += ch;
+      }
+      vals.push(cur.trim());
+      const obj = {}; headers.forEach((h,i) => obj[h] = vals[i]||'');
+      return obj;
+    }).filter(r => r['Employee']);
+
+    LP.payroll = rows.map(r => {
+      const role = (r['Job Title']||'').trim().toLowerCase();
+      const regHrs = parseFloat(r['Regular Hours']||0);
+      const otHrs = parseFloat(r['Overtime Hours']||0);
+      const rate = parseFloat(r['Hourly Rate']||0);
+      const totalPay = parseFloat(r['Total Pay']||0);
+      return {
+        name: (r['Employee']||'').trim(), role,
+        isBOH: BOH_ROLES_SET.has(role),
+        isSalaried: SALARIED_ROLES_SET.has(role) || (rate === 0 && totalPay === 0),
+        hours: regHrs + otHrs, rate, pay: totalPay,
+        location: (r['Location']||'').trim().toLowerCase(),
+      };
+    });
+    LP.location = LP.payroll[0]?.location || '';
+    LP.week = file.name.match(/(\d{4}[_-]\d{2}[_-]\d{2})/g)?.[1] || 'this week';
+    const lbl = document.getElementById('labor-file-label');
+    const boh = LP.payroll.filter(r=>r.isBOH);
+    if (lbl) lbl.innerHTML = file.name + ' <span style="color:var(--green);font-size:10px">LOADED</span> · ' + boh.length + ' BOH · ' + boh.reduce((s,r)=>s+r.hours,0).toFixed(0) + ' hrs';
+    initLaborPage();
+  };
+  reader.readAsText(file);
+}
+
+function estimateDailyBOH(bohRows) {
+  let line = 0, dish = 0, sal = 0;
+  bohRows.forEach(r => {
+    if (r.isSalaried) { sal = Math.min(sal+1, 1); }
+    else if (r.role.includes('dish')) { if (r.hours >= 15) dish++; }
+    else if (r.role.includes('line') || r.role.includes('prep') || r.role.includes('sous')) {
+      if (r.hours >= 20) line++;
+      else if (r.hours >= 6) line += 0.5;
+    }
+  });
+  return { line: Math.round(line), dish: Math.min(dish, 2), sal };
+}
+
+function buildHourlyBOH(bohRows) {
+  const { line, dish, sal } = estimateDailyBOH(bohRows);
+  const sched = {};
+  for (let h = 10; h <= 23; h++) {
+    let count = 0;
+    if (sal > 0 && h >= 10 && h <= 22) count += sal;          // salaried BOH through close
+    if (h >= 11 && h <= 22) count += h <= 14 ? Math.max(1, line-1) : line;  // line cooks full service
+    if (h >= 12 && h <= 22 && dish > 0) count += dish;        // dish through close
+    sched[h] = Math.max(count, (h >= 11 && h <= 22) ? MIN_BOH : 0);
+  }
+  return sched;
+}
+
+function renderLaborIntelligence() {
+  const avg = a => a.length ? a.reduce((s,v)=>s+v,0)/a.length : 0;
+  const _labEl = id => (window._laborContainer ? window._laborContainer.querySelector('#'+id) : null) || document.getElementById(id);
+  const noKitchenEl = _labEl('labor-no-kitchen');
+  const kitchenRows = KS.day === '__all__'
+    ? KS.allRows.filter(r => r.location===KS.loc && r._level===1 && r._secs>0)
+    : KS.allRows.filter(r => r.location===KS.loc && r.day===KS.day && r._level===1 && r._secs>0);
+  const tByH = {};
+  kitchenRows.forEach(r => { if(r._hour!=null){if(!tByH[r._hour])tByH[r._hour]=[];tByH[r._hour].push(r);} });
+
+  // Match payroll to selected location — try exact match first, then any available
+  const locPay = LP.payroll.filter(r => r.location === KS.loc)
+    .concat(LP.payroll.filter(r => r.location !== KS.loc && !LP.payroll.some(x => x.location === KS.loc)));
+  const uniqueLocPay = locPay.filter((r,i,a) => a.findIndex(x=>x.name===r.name&&x.location===r.location)===i);
+  const bohPay = uniqueLocPay.filter(r => r.isBOH);
+  const bohHourly = bohPay.length > 0 ? buildHourlyBOH(bohPay) : null;
+
+  if (!Object.keys(tByH).length) {
+    if (noKitchenEl) noKitchenEl.style.display = 'block';
+    _labEl('labor-kpis').innerHTML = '';
+    return;
+  }
+  if (noKitchenEl) noKitchenEl.style.display = 'none';
+
+  const hours = Object.keys(tByH).map(Number).sort((a,b)=>a-b);
+  const tCounts = hours.map(h => tByH[h].length);
+  const bohC = hours.map(h => bohHourly ? (bohHourly[h] || MIN_BOH) : null);
+  const iplhH = hours.map((h,i) => +((tByH[h].length / (bohC[i]||MIN_BOH)).toFixed(1)));
+  const idealBOH = hours.map(h => Math.max(MIN_BOH, Math.ceil(tByH[h].length/TARGET_IPLH)));
+  const hLabels = hours.map(h => (h%12||12)+(h>=12?'PM':'AM'));
+
+  const totalTickets = kitchenRows.length;
+  const avgIPLH = +(avg(iplhH)).toFixed(1);
+  const peakIPLH = Math.max(...iplhH);
+  const peakHour = hours[iplhH.indexOf(peakIPLH)];
+  const overHrs = hours.filter((h,i)=>iplhH[i]>TARGET_IPLH).length;
+  const underHrs = hours.filter((h,i)=>bohC[i]&&iplhH[i]<5&&tByH[h].length>3).length;
+
+  _labEl('labor-kpis').innerHTML = [
+    {icon:'⚡',label:'Avg IPLH',value:avgIPLH,sub:'target 8.0',ok:avgIPLH>=6&&avgIPLH<=10},
+    {icon:'🔴',label:'Peak IPLH',value:peakIPLH.toFixed(1),sub:(peakHour%12||12)+(peakHour>=12?'PM':'AM'),ok:peakIPLH<=10},
+    {icon:'🚨',label:'Over-Capacity',value:overHrs+' hrs',sub:'IPLH > 8.0',ok:overHrs<=2},
+    {icon:'⚪',label:'Overstaffed',value:underHrs+' hrs',sub:'IPLH < 5.0',ok:underHrs<=1},
+    {icon:'👨‍🍳',label:'BOH Staff',value:bohPay.length,sub:'on payroll',ok:true},
+  ].map(k=>`<div class="kpi" style="flex:1 1 140px"><div class="kpi-bar" style="background:${k.ok?'var(--green)':'var(--red)'}"></div><div class="kpi-label">${k.icon} ${k.label}</div><div class="kpi-value" style="color:${k.ok?'var(--green)':'var(--red)'}">${k.value}</div><div class="kpi-badges"><span class="kpi-badge" style="background:var(--surface-3);color:var(--text-muted)">${k.sub}</span></div></div>`).join('');
+
+  const CO = {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7B8094',font:{size:11}}},tooltip:{backgroundColor:'#1A1D27',borderColor:'#252839',borderWidth:1,titleColor:'#EFF1F5',bodyColor:'#B0B4C8',cornerRadius:10}},scales:{x:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}},y:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}}}};
+
+  _labEl('labor-chart-title').textContent = 'Ticket Volume vs BOH Headcount — '+KS.loc.charAt(0).toUpperCase()+KS.loc.slice(1)+' · '+KS.day;
+  if(S.charts['labor-overlay'])S.charts['labor-overlay'].destroy();
+  const ds = [{label:'Tickets Fired',data:tCounts,backgroundColor:'rgba(99,102,241,.5)',borderColor:'rgba(99,102,241,.8)',borderWidth:1,borderRadius:4,type:'bar',yAxisID:'y'},{label:'Ideal BOH',data:idealBOH,borderColor:'rgba(20,184,166,.9)',backgroundColor:'rgba(20,184,166,.1)',tension:.3,pointRadius:5,borderWidth:2.5,type:'line',yAxisID:'y1',borderDash:[5,3]}];
+  if(bohC[0]!==null)ds.push({label:'Est. BOH on Clock',data:bohC,borderColor:'rgba(249,168,38,.9)',backgroundColor:'rgba(249,168,38,.1)',tension:.3,pointRadius:5,borderWidth:2.5,type:'line',yAxisID:'y1'});
+  S.charts['labor-overlay']=new Chart(_labEl('ch-labor-overlay'),{type:'bar',data:{labels:hLabels,datasets:ds},options:{...CO,scales:{x:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}},y:{...CO.scales.y,position:'left',title:{display:true,text:'Tickets',color:'#6B7085',font:{size:10}}},y1:{position:'right',ticks:{color:'#6B7085',font:{size:10},callback:v=>v+' staff'},grid:{display:false},min:0,max:8,title:{display:true,text:'BOH Headcount',color:'#6B7085',font:{size:10}}}}}});
+
+  if(S.charts['labor-iplh'])S.charts['labor-iplh'].destroy();
+  S.charts['labor-iplh']=new Chart(_labEl('ch-labor-iplh'),{type:'bar',data:{labels:hLabels,datasets:[{label:'IPLH',data:iplhH,backgroundColor:iplhH.map(v=>v>12?'rgba(232,80,91,.8)':v>8?'rgba(249,168,38,.8)':v<4?'rgba(100,100,120,.5)':'rgba(20,184,166,.8)'),borderRadius:5},{label:'Target 8.0',data:hours.map(()=>8),type:'line',borderColor:'rgba(239,68,68,.6)',borderDash:[6,3],borderWidth:1.5,pointRadius:0,backgroundColor:'transparent'}]},options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,min:0}}}});
+
+  const recRows = hours.map((h,i)=>{
+    const tix=tByH[h].length,cur=bohC[i],ideal=idealBOH[i],iplh=iplhH[i];
+    const diff=cur!=null?ideal-cur:null;
+    const st=iplh>12?{label:'OVER CAPACITY',color:'var(--red)',bg:'rgba(232,80,91,.15)'}:iplh>TARGET_IPLH?{label:'STRETCHED',color:'var(--yellow)',bg:'rgba(249,168,38,.15)'}:cur!=null&&iplh<4&&tix>3?{label:'OVERSTAFFED',color:'var(--text-muted)',bg:'var(--surface-3)'}:{label:'OPTIMAL',color:'var(--green)',bg:'rgba(20,184,166,.15)'};
+    return {h,label:hLabels[i],tix,cur,ideal,iplh,diff,st};
+  });
+
+  _labEl('labor-rec-table').innerHTML='<thead><tr style="border-bottom:1px solid var(--border)">'+['Hour','Tickets','Est. BOH','Ideal BOH','Delta','IPLH','Status'].map(h=>`<th style="padding:8px 12px;font-size:10px;font-weight:700;color:var(--accent);text-align:left">${h}</th>`).join('')+'</tr></thead><tbody>'+recRows.map(r=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 12px;font-size:12px;font-weight:700">${r.label}</td><td style="padding:8px 12px;font-size:12px;color:var(--text-2)">${r.tix}</td><td style="padding:8px 12px;font-size:12px;color:var(--text-2)">${r.cur!=null?r.cur:'—'}</td><td style="padding:8px 12px;font-size:13px;font-weight:800;color:var(--green)">${r.ideal}</td><td style="padding:8px 12px;font-size:12px;font-weight:700;color:${r.diff==null?'var(--text-muted)':r.diff>0?'var(--red)':r.diff<0?'var(--yellow)':'var(--green)'}">${r.diff==null?'—':r.diff>0?'+'+r.diff:r.diff<0?r.diff:'✓'}</td><td style="padding:8px 12px;font-size:12px;font-weight:700;color:${r.iplh>10?'var(--red)':r.iplh>8?'var(--yellow)':'var(--green)'}">${r.iplh}</td><td style="padding:8px 12px"><span style="background:${r.st.bg};color:${r.st.color};padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700">${r.st.label}</span></td></tr>`).join('')+'</tbody>';
+
+  const avgRate = bohPay.filter(r=>!r.isSalaried&&r.rate>0).reduce((s,r)=>s+r.rate,0)/Math.max(1,bohPay.filter(r=>!r.isSalaried&&r.rate>0).length);
+  const peakGap = recRows.filter(r=>r.diff>0);
+  const extraCost = peakGap.length * avgRate;
+  const totalBOHPay = bohPay.filter(r=>!r.isSalaried).reduce((s,r)=>s+r.pay,0);
+
+  _labEl('labor-boh-roster').innerHTML = bohPay.length?`<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:1px solid var(--border)">${['Name','Role','Hrs','Rate'].map(h=>`<th style="padding:5px 8px;font-size:10px;color:var(--accent);text-align:left">${h}</th>`).join('')}</tr></thead><tbody>${bohPay.map(r=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:5px 8px;font-weight:600">${r.name.split(',')[0]}</td><td style="padding:5px 8px;color:var(--text-2);text-transform:capitalize">${r.role}</td><td style="padding:5px 8px;font-family:'JetBrains Mono',monospace">${r.hours.toFixed(1)}</td><td style="padding:5px 8px;color:var(--text-muted)">${r.isSalaried?'Salary':'$'+r.rate.toFixed(2)}</td></tr>`).join('')}</tbody></table>`:'<div style="color:var(--text-muted);font-size:13px">Upload payroll CSV to see roster.</div>';
+
+  _labEl('labor-cost-panel').innerHTML=`<div style="display:flex;flex-direction:column;gap:0">
+    ${[['BOH weekly labor (hourly only)','$'+totalBOHPay.toFixed(2),null],['Avg cook rate','$'+avgRate.toFixed(2)+'/hr',null],['Under-staffed peak hours',peakGap.length+' hrs',peakGap.length>2],['Cost to fix (1 extra cook)','$'+extraCost.toFixed(2)+'/shift',false]].map(([l,v,warn])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-2)">${l}</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${warn?'var(--red)':warn===false?'var(--accent)':'var(--text)'}">${v}</span></div>`).join('')}
+    <div style="margin-top:10px;padding:10px;background:rgba(20,184,166,.08);border-radius:8px;border:1px solid rgba(20,184,166,.2)"><div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">The math</div><div style="font-size:11px;color:var(--text-2);line-height:1.5">1 extra cook for ${peakGap.length} peak hours = <strong style="color:var(--text)">$${extraCost.toFixed(2)}/shift</strong>. Ticket avg at peak drops toward 12-min target — protecting ${tByH[peakHour]?.length||0} covers at your busiest hour.</div></div>
+  </div>`;
+
+  LP.analysis = {location:KS.loc,day:KS.day,totalTickets,bohCount:bohPay.length,avgIPLH,peakIPLH:peakIPLH.toFixed(1),peakHour:(peakHour%12||12)+(peakHour>=12?'PM':'AM'),overCapacityHours:peakGap.map(r=>r.label),avgCookRate:avgRate.toFixed(2),extraCostPerShift:extraCost.toFixed(2),recRows,bohRoster:bohPay.map(r=>({name:r.name.split(',')[0],role:r.role,hours:r.hours.toFixed(1),rate:r.isSalaried?'salaried':'$'+r.rate+'/hr'}))};
+}
+
+async function runLaborAI() {
+  if (!LP.analysis) return;
+  document.getElementById('labor-ai-loading').style.display='block';
+  document.getElementById('labor-ai-result').innerHTML='';
+  const a=LP.analysis;
+  const loc=a.location.charAt(0).toUpperCase()+a.location.slice(1);
+  const recSummary=a.recRows.map(r=>`${r.label}: ${r.tix} tickets, ${r.cur!=null?r.cur+' BOH':'unknown'}, ideal ${r.ideal}, IPLH ${r.iplh} [${r.st?.label||''}]`).join('\n');
+  const prompt=`You are a restaurant operations expert analyzing BOH staffing efficiency.\n\nLOCATION: ${loc} · ${a.day}\nTotal tickets: ${a.totalTickets} | BOH on payroll: ${a.bohCount}\nAvg IPLH: ${a.avgIPLH} (target 8.0) | Peak IPLH: ${a.peakIPLH} at ${a.peakHour}\nOver-capacity hours: ${a.overCapacityHours.join(', ')||'none'}\nAvg cook rate: $${a.avgCookRate}/hr | Cost to fix peak: $${a.extraCostPerShift}/shift\n\nBOH ROSTER:\n${a.bohRoster.map(r=>`- ${r.name} (${r.role}): ${r.hours}hrs @ ${r.rate}`).join('\n')}\n\nHOURLY:\n${recSummary}\n\n## Assessment\n2-3 sentences. What does this staffing pattern show?\n\n## Key Gap\nThe single biggest staffing problem. Quantify the ticket time impact.\n\n## 3 Schedule Changes\nExact changes: hour window, role, cost impact.\n\n## Coaching Note\n3 lines for the kitchen manager. Direct and specific.\n\n## 30-Day Outlook\nIf this pattern holds weekly, what is the cumulative impact? Dollar amounts.\n\nUnder 450 words. Real numbers only.`;
+  try {
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(SUPABASE_URL+'/functions/v1/ai-coaching',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||''),'apikey':SUPABASE_ANON},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
+    const json=await res.json();
+    const text=json.content?.map(b=>b.text||'').join('\n')||'No response';
+    document.getElementById('labor-ai-result').innerHTML=text.replace(/\n/g,'<br>').replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  } catch(err){document.getElementById('labor-ai-result').innerHTML='<div style="color:var(--red)">Error: '+err.message+'</div>';}
+  document.getElementById('labor-ai-loading').style.display='none';
+}
+
+
+// ── Contextual Upload Panel JS ─────────────────────────────────────────────
+
+function toggleKitchenUpload() {
+  const p = document.getElementById('kitchen-upload-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleLaborUpload() {
+  const p = document.getElementById('labor-upload-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleSalesUpload() {
+  const p = document.getElementById('sales-upload-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function _pickLoc(selector, btn, loc) {
+  document.querySelectorAll(selector).forEach(b => b.classList.remove('active-loc'));
+  btn.classList.add('active-loc');
+  return loc;
+}
+
+function kitchenPickLoc(btn, loc) {
+  document.getElementById('kitchen-upload-loc').value = _pickLoc('.kitchen-loc-pick', btn, loc);
+}
+
+function laborPickLoc(btn, loc) {
+  document.getElementById('labor-upload-loc').value = _pickLoc('.labor-loc-pick', btn, loc);
+}
+
+function salesPickLoc(btn, loc) {
+  document.getElementById('sales-upload-loc').value = _pickLoc('.sales-loc-pick', btn, loc);
+  document.getElementById('upload-location').value = loc; // sync with main upload loc selector
+}
+
+function _setUploadStatus(elId, msg, isOk) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.display = 'block';
+  el.className = isOk ? 'upload-status-ok' : (isOk === false ? 'upload-status-err' : '');
+  el.textContent = msg;
+}
+
+async function kitchenHandleUpload(files) {
+  if (!files || !files.length) return;
+  const loc = document.getElementById('kitchen-upload-loc').value;
+  _setUploadStatus('kitchen-upload-status', '⏳ Uploading...', null);
+  try {
+    // Override location selector for the session
+    const sel = document.getElementById('upload-location');
+    const prevLoc = sel.value;
+    if (loc) sel.value = loc;
+    await kitchenAddFiles(files);
+    sel.value = prevLoc;
+    const count = KS.allRows.filter(r => !loc || r.location === loc).length;
+    _setUploadStatus('kitchen-upload-status', `✅ Saved — ${count.toLocaleString()} total tickets${loc ? ' · ' + loc.charAt(0).toUpperCase() + loc.slice(1) : ''}`, true);
+    setTimeout(() => toggleKitchenUpload(), 1800);
+  } catch(e) {
+    _setUploadStatus('kitchen-upload-status', '❌ Error: ' + e.message, false);
+  }
+}
+
+async function laborHandleUpload(files) {
+  if (!files || !files.length) return;
+  const loc = document.getElementById('labor-upload-loc').value;
+  _setUploadStatus('labor-upload-status', '⏳ Uploading...', null);
+  try {
+    const sel = document.getElementById('upload-location');
+    const prevLoc = sel.value;
+    if (loc) sel.value = loc;
+    await handleFiles(files);
+    sel.value = prevLoc;
+    _setUploadStatus('labor-upload-status', `✅ Payroll saved${loc ? ' · ' + loc.charAt(0).toUpperCase() + loc.slice(1) : ''} → payroll_entries + weeks`, true);
+    setTimeout(() => toggleLaborUpload(), 1800);
+  } catch(e) {
+    _setUploadStatus('labor-upload-status', '❌ Error: ' + e.message, false);
+  }
+}
+
+async function salesHandleUpload(files) {
+  if (!files || !files.length) return;
+  const loc = document.getElementById('sales-upload-loc').value;
+  _setUploadStatus('sales-upload-status', '⏳ Uploading...', null);
+  try {
+    const sel = document.getElementById('upload-location');
+    const prevLoc = sel.value;
+    if (loc) sel.value = loc;
+    await handleFiles(files);
+    sel.value = prevLoc;
+    _setUploadStatus('sales-upload-status', `✅ Sales data saved${loc ? ' · ' + loc.charAt(0).toUpperCase() + loc.slice(1) : ''} → weeks`, true);
+    setTimeout(() => toggleSalesUpload(), 1800);
+  } catch(e) {
+    _setUploadStatus('sales-upload-status', '❌ Error: ' + e.message, false);
+  }
+}
+
+
+async function runKitchenAI() {
+  if (!KS.summary) return;
+  document.getElementById('kitchen-ai-loading').style.display='block';
+  document.getElementById('kitchen-ai-result').innerHTML='';
+  const s=KS.summary;
+  const loc=s.loc.charAt(0).toUpperCase()+s.loc.slice(1);
+  const ph=s.peakHour!=null?(s.peakHour%12||12)+(s.peakHour>=12?'PM':'AM'):'—';
+  const prompt=`You are a kitchen operations expert for a casual dining restaurant group.\n\nDATA — ${loc} · ${s.day}:\n- Avg ticket time (fire to expo): ${s.avgMin} min (target 12 min)\n- Total tickets: ${s.totalTickets}\n- Over 15 min: ${s.over15pct}%  Over 20 min: ${s.over20}\n- Peak hour: ${ph}\n- Dine-in avg: ${s.dineInAvg}m  Online avg: ${s.onlineAvg}m\n\nSERVER AVERAGES:\n${s.serverRankings.map(r=>'- '+r.name+': '+r.avg+'m ('+r.tickets+' tickets)').join('\n')}\n\nPEAK WINDOWS:\n${s.peakWindows.map(w=>'- '+w.time+': '+w.count+' tickets, '+w.avg+'m avg').join('\n')}\n\n## 🔍 What the Data Shows\n## 🚨 Primary Bottleneck\n## 👤 Server Insight\n## 🎯 3 Fixes for Next Service\n## 💬 Manager Slack Message\n\nUnder 400 words. Use real numbers.`;
+  try {
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(SUPABASE_URL+'/functions/v1/ai-coaching',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||''),'apikey':SUPABASE_ANON},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const json=await res.json();
+    const text=json.content?.map(b=>b.text||'').join('\n')||'No response';
+    document.getElementById('kitchen-ai-result').innerHTML=text.replace(/\n/g,'<br>').replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  } catch(err){document.getElementById('kitchen-ai-result').innerHTML='<div style="color:var(--red)">Error: '+err.message+'</div>';}
+  document.getElementById('kitchen-ai-loading').style.display='none';
+}
+
+</script></html>
+ + Math.round(sales / 1000).toFixed(1) + 'K' : '';
+    return `<div onclick="toggleDay('${date}')" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;background:${isSelected ? 'rgba(99,102,241,.15)' : 'transparent'};border:1px solid ${isSelected ? 'var(--accent)' : 'transparent'}" onmouseover="this.style.background='${isSelected ? 'rgba(99,102,241,.2)' : 'var(--surface-3)'}'" onmouseout="this.style.background='${isSelected ? 'rgba(99,102,241,.15)' : 'transparent'}'" >
+      <div style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${isSelected ? 'var(--accent)' : 'var(--border)'};background:${isSelected ? 'var(--accent)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${isSelected ? '<span style="color:#fff;font-size:9px;font-weight:800">✓</span>' : ''}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${label}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${locRows.length} location${locRows.length !== 1 ? 's' : ''}${salesLabel}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('day-filter-wrap');
+  const dd = document.getElementById('day-filter-dropdown');
+  if (wrap && dd && !wrap.contains(e.target)) dd.style.display = 'none';
+});
 
 // ══════════════════════════════════════════════
 // DATA COMPLETENESS TRACKER
