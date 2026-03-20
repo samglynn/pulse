@@ -4889,4 +4889,19 @@ async function runKitchenAI() {
   document.getElementById('kitchen-ai-loading').style.display='none';
 }
 
-</script></html>
+
+function toggleDay(date) {
+  if (!S.selectedDays) S.selectedDays = [];
+  const idx = S.selectedDays.indexOf(date);
+  if (idx >= 0) S.selectedDays.splice(idx, 1);
+  else S.selectedDays.push(date);
+  renderDashboard();
+}
+
+function selectAllDays() {
+  S.selectedDays = [];
+  renderDashboard();
+}
+</script>
+</body>
+</html>
