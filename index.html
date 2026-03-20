@@ -63,7 +63,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
   .top-bar{padding:8px 10px;gap:6px;display:flex}
   .top-bar-left{gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
   .top-bar-left .btn-sm{padding:4px 8px;font-size:10px;white-space:nowrap;flex-shrink:0}
-  .top-bar-left select{min-width:100px;font-size:10px;padding:4px 6px}
+  .top-bar-left select{min-width:100px;font-size:10px;padding:4px 6px;display:none!important}
   .top-bar-right{display:none}
 
   /* Page content */
@@ -2274,18 +2274,27 @@ function renderDashboard() {
     });
     const allWeeks = [...new Set(S.rows.map(r=>r.week_ending||r.date))].sort();
     fHtml += `<select class="btn btn-sm" onchange="S.weekFilter=this.value;renderDashboard()" style="flex-shrink:0;font-family:inherit;appearance:none;padding-right:16px">`;
-    fHtml += `<option value="latest" ${S.weekFilter==='latest'?'selected':''}>Latest Day</option>`;
-    fHtml += `<option value="all" ${S.weekFilter==='all'?'selected':''}>All Days</option>`;
-    allWeeks.forEach(w => { fHtml += `<option value="${w}" ${S.weekFilter===w?'selected':''}>${w.slice(5)}</option>`; });
-    fHtml += '</select>';
+    fHtml += '</select>'; // mobile select hidden — chips in top bar
     mf.innerHTML = fHtml;
   }
 }
 
-function applyWeekFilter() {
-  S.weekFilter = document.getElementById('week-filter').value;
-  renderDashboard();
-}
+function applyWeekFilter() { renderDashboard(); }
+
+function renderDayChips() {
+  const el = document.getElementById('day-chip-row');
+  if (!el) return;
+  const allDates = [...new Set(S.rows.map(r => r.week_ending || r.date))].filter(Boolean).sort().reverse();
+  const sel = S.selectedDays || [];
+  const allActive = sel.length === 0;
+  let chips = `<button onclick="S.selectedDays=[];renderDashboard()" style="flex-shrink:0;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${allActive?'var(--accent)':'var(--border)'};background:${allActive?'var(--accent)':'var(--surface-2)'};color:${allActive?'#fff':'var(--text-2)'};font-family:inherit;white-space:nowrap;min-height:32px;transition:all .15s">All</button>`;
+  chips += allDates.map(date => {
+    const d = new Date(date + 'T12:00:00');
+    const label = d.toLocaleDateString('en-US', { weekday:'short', month:'numeric', day:'numeric' });
+    const isActive = sel.includes(date);
+    const locRows = S.rows.filter(r => (r.week_ending||r.date) === date);
+    const sales = locRows.reduce((s,r) => s+(r.net_sales||0), 0);
+    const salesStr = sales > 0 ? ' 
 
 // ══════════════════════════════════════════════
 // DATA COMPLETENESS TRACKER
