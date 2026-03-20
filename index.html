@@ -2005,7 +2005,7 @@ function handleFile(f) { handleFiles([f]); }
 // ══════════════════════════════════════════════
 // AGGREGATION
 // ══════════════════════════════════════════════
-function getFiltered() { return S.locFilter==='all' ? S.rows : S.rows.filter(r=>r.location===S.locFilter); }
+function getFiltered() { return S.rows.filter(r => (S.locFilter === 'all' || r.location === S.locFilter) && (!S.selectedDays || !S.selectedDays.size || S.selectedDays.has(r.week_ending||r.date))); }
 
 function getWeeklyBlended(rows) {
   const map = {};
