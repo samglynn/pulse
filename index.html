@@ -2250,8 +2250,7 @@ function renderDashboard() {
   renderCharts(wb);
 
   // Health Scores
-  renderPulseScores(wb);
-
+if (wb) renderPulseScores(wb)
   // Data completeness
   renderDataGaps();
 
@@ -2541,6 +2540,7 @@ async function promptManualKPI(dbKey, label) {
   // Determine which weeks/locations to update
   const filtered = getFiltered();
   const wb = getWeeklyBlended(filtered);
+  if (!rows || !rows.length) return null;
   const weekFilter = S.weekFilter || 'latest';
   let targetWeek;
   if (weekFilter === 'latest' || !weekFilter) targetWeek = wb[wb.length-1]?.weekFull;
