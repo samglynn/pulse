@@ -1085,8 +1085,8 @@ const TARGET_META = {
   // ── Attach Rates ─────────────────────────────────────────────────────────
   starter_attach:   { label:'Starter Attach',   unit:'%',   desc:'Starter orders ÷ dine-in checks',            field:'target_starter_attach', group:'Attach' },
   dessert_attach:   { label:'Dessert Attach',   unit:'%',   desc:'Dessert orders ÷ dine-in checks',            field:'target_dessert_attach', group:'Attach' },
-  burger_attach:    { label:'Burger Attach',    unit:'%',   desc:'Burger orders ÷ dine-in checks',             field:'target_burger_attach',  group:'Attach' },
-  sandwich_attach:  { label:'Sandwich Attach',  unit:'%',   desc:'Sandwich orders ÷ dine-in checks',           field:'target_sandwich_attach',group:'Attach' },
+  burger_attach:    { label:'Burger Attach',    unit:'%',   desc:'Burger sales ÷ entrée sales',                field:'target_burger_attach',  group:'Attach' },
+  sandwich_attach:  { label:'Sandwich Attach',  unit:'%',   desc:'Sandwich sales ÷ entrée sales',              field:'target_sandwich_attach',group:'Attach' },
   drink_attach:     { label:'Drinks/Check',     unit:'',    desc:'Alcoholic drinks ÷ check count',             field:'target_drink_attach',   group:'Attach' },
   cocktail_attach:  { label:'Cocktail Attach',  unit:'%',   desc:'Cocktail orders ÷ total drinks ordered',     field:'target_cocktail_attach',group:'Attach' },
   beer_attach:      { label:'Beer Attach',      unit:'%',   desc:'Beer orders ÷ total drinks ordered',         field:'target_beer_attach',    group:'Attach' },
@@ -1358,15 +1358,9 @@ const { data: weeks, error } = await sb.from('weeks_full').select('*').order('da
       drink_mix: w.drink_mix || {},
       off_premise_pct: parseFloat(w.off_premise_pct)||0,
       rpg: parseFloat(w.rpg)||0,
-      gross_sales: parseFloat(w.gross_sales)||0,
       alcohol_sales: parseFloat(w.alcohol_sales)||0,
       alcohol_mix_pct: parseFloat(w.alcohol_mix_pct)||0,
       food_sales: parseFloat(w.food_sales)||0,
-      cocktail_attach: parseFloat(w.cocktail_attach)||0,
-      beer_attach: parseFloat(w.beer_attach)||0,
-      burger_attach: parseFloat(w.burger_attach)||0,
-      sandwich_attach: parseFloat(w.sandwich_attach)||0,
-      drinks_per_check: parseFloat(w.drinks_per_check)||0,
     }));
 
     // Auto-estimate FPLH for locations missing it but having labor_hrs
@@ -1439,15 +1433,9 @@ const { data: weeks } = await sb.from('weeks_full').select('*').order('date', { 
       drink_mix: w.drink_mix || {},
       off_premise_pct: parseFloat(w.off_premise_pct)||0,
       rpg: parseFloat(w.rpg)||0,
-      gross_sales: parseFloat(w.gross_sales)||0,
       alcohol_sales: parseFloat(w.alcohol_sales)||0,
       alcohol_mix_pct: parseFloat(w.alcohol_mix_pct)||0,
       food_sales: parseFloat(w.food_sales)||0,
-      cocktail_attach: parseFloat(w.cocktail_attach)||0,
-      beer_attach: parseFloat(w.beer_attach)||0,
-      burger_attach: parseFloat(w.burger_attach)||0,
-      sandwich_attach: parseFloat(w.sandwich_attach)||0,
-      drinks_per_check: parseFloat(w.drinks_per_check)||0,
     }));
     loadData(rows, 'Rai — Restaurant AI', true);
   } catch (e) { alert('Supabase error: ' + e.message); }
@@ -2041,11 +2029,6 @@ function getWeeklyBlended(rows) {
       off_premise_pct: Math.round(avg('off_premise_pct')*10)/10,
       alcohol_mix_pct: Math.round(avg('alcohol_mix_pct')*10)/10,
       rpg: Math.round(avg('rpg')*100)/100,
-      cocktail_attach: Math.round(avg('cocktail_attach')*10)/10,
-      beer_attach: Math.round(avg('beer_attach')*10)/10,
-      burger_attach: Math.round(avg('burger_attach')*10)/10,
-      sandwich_attach: Math.round(avg('sandwich_attach')*10)/10,
-      drinks_per_check: Math.round(avg('drinks_per_check')*100)/100,
       lunch_sales: sum('lunch_sales'),
       dinner_sales: sum('dinner_sales'),
       delivery_orders: sum('delivery_orders'),
@@ -2225,19 +2208,17 @@ function renderDashboard() {
     { label:'Guest Count', value:latest.guests||0, unit:'', desc:'Total guests', trend:wow(latest.guests,prev.guests) },
     { label:'PPA', value:latest.ppa||0, target:TARGETS.ppa.target, unit:'$', desc:TARGETS.ppa.desc, trend:wow(latest.ppa,prev.ppa), dbKey:'ppa' },
     { label:'Drinks/Check', value:latest.drink_attach||0, target:TARGETS.drink_attach.target, unit:'', desc:'Alcoholic Drinks ÷ Check Count', trend:wow(latest.drink_attach,prev.drink_attach), dbKey:'drink_attach' },
-    { label:'Alcohol Mix %', value:latest.alcohol_mix_pct||0, target:TARGETS.alcohol_mix_pct?.target, unit:'%', desc:'Alcohol Sales ÷ Net Sales', trend:wow(latest.alcohol_mix_pct,prev.alcohol_mix_pct), dbKey:'alcohol_mix_pct' },
-    { label:'Off-Premise %', value:latest.off_premise_pct||0, target:TARGETS.off_premise_pct?.target, unit:'%', desc:'All takeout (counter + delivery) ÷ Net Sales', invert:true, trend:wow(latest.off_premise_pct,prev.off_premise_pct), dbKey:'off_premise_pct' },
-    { label:'Rev/Guest', value:latest.rpg||0, unit:'
+    { label:'Alcohol Mix %', value:latest.alcohol_mix_pct||0, target:TARGETS.alcohol_mix_pct?.target, unit:'%', desc:'Alcohol Sales ÷ Net Sales · Higher = better margins', trend:wow(latest.alcohol_mix_pct,prev.alcohol_mix_pct), dbKey:'alcohol_mix_pct' },
+    { label:'Off-Premise %', value:latest.off_premise_pct||0, target:TARGETS.off_premise_pct?.target, unit:'%', desc:'(Delivery + Takeout) ÷ Net Sales', invert:true, trend:wow(latest.off_premise_pct,prev.off_premise_pct), dbKey:'off_premise_pct' },
+    { label:'Rev/Guest', value:latest.rpg||0, unit:'$', desc:'Gross revenue (incl tips & tax) ÷ Guests', trend:wow(latest.rpg,prev.rpg) },
   ];
 
   // Menu tab KPIs
   const kpiMenu = [
-    { label:'Starter Attach', value:latest.starter_attach||0, target:TARGETS.starter_attach.target, unit:'%', desc:'Starter orders ÷ dine-in checks', trend:wow(latest.starter_attach,prev.starter_attach), dbKey:'starter_attach' },
-    { label:'Cocktail Attach', value:latest.cocktail_attach||0, target:TARGETS.cocktail_attach.target, unit:'%', desc:'Cocktail orders ÷ dine-in checks', trend:wow(latest.cocktail_attach,prev.cocktail_attach), dbKey:'cocktail_attach' },
-    { label:'Beer Attach', value:latest.beer_attach||0, target:TARGETS.beer_attach.target, unit:'%', desc:'Beer orders ÷ dine-in checks', trend:wow(latest.beer_attach,prev.beer_attach), dbKey:'beer_attach' },
-    { label:'Burger Attach', value:latest.burger_attach||0, target:TARGETS.burger_attach.target, unit:'%', desc:'Burger orders ÷ dine-in checks', trend:wow(latest.burger_attach,prev.burger_attach), dbKey:'burger_attach' },
-    { label:'Sandwich Attach', value:latest.sandwich_attach||0, target:TARGETS.sandwich_attach?.target, unit:'%', desc:'Sandwich orders ÷ dine-in checks', trend:wow(latest.sandwich_attach,prev.sandwich_attach), dbKey:'sandwich_attach' },
-    { label:'Drinks/Check', value:latest.drinks_per_check||0, target:TARGETS.drink_attach?.target, unit:'', desc:'Alc drinks ÷ total checks', trend:wow(latest.drinks_per_check,prev.drinks_per_check) },
+    { label:'Starter Attach', value:latest.starter_attach||0, target:TARGETS.starter_attach.target, unit:'%', desc:TARGETS.starter_attach.desc, trend:wow(latest.starter_attach,prev.starter_attach), dbKey:'starter_attach' },
+    { label:'Cocktail Attach', value:latest.cocktail_attach||0, target:TARGETS.cocktail_attach.target, unit:'%', desc:'Cocktail Orders ÷ Total Drink Orders', trend:wow(latest.cocktail_attach,prev.cocktail_attach), dbKey:'cocktail_attach' },
+    { label:'Beer Attach', value:latest.beer_attach||0, target:TARGETS.beer_attach.target, unit:'%', desc:'Beer Orders ÷ Total Drink Orders', trend:wow(latest.beer_attach,prev.beer_attach), dbKey:'beer_attach' },
+    { label:'Burger Attach', value:latest.burger_attach||0, target:TARGETS.burger_attach.target, unit:'%', desc:'Burger Sales ÷ Entrée Sales', trend:wow(latest.burger_attach,prev.burger_attach), dbKey:'burger_attach' },
     { label:'Food Cost %', value:latest.food_cost||0, target:TARGETS.food_cost.target, unit:'%', desc:TARGETS.food_cost.desc, invert:true, trend:wow(latest.food_cost,prev.food_cost), dbKey:'food_cost' },
   ];
 
