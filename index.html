@@ -230,6 +230,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 .loc-table{width:100%;border-collapse:collapse;font-size:12px}
 .loc-table th{padding:8px 10px;text-align:left;font-weight:700;border-bottom:1px solid var(--border);color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
 .loc-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+#loc-toggles{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
 
 /* ── Sub-nav ── */
 .nav-group { margin-bottom: 2px; }
@@ -2195,7 +2196,8 @@ function renderDashboard() {
 
   // Location toggles
   let tHtml = `<button class="btn btn-sm ${S.locFilter==='all'?'btn-active':''}" onclick="setLoc('all')">All</button>`;
-  S.locations.forEach(l => { tHtml += `<button class="btn btn-sm ${S.locFilter===l?'btn-active':''}" onclick="setLoc('${l}')" style="text-transform:capitalize">${l}</button>`; });
+  const locsWithData = [...new Set(S.rows.map(r=>r.location).filter(Boolean))];
+  locsWithData.forEach(l => { tHtml += `<button class="btn btn-sm ${S.locFilter===l?'btn-active':''}" onclick="setLoc('${l}')" style="text-transform:capitalize;min-height:36px;padding:6px 14px">${l}</button>`; });
   document.getElementById('loc-toggles').innerHTML = tHtml;
 
   // KPI Row 1 — uses selected week
