@@ -369,6 +369,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
       <div class="top-bar">
         <div class="top-bar-left">
           <div id="loc-toggles" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none"></div>
+          <div id="date-range-bar" style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+            <button class="btn btn-sm" id="dr-today" onclick="setDateRange('today')" style="font-size:11px;padding:5px 10px;white-space:nowrap">Today</button>
+            <button class="btn btn-sm" id="dr-week" onclick="setDateRange('thisWeek')" style="font-size:11px;padding:5px 10px;white-space:nowrap">This Week</button>
+            <button class="btn btn-sm" id="dr-lastweek" onclick="setDateRange('lastWeek')" style="font-size:11px;padding:5px 10px;white-space:nowrap">Last Week</button>
+          </div>
           <div id="day-chip-row" style="display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;flex-shrink:1;max-width:100%;align-items:center"></div>
           <div id="week-range-label" style="font-size:11px;color:var(--text-2)"></div>
         </div>
@@ -1220,6 +1225,7 @@ let S = {
   charts: {},
   historicalRows: [],
   weekFilter: 'latest',
+  dateRange: null,
 };
 
 const COACHING_MODES = {
@@ -2309,6 +2315,7 @@ if (wb) renderPulseScores(wb)
       fHtml += `<button class="btn btn-sm ${S.locFilter===l?'btn-active':''}" onclick="setLoc('${l}')" style="flex-shrink:0;text-transform:capitalize">${l}</button>`;
     });
     const allWeeks = [...new Set(S.rows.map(r=>r.week_ending||r.date))].sort();
+        fHtml += '<div style="display:flex;gap:4px;flex-shrink:0"><button class="btn btn-sm" onclick="setDateRange(\'today\')" style="font-size:10px;padding:4px 8px;white-space:nowrap">Today</button><button class="btn btn-sm" onclick="setDateRange(\'thisWeek\')" style="font-size:10px;padding:4px 8px;white-space:nowrap">This Wk</button><button class="btn btn-sm" onclick="setDateRange(\'lastWeek\')" style="font-size:10px;padding:4px 8px;white-space:nowrap">Last Wk</button></div>';
     fHtml += `<select class="btn btn-sm" onchange="S.weekFilter=this.value;renderDashboard()" style="flex-shrink:0;font-family:inherit;appearance:none;padding-right:16px">`;
     fHtml += `<option value="latest" ${S.weekFilter==='latest'?'selected':''}>Latest Day</option>`;
     fHtml += `<option value="all" ${S.weekFilter==='all'?'selected':''}>All Days</option>`;
@@ -2327,7 +2334,73 @@ function toggleDay(date) {
   renderDashboard();
 }
 
-function selectAllDays() { S.selectedDays=[]; renderDashboard(); }
+function selectAllDays() { S.selectedDays=[]; S.dateRange=null; updateDateRangeUI(null); renderDashboard(); }
+
+
+function setDateRange(range) {
+  // Get all available dates from data
+  const allDates = [...new Set(S.rows.map(r => r.week_ending || r.date).filter(Boolean))].sort();
+  if (!allDates.length) return;
+  
+  const today = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
+  
+  let startDate, endDate;
+  if (range === 'today') {
+    startDate = endDate = fmt(today);
+  } else if (range === 'thisWeek') {
+    const day = today.getDay();
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    startDate = fmt(mon);
+    endDate = fmt(sun);
+  } else if (range === 'lastWeek') {
+    const day = today.getDay();
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - (day === 0 ? 6 : day - 1) - 7);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    startDate = fmt(mon);
+    endDate = fmt(sun);
+  } else {
+    S.dateRange = null;
+    S.selectedDays = [];
+    updateDateRangeUI(null);
+    renderDashboard();
+    return;
+  }
+  
+  // Filter to dates within range that exist in our data
+  const matches = allDates.filter(d => d >= startDate && d <= endDate);
+  
+  S.dateRange = range;
+  if (matches.length > 0) {
+    S.selectedDays = matches;
+  } else {
+    // No data for this range — find closest available date
+    const closest = allDates.reduce((best, d) => {
+      const diff = Math.abs(new Date(d) - today);
+      return diff < best.diff ? { date: d, diff } : best;
+    }, { date: allDates[allDates.length - 1], diff: Infinity });
+    S.selectedDays = [closest.date];
+  }
+  
+  updateDateRangeUI(range);
+  renderDashboard();
+}
+
+function updateDateRangeUI(active) {
+  ['dr-today','dr-week','dr-lastweek'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isActive = (active === 'today' && id === 'dr-today') || (active === 'thisWeek' && id === 'dr-week') || (active === 'lastWeek' && id === 'dr-lastweek');
+    el.style.background = isActive ? 'var(--accent)' : '';
+    el.style.color = isActive ? '#fff' : '';
+    el.style.borderColor = isActive ? 'var(--accent)' : '';
+  });
+}
 
 function renderDayChips() {
   var el = document.getElementById('day-chip-row');
@@ -2351,7 +2424,7 @@ function renderDayChips() {
   el.innerHTML = html;
   el.onclick = function(e){
     var b=e.target.closest('button'); if(!b) return;
-    if(b.dataset.ca){ selectAllDays(); } else if(b.dataset.cd){ toggleDay(b.dataset.cd); }
+    if(b.dataset.ca){ selectAllDays(); } else if(b.dataset.cd){ S.dateRange=null; updateDateRangeUI(null); toggleDay(b.dataset.cd); }
   };
 }
 
