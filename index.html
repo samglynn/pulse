@@ -2047,7 +2047,7 @@ function handleFile(f) { handleFiles([f]); }
 // ══════════════════════════════════════════════
 // AGGREGATION
 // ══════════════════════════════════════════════
-function getFiltered() { return S.rows.filter(r => (S.locFilter === 'all' || r.location === S.locFilter) && (!S.selectedDays || !S.selectedDays.size || S.selectedDays.has(r.week_ending||r.date))); }
+function getFiltered() { return S.rows.filter(r => (S.locFilter === 'all' || r.location === S.locFilter) && (!S.selectedDays || !S.selectedDays.length || S.selectedDays.indexOf(r.week_ending||r.date) >= 0)); }
 
 function getWeeklyBlended(rows) {
   const map = {};
@@ -2196,38 +2196,37 @@ function renderDashboard() {
   const wb = getWeeklyBlended(filtered);
 
   // Populate week filter dropdown
-  const weekSelect = document.getElementById('day-chip-row');
-  const currentWeekVal = S.weekFilter || 'latest';
-  let weekHtml = '<option value="all">All Days (Trend View)</option>';
-  weekHtml += '<option value="latest">Latest Day</option>';
-  // Add each day as an option (most recent first)
-  const weeksCopy = [...wb].reverse();
-  weeksCopy.forEach(w => {
-    const d = new Date(w.weekFull + 'T00:00:00');
-    const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-    weekHtml += `<option value="${w.weekFull}">${label}</option>`;
-  });
-  weekSelect.innerHTML = weekHtml;
-  weekSelect.value = currentWeekVal;
+  renderDayChips();
 
   // Determine which week to show in KPI cards
+  let currentWeekVal;
+  if (S.selectedDays && S.selectedDays.length > 0) {
+    currentWeekVal = S.selectedDays[S.selectedDays.length - 1];
+  } else {
+    currentWeekVal = S.weekFilter || 'latest';
+  }
   let displayWeek, prevWeek, weekRangeText;
-  if (currentWeekVal === 'all') {
+  if (S.selectedDays && S.selectedDays.length > 0) {
+    // Show aggregate of selected days
+    const selRows = wb.filter(w => S.selectedDays.indexOf(w.weekFull) >= 0);
+    displayWeek = selRows[selRows.length - 1] || wb[wb.length - 1] || {};
+    prevWeek = selRows.length > 1 ? selRows[selRows.length - 2] : {};
+    const rangeLabel = S.dateRange === 'today' ? 'Today' : S.dateRange === 'thisWeek' ? 'This Week' : S.dateRange === 'lastWeek' ? 'Last Week' : S.selectedDays.length + ' days selected';
+    weekRangeText = rangeLabel + ': ' + S.selectedDays.join(', ');
+  } else if (currentWeekVal === 'all') {
     displayWeek = wb[wb.length-1]||{};
     prevWeek = wb[wb.length-2]||{};
-    weekRangeText = wb.length > 0 ? `${wb[0].weekFull} → ${wb[wb.length-1].weekFull} (${wb.length} days)` : '';
+    weekRangeText = wb.length > 0 ? wb[0].weekFull + ' to ' + wb[wb.length-1].weekFull + ' (' + wb.length + ' days)' : '';
   } else if (currentWeekVal === 'latest' || !currentWeekVal) {
     displayWeek = wb[wb.length-1]||{};
     prevWeek = wb[wb.length-2]||{};
-    weekRangeText = displayWeek.weekFull ? `Showing latest day: ${displayWeek.weekFull}` : '';
+    weekRangeText = displayWeek.weekFull ? 'Showing latest day: ' + displayWeek.weekFull : '';
   } else {
     const idx = wb.findIndex(w => w.weekFull === currentWeekVal);
     displayWeek = idx >= 0 ? wb[idx] : wb[wb.length-1]||{};
     prevWeek = idx > 0 ? wb[idx-1] : {};
-    const d = new Date(currentWeekVal + 'T00:00:00');
-    weekRangeText = `Showing: ${d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`;
+    weekRangeText = 'Showing: ' + currentWeekVal;
   }
-
   document.getElementById('week-range-label').textContent = weekRangeText;
   document.getElementById('scorecard-label').textContent = `${S.fileName || 'Rai'} — ${displayWeek.weekFull||'—'} · ${filtered.length} days · ${S.locations.length} location`;
 
