@@ -51,33 +51,52 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 .hamburger{background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:45}
 
+/* ── Bottom Tab Bar (mobile) ── */
+.bottom-tabs{display:none;position:fixed;bottom:0;left:0;right:0;z-index:60;background:var(--surface);border-top:1px solid var(--border);padding:0 0 env(safe-area-inset-bottom,0)}
+.bottom-tabs-inner{display:flex;justify-content:space-around;align-items:stretch}
+.btab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 2px 6px;background:none;border:none;color:var(--text-muted);font-size:9px;font-weight:600;cursor:pointer;transition:color .15s;-webkit-tap-highlight-color:transparent;position:relative}
+.btab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btab.active{color:var(--accent)}
+.btab.active::after{content:'';position:absolute;top:0;left:25%;right:25%;height:2px;background:var(--accent);border-radius:0 0 2px 2px}
+.btab-more{position:relative}
+.btab-menu{display:none;position:absolute;bottom:calc(100% + 8px);right:0;min-width:160px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:0 -8px 32px rgba(0,0,0,.4);z-index:70}
+.btab-menu.open{display:block}
+.btab-menu-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer;white-space:nowrap}
+.btab-menu-item:active{background:var(--surface)}
+
 @media(max-width:768px){
-  /* Core layout */
-  .sidebar{transform:translateX(-100%);width:260px}
+  /* Bottom tab bar visible */
+  .bottom-tabs{display:block}
+
+  /* Core layout — no sidebar push */
+  .sidebar{transform:translateX(-100%);width:280px;max-width:80vw;border-radius:0 16px 16px 0;box-shadow:8px 0 40px rgba(0,0,0,.5)}
   .sidebar.open{transform:translateX(0)}
   .sidebar-overlay.open{display:block}
   .mobile-header{display:flex}
-  .main-content{margin-left:0}
+  .main-content{margin-left:0;padding-bottom:64px}
 
-  /* Top bar */
-  .top-bar{padding:8px 10px;gap:6px;display:flex;flex-wrap:wrap}
-  .top-bar-left{gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
-  .top-bar-left .btn-sm{padding:4px 8px;font-size:10px;white-space:nowrap;flex-shrink:0}
+  /* Slimmer mobile header */
+  .mobile-header{padding:8px 14px 6px;gap:0}
+
+  /* Top bar — compact filters */
+  .top-bar{padding:6px 10px;gap:4px;display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .top-bar-left{gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;flex:1}
+  .top-bar-left .btn-sm{padding:5px 10px;font-size:10px;white-space:nowrap;flex-shrink:0;border-radius:20px}
   .top-bar-left select{min-width:100px;font-size:10px;padding:4px 6px}
   .top-bar-right{display:none}
 
-  /* Page content */
-  .page-content{padding:10px}
+  /* Page content — room for bottom tabs */
+  .page-content{padding:12px 10px 20px}
 
-  /* KPI cards — 2 col grid */
-  .kpi-row{gap:6px;display:grid !important;grid-template-columns:1fr 1fr}
-  .kpi{min-width:0 !important;padding:10px 12px;flex:none !important}
-  .kpi-value{font-size:18px}
-  .kpi-label{font-size:8px;letter-spacing:.04em}
-  .kpi-desc{font-size:8px;margin-bottom:3px}
-  .kpi-badges{gap:3px;margin-top:3px;flex-wrap:wrap}
-  .kpi-badge{font-size:7px;padding:1px 4px}
-  .kpi-trend{font-size:7px}
+  /* KPI cards — 2 col, larger touch targets */
+  .kpi-row{gap:8px;display:grid !important;grid-template-columns:1fr 1fr}
+  .kpi{min-width:0 !important;padding:14px;flex:none !important;border-radius:12px}
+  .kpi-value{font-size:20px}
+  .kpi-label{font-size:9px;letter-spacing:.05em}
+  .kpi-desc{font-size:9px;margin-bottom:3px}
+  .kpi-badges{gap:3px;margin-top:4px;flex-wrap:wrap}
+  .kpi-badge{font-size:8px;padding:2px 6px}
+  .kpi-trend{font-size:8px}
 
   /* Health scores — 2x2 grid */
   .pulse-score-row{display:grid !important;grid-template-columns:1fr 1fr !important;gap:6px !important;flex-wrap:unset !important}
@@ -87,12 +106,20 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
   .pulse-score-row > div > div:last-child > div:first-child{font-size:26px !important}
   .pulse-score-row > div > div:last-child > div:nth-child(2){font-size:11px !important}
 
-  /* Charts */
-  .chart-grid{grid-template-columns:1fr !important;gap:8px}
-  .chart-card{padding:12px;min-height:200px}
+  /* Charts — full width, proper sizing */
+  .chart-grid{grid-template-columns:1fr !important;gap:10px}
+  .chart-card{padding:14px;min-height:200px;border-radius:12px}
   .chart-card.span-2{grid-column:span 1 !important}
-  .chart-wrap{height:180px}
-  .chart-title{font-size:11px;margin-bottom:8px}
+  .chart-wrap{height:200px}
+  .chart-title{font-size:12px;margin-bottom:8px}
+
+  /* Sub-tab buttons — pill style */
+  .hub-tabs,.perf-tabs,.ai-tabs,.labor-tabs,.kitchen-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap !important;gap:4px !important;padding-bottom:2px}
+  .hub-tabs .btn,.perf-tabs .btn,.ai-tabs .btn,.labor-tabs .btn,.kitchen-tabs .btn{white-space:nowrap;flex-shrink:0;border-radius:20px;padding:6px 14px;font-size:11px}
+
+  /* Date range bar pills */
+  #date-range-bar .btn-sm{border-radius:20px}
+  #day-chip-row .btn-sm{border-radius:16px}
 
   /* Coaching panel */
   .coaching-header{padding:12px 14px 10px}
@@ -103,8 +130,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
   .coaching-content h3{font-size:13px;margin:16px 0 6px}
   .coaching-content p,.coaching-content li{font-size:12px}
 
-  /* Chat */
-  #tab-chat > div{height:calc(100vh - 60px) !important;min-height:300px !important}
+  /* Chat — full height minus header and bottom tabs */
+  #tab-chat > div{height:calc(100vh - 130px) !important;min-height:300px !important}
 
   /* Notification dropdown */
   #notif-dropdown{width:calc(100vw - 20px) !important;right:-40px !important;max-height:60vh !important;overflow-y:auto !important}
@@ -149,14 +176,16 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
   table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
 }
 
-/* Extra small phones (iPhone SE) */
+/* Extra small phones (iPhone SE / 375px) */
 @media(max-width:380px){
   .kpi-row{grid-template-columns:1fr !important}
-  .kpi-value{font-size:20px}
-  .page-content{padding:8px}
+  .kpi-value{font-size:22px}
+  .page-content{padding:10px 8px}
   .pulse-score-row{grid-template-columns:1fr !important}
   .pulse-score-row > div > div:last-child > div:first-child{font-size:22px !important}
-  .coaching-modes .btn{font-size:8px;padding:3px 6px}
+  .coaching-modes .btn{font-size:9px;padding:4px 8px}
+  .btab{font-size:8px;padding:6px 2px 5px}
+  .btab svg{width:18px;height:18px}
 }
 
 /* ── Buttons & Toggles ── */
@@ -320,12 +349,16 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 
     <!-- Mobile Header -->
     <div class="mobile-header">
-      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:6px">
-        <button class="hamburger" onclick="toggleSidebar()">☰</button>
-        <div style="font-size:14px;font-weight:800" id="mobile-page-title">Rai</div>
-        <button class="btn btn-sm" onclick="toggleNotifications()" id="notif-bell-mobile" style="position:relative;padding:4px 8px">🔔
-          <span id="notif-badge-mobile" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:10px"></span>
-        </button>
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:15px;font-weight:800;letter-spacing:-.02em" id="mobile-page-title">Overview</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn btn-sm" onclick="toggleNotifications()" id="notif-bell-mobile" style="position:relative;padding:5px 8px;border-radius:20px">🔔
+            <span id="notif-badge-mobile" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:10px"></span>
+          </button>
+          <button class="hamburger" onclick="toggleSidebar()" style="font-size:18px;padding:5px">☰</button>
+        </div>
       </div>
       <div id="mobile-filters" style="display:flex;gap:4px;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px"></div>
     </div>
@@ -963,6 +996,39 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 
       </div><!-- /page-content -->
     </div><!-- /main-content -->
+
+    <!-- Bottom Tab Bar (mobile) -->
+    <div class="bottom-tabs" id="bottom-tabs">
+      <div class="bottom-tabs-inner">
+        <button class="btab active" data-page="dashboard" onclick="mobileNav('dashboard')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+          <span>Overview</span>
+        </button>
+        <button class="btab" data-page="performance" onclick="mobileNav('performance')">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>Sales</span>
+        </button>
+        <button class="btab" data-page="laborhub" onclick="mobileNav('laborhub')">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Labor</span>
+        </button>
+        <button class="btab" data-page="kitchen" onclick="mobileNav('kitchen')">
+          <svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+          <span>Kitchen</span>
+        </button>
+        <button class="btab btab-more" onclick="toggleMoreMenu(event)">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          <span>More</span>
+          <div class="btab-menu" id="btab-more-menu">
+            <div class="btab-menu-item" onclick="mobileNav('scoreboard')">Scoreboard</div>
+            <div class="btab-menu-item" onclick="mobileNav('ai')">Rai AI</div>
+            <div class="btab-menu-item" onclick="mobileNav('settings')">Targets</div>
+            <div class="btab-menu-item" onclick="mobileNav('knowledge')">Knowledge</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
   </div><!-- /app-shell -->
 </div><!-- /screen-dashboard -->
 
@@ -1403,6 +1469,13 @@ const { data: weeks, error } = await sb.from('weeks_full').select('*').order('da
       alcohol_sales: parseFloat(w.alcohol_sales)||0,
       alcohol_mix_pct: parseFloat(w.alcohol_mix_pct)||0,
       food_sales: parseFloat(w.food_sales)||0,
+      foh_labor_hrs: parseFloat(w.foh_labor_hrs)||0,
+      boh_labor_hrs: parseFloat(w.boh_labor_hrs)||0,
+      labor_cost_dollars: parseFloat(w.labor_cost_dollars)||0,
+      total_checks: parseInt(w.total_checks)||0,
+      total_food_items: parseInt(w.total_food_items)||0,
+      dine_in_checks: parseInt(w.dine_in_checks)||0,
+      dine_in_sales: parseFloat(w.dine_in_sales)||0,
     }));
 
     // Auto-estimate FPLH for locations missing it but having labor_hrs
@@ -2056,13 +2129,15 @@ function getWeeklyBlended(rows) {
     const sum=k=>rs.reduce((s,r)=>s+(typeof r[k]==='number'?r[k]:0),0);
     const avg=k=>{const v=rs.filter(r=>typeof r[k]==='number'&&r[k]>0);return v.length?v.reduce((s,r)=>s+r[k],0)/v.length:0;};
     const totalSales=sum('net_sales'), totalGuests=sum('guests'), totalHrs=sum('labor_hrs');
+    const fohHrs=sum('foh_labor_hrs'), laborCost=sum('labor_cost_dollars');
     return{
       week:week.slice(5), weekFull:week, locCount:rs.length,
       net_sales:totalSales, guests:totalGuests, labor_hrs:totalHrs,
+      foh_labor_hrs:fohHrs, boh_labor_hrs:sum('boh_labor_hrs'), labor_cost_dollars:laborCost,
       ppa: totalGuests>0 ? Math.round(totalSales/totalGuests*100)/100 : 0,
-      splh: totalHrs>0 ? Math.round(totalSales/totalHrs*100)/100 : 0,
+      splh: fohHrs>0 ? Math.round(totalSales/fohHrs*100)/100 : (totalHrs>0 ? Math.round(totalSales/totalHrs*100)/100 : 0),
       gplh: totalHrs>0 ? Math.round(totalGuests/totalHrs*100)/100 : 0,
-      labor_pct: Math.round(avg('labor_pct')*10)/10,
+      labor_pct: laborCost>0&&totalSales>0 ? Math.round((laborCost/totalSales)*1000)/10 : Math.round(avg('labor_pct')*10)/10,
       fplh: Math.round(avg('fplh')*10)/10,
       starter_attach: Math.round(avg('starter_attach')*10)/10,
       drink_attach: Math.round(avg('drink_attach')*100)/100,
@@ -3280,8 +3355,37 @@ function navTo(page) {
 
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+  updateBottomTabs(activePage);
   window.scrollTo(0,0);
 }
+
+function mobileNav(page) {
+  var menu = document.getElementById('btab-more-menu');
+  if (menu) menu.classList.remove('open');
+  navTo(page);
+}
+
+function toggleMoreMenu(e) {
+  e.stopPropagation();
+  var menu = document.getElementById('btab-more-menu');
+  if (menu) menu.classList.toggle('open');
+}
+
+function updateBottomTabs(activePage) {
+  var tabs = document.querySelectorAll('.btab[data-page]');
+  var mainPages = ['dashboard','performance','laborhub','kitchen'];
+  var isMainPage = mainPages.indexOf(activePage) >= 0;
+  tabs.forEach(function(t) { t.classList.toggle('active', t.dataset.page === activePage); });
+  var moreBtn = document.querySelector('.btab-more');
+  if (moreBtn) moreBtn.classList.toggle('active', !isMainPage);
+}
+
+document.addEventListener('click', function(e) {
+  var menu = document.getElementById('btab-more-menu');
+  if (menu && menu.classList.contains('open') && !e.target.closest('.btab-more')) {
+    menu.classList.remove('open');
+  }
+});
 
 // ── Sub-tab switchers ──────────────────────────────────────────────────────────
 function perfTab(t) {
