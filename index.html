@@ -503,7 +503,40 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
           <div id="lab-kpi">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
               <div style="font-size:10px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase">⚙️ LABOR &amp; EFFICIENCY</div>
-              <button class="btn btn-sm" onclick="toggleLaborUpload()" style="border-color:var(--accent);color:var(--accent)">⬆ Upload Payroll</button>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-sm" onclick="toggleToastSync()" style="border-color:var(--green);color:var(--green)">🔄 Sync from Toast</button>
+                <button class="btn btn-sm" onclick="toggleLaborUpload()" style="border-color:var(--accent);color:var(--accent)">⬆ Upload Payroll</button>
+              </div>
+            </div>
+
+            <!-- Toast Sync Panel -->
+            <div id="toast-sync-panel" style="display:none;background:var(--surface);border:1px solid var(--green);border-radius:14px;padding:20px;margin-bottom:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <div>
+                  <div style="font-size:13px;font-weight:800;color:var(--text)">🔄 Sync from Toast API</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Pull time entries, orders &amp; labor data directly — no CSV export needed</div>
+                </div>
+                <button onclick="toggleToastSync()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:4px">✕</button>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+                <div>
+                  <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">Start Date</div>
+                  <input type="date" id="toast-sync-start" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12px;font-family:inherit">
+                </div>
+                <div>
+                  <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">End Date</div>
+                  <input type="date" id="toast-sync-end" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12px;font-family:inherit">
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn btn-sm" onclick="toastSetToday()" style="border-color:var(--border);color:var(--text-muted);font-size:11px">Today</button>
+                  <button class="btn btn-sm" onclick="toastSetThisWeek()" style="border-color:var(--border);color:var(--text-muted);font-size:11px">This Week</button>
+                  <button class="btn btn-sm" onclick="toastSetLastWeek()" style="border-color:var(--border);color:var(--text-muted);font-size:11px">Last Week</button>
+                </div>
+                <button id="toast-sync-btn" onclick="toastSyncAll()" class="btn btn-sm" style="background:var(--green);color:#fff;border-color:var(--green);padding:8px 18px;font-size:13px;font-weight:700">
+                  🔄 Sync
+                </button>
+              </div>
+              <div id="toast-sync-status" style="margin-top:12px;font-size:12px;display:none"></div>
             </div>
 
             <!-- Labor Upload Panel -->
@@ -4911,6 +4944,115 @@ async function runKitchenAI() {
     document.getElementById('kitchen-ai-result').innerHTML=text.replace(/\n/g,'<br>').replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
   } catch(err){document.getElementById('kitchen-ai-result').innerHTML='<div style="color:var(--red)">Error: '+err.message+'</div>';}
   document.getElementById('kitchen-ai-loading').style.display='none';
+}
+
+// ── Toast API Sync ──────────────────────────────────────────────────────────
+
+function toggleToastSync() {
+  const p = document.getElementById('toast-sync-panel');
+  if (!p) return;
+  const show = p.style.display === 'none';
+  p.style.display = show ? 'block' : 'none';
+  // Close the upload panel when opening sync
+  if (show) {
+    const up = document.getElementById('labor-upload-panel');
+    if (up) up.style.display = 'none';
+  }
+  // Set default dates if empty
+  if (show) {
+    const s = document.getElementById('toast-sync-start');
+    const e = document.getElementById('toast-sync-end');
+    if (!s.value || !e.value) toastSetThisWeek();
+  }
+}
+
+function _toastFmt(d) { return d.toISOString().split('T')[0]; }
+
+function toastSetToday() {
+  const today = _toastFmt(new Date());
+  document.getElementById('toast-sync-start').value = today;
+  document.getElementById('toast-sync-end').value = today;
+}
+
+function toastSetThisWeek() {
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  document.getElementById('toast-sync-start').value = _toastFmt(mon);
+  document.getElementById('toast-sync-end').value = _toastFmt(sun);
+}
+
+function toastSetLastWeek() {
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1) - 7);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  document.getElementById('toast-sync-start').value = _toastFmt(mon);
+  document.getElementById('toast-sync-end').value = _toastFmt(sun);
+}
+
+let _toastSyncing = false;
+async function toastSyncAll() {
+  if (_toastSyncing) return;
+  _toastSyncing = true;
+
+  const btn = document.getElementById('toast-sync-btn');
+  const statusEl = document.getElementById('toast-sync-status');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
+
+  const startDate = document.getElementById('toast-sync-start').value;
+  const endDate = document.getElementById('toast-sync-end').value;
+
+  if (!startDate || !endDate) {
+    if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = 'var(--red)'; statusEl.textContent = '❌ Please select start and end dates.'; }
+    _toastSyncing = false;
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync'; }
+    return;
+  }
+
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = 'var(--text-muted)'; statusEl.textContent = '⏳ Syncing from Toast API... this may take 30-60 seconds for multi-day ranges.'; }
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const token = session?.access_token || '';
+
+    const res = await fetch(SUPABASE_URL + '/functions/v1/toast-sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'apikey': SUPABASE_ANON,
+      },
+      body: JSON.stringify({ startDate, endDate }),
+    });
+
+    const json = await res.json();
+    if (!res.ok || json.error) throw new Error(json.error || 'Sync failed (' + res.status + ')');
+
+    // Build summary
+    const days = json.days || 0;
+    const daily = json.daily || [];
+    let totalOrders = 0, totalEntries = 0;
+    for (const d of daily) { totalOrders += d.orders || 0; totalEntries += d.time_entries || 0; }
+
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = '✅ Synced ' + days + ' day' + (days !== 1 ? 's' : '') + ' · ' + totalOrders + ' orders · ' + totalEntries + ' time entries · ' + startDate + ' → ' + endDate;
+    }
+
+    // Reload data and re-render
+    LP.payroll = await loadPayrollFromSupabase();
+    if (typeof renderLaborIntelligence === 'function') renderLaborIntelligence();
+    if (typeof initLaborPage === 'function') initLaborPage();
+
+  } catch (err) {
+    if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = 'var(--red)'; statusEl.textContent = '❌ ' + err.message; }
+  }
+
+  _toastSyncing = false;
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync'; }
 }
 
 </script></body>
