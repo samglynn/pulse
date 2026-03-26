@@ -807,7 +807,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
             </div>
             <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <div class="chart-title" style="margin-bottom:0">🧠 HeyRai Kitchen Diagnosis</div>
+                <div class="chart-title" style="margin-bottom:0">🧠 HeyHeyRai Kitchen Diagnosis</div>
                 <button class="btn btn-primary btn-sm" onclick="runKitchenAI()">Generate Analysis</button>
               </div>
               <div id="kitchen-ai-loading" style="display:none;padding:20px;text-align:center;color:var(--text-muted);font-size:13px">Analyzing...</div>
@@ -2207,10 +2207,68 @@ function renderDashboard() {
   }
   let displayWeek, prevWeek, weekRangeText;
   if (S.selectedDays && S.selectedDays.length > 0) {
-    // Show aggregate of selected days
+    // Show aggregate of selected days — sum all selected into one combined row
     const selRows = wb.filter(w => S.selectedDays.indexOf(w.weekFull) >= 0);
-    displayWeek = selRows[selRows.length - 1] || wb[wb.length - 1] || {};
-    prevWeek = selRows.length > 1 ? selRows[selRows.length - 2] : {};
+    if (selRows.length > 1) {
+      const sumK = k => selRows.reduce((s,r) => s + (typeof r[k]==='number' ? r[k] : 0), 0);
+      const avgK = k => { const v=selRows.filter(r=>typeof r[k]==='number'&&r[k]>0); return v.length?v.reduce((s,r)=>s+r[k],0)/v.length:0; };
+      const totalSales = sumK('net_sales'), totalGuests = sumK('guests'), totalHrs = sumK('labor_hrs');
+      displayWeek = {
+        weekFull: selRows[0].weekFull + ' \u2013 ' + selRows[selRows.length-1].weekFull,
+        week: selRows[0].week + '\u2013' + selRows[selRows.length-1].week,
+        locCount: selRows.reduce((s,r)=>s+(r.locCount||0),0),
+        net_sales: totalSales, guests: totalGuests, labor_hrs: totalHrs,
+        ppa: totalGuests>0 ? Math.round(totalSales/totalGuests*100)/100 : 0,
+        splh: totalHrs>0 ? Math.round(totalSales/totalHrs*100)/100 : 0,
+        gplh: totalHrs>0 ? Math.round(totalGuests/totalHrs*100)/100 : 0,
+        labor_pct: Math.round(avgK('labor_pct')*10)/10,
+        fplh: Math.round(avgK('fplh')*10)/10,
+        starter_attach: Math.round(avgK('starter_attach')*10)/10,
+        drink_attach: Math.round(avgK('drink_attach')*100)/100,
+        food_cost: Math.round(avgK('food_cost')*10)/10,
+        cocktail_attach: Math.round(avgK('cocktail_attach')*10)/10,
+        beer_attach: Math.round(avgK('beer_attach')*10)/10,
+        burger_attach: Math.round(avgK('burger_attach')*10)/10,
+        sandwich_attach: Math.round(avgK('sandwich_attach')*10)/10,
+        drinks_per_check: Math.round(avgK('drinks_per_check')*100)/100,
+        off_premise_pct: Math.round(avgK('off_premise_pct')*10)/10,
+        alcohol_mix_pct: Math.round(avgK('alcohol_mix_pct')*10)/10,
+        rpg: Math.round(avgK('rpg')*100)/100,
+        lunch_sales: sumK('lunch_sales'), dinner_sales: sumK('dinner_sales'),
+        delivery_orders: sumK('delivery_orders'), delivery_sales: sumK('delivery_sales'),
+        takeout_orders: sumK('takeout_orders'), takeout_sales: sumK('takeout_sales'),
+        tips: sumK('tips'), gross_sales: sumK('gross_sales'),
+        void_pct: Math.round(avgK('void_pct')*10)/10,
+        top_items: selRows.flatMap(r=>r.top_items||[]),
+      };
+    } else {
+      displayWeek = selRows[0] || wb[wb.length - 1] || {};
+    }
+    // For WoW comparison, get the equivalent prior period
+    const priorEnd = new Date(S.selectedDays[0]);
+    priorEnd.setDate(priorEnd.getDate() - 1);
+    const priorStart = new Date(priorEnd);
+    priorStart.setDate(priorEnd.getDate() - (S.selectedDays.length - 1));
+    const fmtD = d => d.toISOString().split('T')[0];
+    const priorRows = wb.filter(w => w.weekFull >= fmtD(priorStart) && w.weekFull <= fmtD(priorEnd));
+    if (priorRows.length > 0) {
+      const sumP = k => priorRows.reduce((s,r) => s + (typeof r[k]==='number' ? r[k] : 0), 0);
+      const avgP = k => { const v=priorRows.filter(r=>typeof r[k]==='number'&&r[k]>0); return v.length?v.reduce((s,r)=>s+r[k],0)/v.length:0; };
+      const pSales = sumP('net_sales'), pGuests = sumP('guests'), pHrs = sumP('labor_hrs');
+      prevWeek = {
+        net_sales: pSales, guests: pGuests, labor_hrs: pHrs,
+        ppa: pGuests>0 ? Math.round(pSales/pGuests*100)/100 : 0,
+        splh: pHrs>0 ? Math.round(pSales/pHrs*100)/100 : 0,
+        gplh: pHrs>0 ? Math.round(pGuests/pHrs*100)/100 : 0,
+        labor_pct: Math.round(avgP('labor_pct')*10)/10,
+        starter_attach: Math.round(avgP('starter_attach')*10)/10,
+        drink_attach: Math.round(avgP('drink_attach')*100)/100,
+        food_cost: Math.round(avgP('food_cost')*10)/10,
+        drinks_per_check: Math.round(avgP('drinks_per_check')*100)/100,
+      };
+    } else {
+      prevWeek = {};
+    }
     const rangeLabel = S.dateRange === 'today' ? 'Today' : S.dateRange === 'thisWeek' ? 'This Week' : S.dateRange === 'lastWeek' ? 'Last Week' : S.selectedDays.length + ' days selected';
     weekRangeText = rangeLabel + ': ' + S.selectedDays.join(', ');
   } else if (currentWeekVal === 'all') {
