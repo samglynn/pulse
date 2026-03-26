@@ -2654,7 +2654,7 @@ function renderDpCalendar() {
     if (inRange) cls += ' in-range';
     if (isStart) cls += ' range-start';
     if (isEnd) cls += ' range-end';
-    html += '<div class="'+cls+'" onclick="dpClickDay(\x27'+dateStr+'\x27')">'+d+'</div>';
+    html += '<div class="'+cls+'" onclick="dpClickDay(\x27'+dateStr+'\x27)">'+d+'</div>';
   }
   const totalCells = startPad + daysInMonth;
   const remainder = totalCells % 7;
