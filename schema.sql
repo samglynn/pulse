@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════
--- PULSE — Supabase Schema
+-- HEYRAI — Supabase Schema
 -- Run this once in your Supabase SQL Editor
 -- supabase.com → your project → SQL Editor → New Query
 -- ═══════════════════════════════════════════════════════════
