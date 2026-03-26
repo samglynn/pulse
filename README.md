@@ -1,4 +1,4 @@
-# Pulse — Restaurant Intelligence Platform
+# HeyRai — Restaurant Intelligence Platform
 ### by Water Street Advisors
 
 A lightweight, single-file restaurant operations intelligence platform. Tracks health scores, coaching metrics, staffing, and weekly trends across multiple locations — powered by Supabase for persistent, multi-device data storage.
@@ -9,8 +9,8 @@ A lightweight, single-file restaurant operations intelligence platform. Tracks h
 
 ### 1. Fork or clone this repo
 ```bash
-git clone https://github.com/YOUR_USERNAME/pulse.git
-cd pulse
+git clone https://github.com/YOUR_USERNAME/heyrai.git
+cd heyrai
 ```
 
 ### 2. Connect your Supabase project
@@ -31,14 +31,14 @@ In your Supabase dashboard, go to **SQL Editor** and run the contents of `schema
 
 Go to your repo → **Settings → Pages → Source: main branch / root folder**
 
-Your app will be live at: `https://YOUR_USERNAME.github.io/pulse`
+Your app will be live at: `https://YOUR_USERNAME.github.io/heyrai`
 
 ---
 
 ## File Structure
 
 ```
-pulse/
+heyrai/
 ├── index.html        ← The entire app (open this in a browser)
 ├── config.js         ← Your Supabase credentials (edit this)
 ├── schema.sql        ← Run once in Supabase SQL Editor
