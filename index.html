@@ -2384,6 +2384,10 @@ function renderDashboard() {
         takeout_orders: sumK('takeout_orders'), takeout_sales: sumK('takeout_sales'),
         tips: sumK('tips'), gross_sales: sumK('gross_sales'),
         void_pct: Math.round(avgK('void_pct')*10)/10,
+        food_items_sold: sumK('food_items_sold'),
+        total_items_sold: sumK('total_items_sold'),
+        total_orders: sumK('total_orders'),
+        ipc: sumK('dine_in_orders') > 0 ? Math.round((sumK('total_items_sold') || sumK('food_items_sold')) / sumK('dine_in_orders') * 100) / 100 : 0,
         top_items: selRows.flatMap(r=>r.top_items||[]),
       };
     } else {
