@@ -1372,11 +1372,24 @@ async function saveRowsToSupabase(rows) {
         beer_attach: r.beer_attach || 0,
         burger_attach: r.burger_attach || 0,
         sandwich_attach: r.sandwich_attach || 0,
+        drinks_per_check: r.drinks_per_check || 0,
         kitchen_labor_hrs: r.kitchen_labor_hrs || 0,
         food_items_sold: Math.round(r.food_items || r.food_items_sold || 0),
         total_orders: Math.round(r.total_orders || 0),
         dine_in_orders: Math.round(r.dine_in_orders || 0),
         alcohol_items: Math.round(r.alcohol_items || 0),
+        alcohol_sales: r.alcohol_sales || 0,
+        alcohol_mix_pct: r.alcohol_mix_pct || 0,
+        delivery_sales: r.delivery_sales || 0,
+        delivery_orders: Math.round(r.delivery_orders || 0),
+        takeout_sales: r.takeout_sales || 0,
+        takeout_orders: Math.round(r.takeout_orders || 0),
+        off_premise_pct: r.off_premise_pct || 0,
+        lunch_sales: r.lunch_sales || 0,
+        dinner_sales: r.dinner_sales || 0,
+        tips: r.tips || 0,
+        gross_sales: r.gross_sales || 0,
+        rpg: r.rpg || 0,
       };
 
       if (user) allFields.user_id = user.id;
@@ -1493,6 +1506,24 @@ const { data: weeks, error } = await sb.from('weeks_full').select('*').order('da
         }
       });
     }
+
+    // Auto-compute derived KPIs when raw data exists but computed fields are missing
+    rows.forEach(r => {
+      const ns = r.net_sales || 0;
+      if (r.alcohol_mix_pct === 0 && r.alcohol_sales > 0 && ns > 0) {
+        r.alcohol_mix_pct = Math.round(r.alcohol_sales / ns * 1000) / 10;
+      }
+      if (r.off_premise_pct === 0 && ns > 0 && (r.delivery_sales > 0 || r.takeout_sales > 0)) {
+        r.off_premise_pct = Math.round(((r.delivery_sales||0) + (r.takeout_sales||0)) / ns * 1000) / 10;
+      }
+      if (r.rpg === 0 && r.guests > 0 && ns > 0) {
+        const rev = (r.gross_sales > 0 ? r.gross_sales : ns) + (r.tips || 0);
+        r.rpg = Math.round(rev / r.guests * 100) / 100;
+      }
+      if (r.drinks_per_check === 0 && r.drink_attach > 0) {
+        r.drinks_per_check = r.drink_attach;
+      }
+    });
 
     // Store for merging with uploaded data
     S.historicalRows = rows;
@@ -2123,7 +2154,7 @@ function getWeeklyBlended(rows) {
     const sum=k=>rs.reduce((s,r)=>s+(typeof r[k]==='number'?r[k]:0),0);
     const avg=k=>{const v=rs.filter(r=>typeof r[k]==='number'&&r[k]>0);return v.length?v.reduce((s,r)=>s+r[k],0)/v.length:0;};
     const totalSales=sum('net_sales'), totalGuests=sum('guests'), totalHrs=sum('labor_hrs');
-    return{
+    const row = {
       week:week.slice(5), weekFull:week, locCount:rs.length,
       net_sales:totalSales, guests:totalGuests, labor_hrs:totalHrs,
       ppa: totalGuests>0 ? Math.round(totalSales/totalGuests*100)/100 : 0,
@@ -2152,9 +2183,15 @@ function getWeeklyBlended(rows) {
       takeout_sales: sum('takeout_sales'),
       tips: sum('tips'),
       gross_sales: sum('gross_sales'),
+      alcohol_sales: sum('alcohol_sales'),
+      food_sales: sum('food_sales'),
       void_pct: Math.round(avg('void_pct')*10)/10,
       top_items: rs.filter(r=>r.top_items?.length>0).flatMap(r=>r.top_items),
     };
+      if(row.alcohol_mix_pct===0&&row.alcohol_sales>0&&row.net_sales>0)row.alcohol_mix_pct=Math.round(row.alcohol_sales/row.net_sales*1000)/10;
+      if(row.off_premise_pct===0&&row.net_sales>0&&(row.delivery_sales>0||row.takeout_sales>0))row.off_premise_pct=Math.round((row.delivery_sales+row.takeout_sales)/row.net_sales*1000)/10;
+      if(row.rpg===0&&row.guests>0&&row.net_sales>0){const rev=(row.gross_sales>0?row.gross_sales:row.net_sales)+(row.tips||0);row.rpg=Math.round(rev/row.guests*100)/100;}
+      return row;
   });
 }
 
@@ -3798,6 +3835,9 @@ function renderLaborIntelligenceInto(container) {
       <div id="labor-loc-tabs2" style="display:flex;gap:4px"></div>
       <div id="labor-day-tabs2" style="display:flex;gap:4px;flex-wrap:wrap"></div>
     </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap" id="labor-job-filter">
+      <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-right:4px">Role</div>
+    </div>
     <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
       <div>
         <div style="font-size:13px;font-weight:700;color:var(--text-2)" id="labor-file-label">No payroll loaded — upload to enable hour-by-hour staffing analysis</div>
@@ -5110,7 +5150,7 @@ function renderKitchenDashboard(rows) {
 // ══════════════════════════════════════════════
 // LABOR INTELLIGENCE
 // ══════════════════════════════════════════════
-let LP = { payroll: [], location: null, week: null, analysis: null, loc: null, day: null };
+let LP = { payroll: [], location: null, week: null, analysis: null, loc: null, day: null, jobFilter: 'all' };
 
 async function initLaborPage() {
   // Load kitchen data if not already loaded
@@ -5136,6 +5176,7 @@ async function initLaborPage() {
   if (LP.loc) KS.loc = LP.loc;
   if (LP.day) KS.day = LP.day;
 
+  renderJobFilterUI();
   renderLaborIntelligence();
 }
 
@@ -5147,6 +5188,36 @@ function laborSetLoc(loc) {
 function laborSetDay(day) {
   LP.day = day; KS.day = day;
   initLaborPage();
+}
+
+function laborSetJobFilter(filter) {
+  LP.jobFilter = filter;
+  renderJobFilterUI();
+  renderLaborIntelligence();
+}
+
+const JOB_CATEGORIES = [
+  { id: 'all',       label: 'All Staff',    icon: '\u{1F465}', match: () => true },
+  { id: 'boh',       label: 'BOH',          icon: '\u{1F468}\u200D\u{1F373}', match: r => r.isBOH },
+  { id: 'foh',       label: 'FOH',          icon: '\u{1F37D}\uFE0F', match: r => !r.isBOH && !r.isSalaried },
+  { id: 'line',      label: 'Line Cooks',   icon: '\u{1F525}', match: r => ['line cook','line cook/prep','sous','chef'].some(j => r.role.includes(j)) },
+  { id: 'salaried',  label: 'Salaried',     icon: '\u{1F4BC}', match: r => r.isSalaried },
+  { id: 'hourly',    label: 'Hourly',       icon: '\u23F0', match: r => !r.isSalaried && r.rate > 0 },
+];
+
+function renderJobFilterUI() {
+  const _labEl = id => (window._laborContainer ? window._laborContainer.querySelector('#'+id) : null) || document.getElementById(id);
+  const el = _labEl('labor-job-filter');
+  if (!el) return;
+  const activeStyle = 'background:var(--accent);border-color:var(--accent);color:#fff';
+  const inactiveStyle = 'background:var(--surface-2);border-color:var(--border);color:var(--text-2)';
+  const locPay = LP.payroll.filter(r => r.location === (KS.loc || LP.loc));
+  el.innerHTML = '<div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-right:4px">Role</div>' +
+    JOB_CATEGORIES.map(cat => {
+      const count = locPay.filter(cat.match).length;
+      const isActive = LP.jobFilter === cat.id;
+      return `<button onclick="laborSetJobFilter('${cat.id}')" style="padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid;white-space:nowrap;font-family:inherit;transition:all .15s;${isActive ? activeStyle : inactiveStyle}">${cat.icon} ${cat.label}${count > 0 ? ' <span style="opacity:.6;font-size:10px">('+count+')</span>' : ''}</button>`;
+    }).join('');
 }
 
 const BOH_ROLES_SET = new Set(['sous','chef','line cook','prep cook','dish washer','dishwasher','expo','kitchen manager','line cook/prep']);
@@ -5236,7 +5307,9 @@ function renderLaborIntelligence() {
   const locPay = LP.payroll.filter(r => r.location === KS.loc)
     .concat(LP.payroll.filter(r => r.location !== KS.loc && !LP.payroll.some(x => x.location === KS.loc)));
   const uniqueLocPay = locPay.filter((r,i,a) => a.findIndex(x=>x.name===r.name&&x.location===r.location)===i);
-  const bohPay = uniqueLocPay.filter(r => r.isBOH);
+  const activeFilter = JOB_CATEGORIES.find(c => c.id === LP.jobFilter) || JOB_CATEGORIES[0];
+  const filteredPay = uniqueLocPay.filter(activeFilter.match);
+  const bohPay = LP.jobFilter === 'all' ? uniqueLocPay.filter(r => r.isBOH) : filteredPay;
   const bohHourly = bohPay.length > 0 ? buildHourlyBOH(bohPay) : null;
 
   if (!Object.keys(tByH).length) {
@@ -5265,7 +5338,7 @@ function renderLaborIntelligence() {
     {icon:'🔴',label:'Peak IPLH',value:peakIPLH.toFixed(1),sub:(peakHour%12||12)+(peakHour>=12?'PM':'AM'),ok:peakIPLH<=10},
     {icon:'🚨',label:'Over-Capacity',value:overHrs+' hrs',sub:'IPLH > 8.0',ok:overHrs<=2},
     {icon:'⚪',label:'Overstaffed',value:underHrs+' hrs',sub:'IPLH < 5.0',ok:underHrs<=1},
-    {icon:'👨‍🍳',label:'BOH Staff',value:bohPay.length,sub:'on payroll',ok:true},
+    {icon:activeFilter.icon,label:activeFilter.label,value:(LP.jobFilter==='all'?bohPay:filteredPay).length,sub:'on payroll',ok:true},
   ].map(k=>`<div class="kpi" style="flex:1 1 140px"><div class="kpi-bar" style="background:${k.ok?'var(--green)':'var(--red)'}"></div><div class="kpi-label">${k.icon} ${k.label}</div><div class="kpi-value" style="color:${k.ok?'var(--green)':'var(--red)'}">${k.value}</div><div class="kpi-badges"><span class="kpi-badge" style="background:var(--surface-3);color:var(--text-muted)">${k.sub}</span></div></div>`).join('');
 
   const CO = {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7B8094',font:{size:11}}},tooltip:{backgroundColor:'#1A1D27',borderColor:'#252839',borderWidth:1,titleColor:'#EFF1F5',bodyColor:'#B0B4C8',cornerRadius:10}},scales:{x:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}},y:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}}}};
@@ -5288,15 +5361,273 @@ function renderLaborIntelligence() {
 
   _labEl('labor-rec-table').innerHTML='<thead><tr style="border-bottom:1px solid var(--border)">'+['Hour','Tickets','Est. BOH','Ideal BOH','Delta','IPLH','Status'].map(h=>`<th style="padding:8px 12px;font-size:10px;font-weight:700;color:var(--accent);text-align:left">${h}</th>`).join('')+'</tr></thead><tbody>'+recRows.map(r=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 12px;font-size:12px;font-weight:700">${r.label}</td><td style="padding:8px 12px;font-size:12px;color:var(--text-2)">${r.tix}</td><td style="padding:8px 12px;font-size:12px;color:var(--text-2)">${r.cur!=null?r.cur:'—'}</td><td style="padding:8px 12px;font-size:13px;font-weight:800;color:var(--green)">${r.ideal}</td><td style="padding:8px 12px;font-size:12px;font-weight:700;color:${r.diff==null?'var(--text-muted)':r.diff>0?'var(--red)':r.diff<0?'var(--yellow)':'var(--green)'}">${r.diff==null?'—':r.diff>0?'+'+r.diff:r.diff<0?r.diff:'✓'}</td><td style="padding:8px 12px;font-size:12px;font-weight:700;color:${r.iplh>10?'var(--red)':r.iplh>8?'var(--yellow)':'var(--green)'}">${r.iplh}</td><td style="padding:8px 12px"><span style="background:${r.st.bg};color:${r.st.color};padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700">${r.st.label}</span></td></tr>`).join('')+'</tbody>';
 
-  const avgRate = bohPay.filter(r=>!r.isSalaried&&r.rate>0).reduce((s,r)=>s+r.rate,0)/Math.max(1,bohPay.filter(r=>!r.isSalaried&&r.rate>0).length);
+  const costRows = LP.jobFilter === 'all' ? bohPay : filteredPay;
+  const avgRate = costRows.filter(r=>!r.isSalaried&&r.rate>0).reduce((s,r)=>s+r.rate,0)/Math.max(1,costRows.filter(r=>!r.isSalaried&&r.rate>0).length);
   const peakGap = recRows.filter(r=>r.diff>0);
   const extraCost = peakGap.length * avgRate;
-  const totalBOHPay = bohPay.filter(r=>!r.isSalaried).reduce((s,r)=>s+r.pay,0);
+  const totalBOHPay = costRows.filter(r=>!r.isSalaried).reduce((s,r)=>s+r.pay,0);
 
-  _labEl('labor-boh-roster').innerHTML = bohPay.length?`<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:1px solid var(--border)">${['Name','Role','Hrs','Rate'].map(h=>`<th style="padding:5px 8px;font-size:10px;color:var(--accent);text-align:left">${h}</th>`).join('')}</tr></thead><tbody>${bohPay.map(r=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:5px 8px;font-weight:600">${r.name.split(',')[0]}</td><td style="padding:5px 8px;color:var(--text-2);text-transform:capitalize">${r.role}</td><td style="padding:5px 8px;font-family:'JetBrains Mono',monospace">${r.hours.toFixed(1)}</td><td style="padding:5px 8px;color:var(--text-muted)">${r.isSalaried?'Salary':'$'+r.rate.toFixed(2)}</td></tr>`).join('')}</tbody></table>`:'<div style="color:var(--text-muted);font-size:13px">Upload payroll CSV to see roster.</div>';
+  const rosterRows = LP.jobFilter === 'all' ? bohPay : filteredPay;
+  const rosterLabel = activeFilter.icon + ' ' + activeFilter.label + ' Roster (' + rosterRows.length + ')';
+  _labEl('labor-boh-roster').innerHTML = rosterRows.length?`<div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px;letter-spacing:.05em">${rosterLabel}</div><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:1px solid var(--border)">${['Name','Role','Hrs','Rate'].map(h=>`<th style="padding:5px 8px;font-size:10px;color:var(--accent);text-align:left">${h}</th>`).join('')}</tr></thead><tbody>${rosterRows.map(r=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:5px 8px;font-weight:600">${r.name.split(',')[0]}</td><td style="padding:5px 8px;color:var(--text-2);text-transform:capitalize">${r.role}</td><td style="padding:5px 8px;font-family:'JetBrains Mono',monospace">${r.hours.toFixed(1)}</td><td style="padding:5px 8px;color:var(--text-muted)">${r.isSalaried?'Salary':'$'+r.rate.toFixed(2)}</td></tr>`).join('')}</tbody></table>`:'<div style="color:var(--text-muted);font-size:13px">Upload payroll CSV to see roster.</div>';
 
   _labEl('labor-cost-panel').innerHTML=`<div style="display:flex;flex-direction:column;gap:0">
-    ${[['BOH weekly labor (hourly only)','$'+totalBOHPay.toFixed(2),null],['Avg cook rate','$'+avgRate.toFixed(2)+'/hr',null],['Under-staffed peak hours',peakGap.length+' hrs',peakGap.length>2],['Cost to fix (1 extra cook)','$'+extraCost.toFixed(2)+'/shift',false]].map(([l,v,warn])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-2)">${l}</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${warn?'var(--red)':warn===false?'var(--accent)':'var(--text)'}">${v}</span></div>`).join('')}
+    ${[[LP.jobFilter==='all'?'BOH weekly labor (hourly only)':activeFilter.label+' weekly labor (hourly)','.toFixed(2),null],['Avg cook rate','$'+avgRate.toFixed(2)+'/hr',null],['Under-staffed peak hours',peakGap.length+' hrs',peakGap.length>2],['Cost to fix (1 extra cook)','$'+extraCost.toFixed(2)+'/shift',false]].map(([l,v,warn])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-2)">${l}</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${warn?'var(--red)':warn===false?'var(--accent)':'var(--text)'}">${v}</span></div>`).join('')}
+    <div style="margin-top:10px;padding:10px;background:rgba(20,184,166,.08);border-radius:8px;border:1px solid rgba(20,184,166,.2)"><div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">The math</div><div style="font-size:11px;color:var(--text-2);line-height:1.5">1 extra cook for ${peakGap.length} peak hours = <strong style="color:var(--text)">$${extraCost.toFixed(2)}/shift</strong>. Ticket avg at peak drops toward 12-min target — protecting ${tByH[peakHour]?.length||0} covers at your busiest hour.</div></div>
+  </div>`;
+
+  LP.analysis = {location:KS.loc,day:KS.day,totalTickets,bohCount:bohPay.length,avgIPLH,peakIPLH:peakIPLH.toFixed(1),peakHour:(peakHour%12||12)+(peakHour>=12?'PM':'AM'),overCapacityHours:peakGap.map(r=>r.label),avgCookRate:avgRate.toFixed(2),extraCostPerShift:extraCost.toFixed(2),recRows,bohRoster:bohPay.map(r=>({name:r.name.split(',')[0],role:r.role,hours:r.hours.toFixed(1),rate:r.isSalaried?'salaried':'$'+r.rate+'/hr'}))};
+}
+
+async function runLaborAI() {
+  if (!LP.analysis) return;
+  document.getElementById('labor-ai-loading').style.display='block';
+  document.getElementById('labor-ai-result').innerHTML='';
+  const a=LP.analysis;
+  const loc=a.location.charAt(0).toUpperCase()+a.location.slice(1);
+  const recSummary=a.recRows.map(r=>`${r.label}: ${r.tix} tickets, ${r.cur!=null?r.cur+' BOH':'unknown'}, ideal ${r.ideal}, IPLH ${r.iplh} [${r.st?.label||''}]`).join('\n');
+  const prompt=`You are a restaurant operations expert analyzing BOH staffing efficiency.\n\nLOCATION: ${loc} · ${a.day}\nTotal tickets: ${a.totalTickets} | BOH on payroll: ${a.bohCount}\nAvg IPLH: ${a.avgIPLH} (target 8.0) | Peak IPLH: ${a.peakIPLH} at ${a.peakHour}\nOver-capacity hours: ${a.overCapacityHours.join(', ')||'none'}\nAvg cook rate: $${a.avgCookRate}/hr | Cost to fix peak: $${a.extraCostPerShift}/shift\n\nBOH ROSTER:\n${a.bohRoster.map(r=>`- ${r.name} (${r.role}): ${r.hours}hrs @ ${r.rate}`).join('\n')}\n\nHOURLY:\n${recSummary}\n\n## Assessment\n2-3 sentences. What does this staffing pattern show?\n\n## Key Gap\nThe single biggest staffing problem. Quantify the ticket time impact.\n\n## 3 Schedule Changes\nExact changes: hour window, role, cost impact.\n\n## Coaching Note\n3 lines for the kitchen manager. Direct and specific.\n\n## 30-Day Outlook\nIf this pattern holds weekly, what is the cumulative impact? Dollar amounts.\n\nUnder 450 words. Real numbers only.`;
+  try {
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(SUPABASE_URL+'/functions/v1/ai-coaching',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||''),'apikey':SUPABASE_ANON},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
+    const json=await res.json();
+    const text=json.content?.map(b=>b.text||'').join('\n')||'No response';
+    document.getElementById('labor-ai-result').innerHTML=text.replace(/\n/g,'<br>').replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  } catch(err){document.getElementById('labor-ai-result').innerHTML='<div style="color:var(--red)">Error: '+err.message+'</div>';}
+  document.getElementById('labor-ai-loading').style.display='none';
+}
+
+
+// ── Contextual Upload Panel JS ─────────────────────────────────────────────
+
+function toggleKitchenUpload() {
+  const p = document.getElementById('kitchen-upload-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleLaborUpload() {
+  const p = document.getElementById('labor-upload-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleSalesUpload() {
+  const p = document.getElementById('sales-upload-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function _pickLoc(selector, btn, loc) {
+  document.querySelectorAll(selector).forEach(b => b.classList.remove('active-loc'));
+  btn.classList.add('active-loc');
+  return loc;
+}
+
+function kitchenPickLoc(btn, loc) {
+  document.getElementById('kitchen-upload-loc').value = _pickLoc('.kitchen-loc-pick', btn, loc);
+}
+
+function laborPickLoc(btn, loc) {
+  document.getElementById('labor-upload-loc').value = _pickLoc('.labor-loc-pick', btn, loc);
+}
+
+function salesPickLoc(btn, loc) {
+  document.getElementById('sales-upload-loc').value = _pickLoc('.sales-loc-pick', btn, loc);
+  document.getElementById('upload-location').value = loc; // sync with main upload loc selector
+}
+
+function _setUploadStatus(elId, msg, isOk) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.display = 'block';
+  el.className = isOk ? 'upload-status-ok' : (isOk === false ? 'upload-status-err' : '');
+  el.textContent = msg;
+}
+
+async function kitchenHandleUpload(files) {
+  if (!files || !files.length) return;
+  const loc = document.getElementById('kitchen-upload-loc').value;
+  _setUploadStatus('kitchen-upload-status', '⏳ Uploading...', null);
+  try {
+    // Override location selector for the session
+    const sel = document.getElementById('upload-location');
+    const prevLoc = sel.value;
+    if (loc) sel.value = loc;
+    await kitchenAddFiles(files);
+    sel.value = prevLoc;
+    const count = KS.allRows.filter(r => !loc || r.location === loc).length;
+    _setUploadStatus('kitchen-upload-status', `✅ Saved — ${count.toLocaleString()} total tickets${loc ? ' · ' + loc.charAt(0).toUpperCase() + loc.slice(1) : ''}`, true);
+    setTimeout(() => toggleKitchenUpload(), 1800);
+  } catch(e) {
+    _setUploadStatus('kitchen-upload-status', '❌ Error: ' + e.message, false);
+  }
+}
+
+async function laborHandleUpload(files) {
+  if (!files || !files.length) return;
+  const loc = document.getElementById('labor-upload-loc').value;
+  _setUploadStatus('labor-upload-status', '⏳ Uploading...', null);
+  try {
+    const sel = document.getElementById('upload-location');
+    const prevLoc = sel.value;
+    if (loc) sel.value = loc;
+    await handleFiles(files);
+    sel.value = prevLoc;
+    _setUploadStatus('labor-upload-status', `✅ Payroll saved${loc ? ' · ' + loc.charAt(0).toUpperCase() + loc.slice(1) : ''} → payroll_entries + weeks`, true);
+    setTimeout(() => toggleLaborUpload(), 1800);
+  } catch(e) {
+    _setUploadStatus('labor-upload-status', '❌ Error: ' + e.message, false);
+  }
+}
+
+async function salesHandleUpload(files) {
+  if (!files || !files.length) return;
+  const loc = document.getElementById('sales-upload-loc').value;
+  _setUploadStatus('sales-upload-status', '⏳ Uploading...', null);
+  try {
+    const sel = document.getElementById('upload-location');
+    const prevLoc = sel.value;
+    if (loc) sel.value = loc;
+    await handleFiles(files);
+    sel.value = prevLoc;
+    _setUploadStatus('sales-upload-status', `✅ Sales data saved${loc ? ' · ' + loc.charAt(0).toUpperCase() + loc.slice(1) : ''} → weeks`, true);
+    setTimeout(() => toggleSalesUpload(), 1800);
+  } catch(e) {
+    _setUploadStatus('sales-upload-status', '❌ Error: ' + e.message, false);
+  }
+}
+
+
+async function runKitchenAI() {
+  if (!KS.summary) return;
+  document.getElementById('kitchen-ai-loading').style.display='block';
+  document.getElementById('kitchen-ai-result').innerHTML='';
+  const s=KS.summary;
+  const loc=s.loc.charAt(0).toUpperCase()+s.loc.slice(1);
+  const ph=s.peakHour!=null?(s.peakHour%12||12)+(s.peakHour>=12?'PM':'AM'):'—';
+  const prompt=`You are a kitchen operations expert for a casual dining restaurant group.\n\nDATA — ${loc} · ${s.day}:\n- Avg ticket time (fire to expo): ${s.avgMin} min (target 12 min)\n- Total tickets: ${s.totalTickets}\n- Over 15 min: ${s.over15pct}%  Over 20 min: ${s.over20}\n- Peak hour: ${ph}\n- Dine-in avg: ${s.dineInAvg}m  Online avg: ${s.onlineAvg}m\n\nSERVER AVERAGES:\n${s.serverRankings.map(r=>'- '+r.name+': '+r.avg+'m ('+r.tickets+' tickets)').join('\n')}\n\nPEAK WINDOWS:\n${s.peakWindows.map(w=>'- '+w.time+': '+w.count+' tickets, '+w.avg+'m avg').join('\n')}\n\n## 🔍 What the Data Shows\n## 🚨 Primary Bottleneck\n## 👤 Server Insight\n## 🎯 3 Fixes for Next Service\n## 💬 Manager Slack Message\n\nUnder 400 words. Use real numbers.`;
+  try {
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(SUPABASE_URL+'/functions/v1/ai-coaching',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||''),'apikey':SUPABASE_ANON},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const json=await res.json();
+    const text=json.content?.map(b=>b.text||'').join('\n')||'No response';
+    document.getElementById('kitchen-ai-result').innerHTML=text.replace(/\n/g,'<br>').replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  } catch(err){document.getElementById('kitchen-ai-result').innerHTML='<div style="color:var(--red)">Error: '+err.message+'</div>';}
+  document.getElementById('kitchen-ai-loading').style.display='none';
+}
+
+// ── Toast API Sync ──────────────────────────────────────────────────────────
+
+function toggleToastSync() {
+  const p = document.getElementById('toast-sync-panel');
+  if (!p) return;
+  const show = p.style.display === 'none';
+  p.style.display = show ? 'block' : 'none';
+  // Close the upload panel when opening sync
+  if (show) {
+    const up = document.getElementById('labor-upload-panel');
+    if (up) up.style.display = 'none';
+  }
+  // Set default dates if empty
+  if (show) {
+    const s = document.getElementById('toast-sync-start');
+    const e = document.getElementById('toast-sync-end');
+    if (!s.value || !e.value) toastSetThisWeek();
+  }
+}
+
+function _toastFmt(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+function toastSetToday() {
+  const today = _toastFmt(new Date());
+  document.getElementById('toast-sync-start').value = today;
+  document.getElementById('toast-sync-end').value = today;
+}
+
+function toastSetThisWeek() {
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  document.getElementById('toast-sync-start').value = _toastFmt(mon);
+  document.getElementById('toast-sync-end').value = _toastFmt(sun);
+}
+
+function toastSetLastWeek() {
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1) - 7);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  document.getElementById('toast-sync-start').value = _toastFmt(mon);
+  document.getElementById('toast-sync-end').value = _toastFmt(sun);
+}
+
+let _toastSyncing = false;
+async function toastSyncAll() {
+  if (_toastSyncing) return;
+  _toastSyncing = true;
+
+  const btn = document.getElementById('toast-sync-btn');
+  const statusEl = document.getElementById('toast-sync-status');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
+
+  const startDate = document.getElementById('toast-sync-start').value;
+  const endDate = document.getElementById('toast-sync-end').value;
+
+  if (!startDate || !endDate) {
+    if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = 'var(--red)'; statusEl.textContent = '❌ Please select start and end dates.'; }
+    _toastSyncing = false;
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync'; }
+    return;
+  }
+
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = 'var(--text-muted)'; statusEl.textContent = '⏳ Syncing from Toast API... this may take 30-60 seconds for multi-day ranges.'; }
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const token = session?.access_token || '';
+
+    const res = await fetch(SUPABASE_URL + '/functions/v1/toast-sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'apikey': SUPABASE_ANON,
+      },
+      body: JSON.stringify({ startDate, endDate }),
+    });
+
+    const json = await res.json();
+    if (!res.ok || json.error) throw new Error(json.error || 'Sync failed (' + res.status + ')');
+
+    // Build summary
+    const days = json.days || 0;
+    const daily = json.daily || [];
+    let totalOrders = 0, totalEntries = 0;
+    for (const d of daily) { totalOrders += d.orders || 0; totalEntries += d.time_entries || 0; }
+
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = '✅ Synced ' + days + ' day' + (days !== 1 ? 's' : '') + ' · ' + totalOrders + ' orders · ' + totalEntries + ' time entries · ' + startDate + ' → ' + endDate;
+    }
+
+    // Reload data and re-render
+    LP.payroll = await loadPayrollFromSupabase();
+    if (typeof renderLaborIntelligence === 'function') renderLaborIntelligence();
+    if (typeof initLaborPage === 'function') initLaborPage();
+
+  } catch (err) {
+    if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = 'var(--red)'; statusEl.textContent = '❌ ' + err.message; }
+  }
+
+  _toastSyncing = false;
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync'; }
+}
+
+// Toast API Sync
+
+</script></body>
+</html>
++totalBOHPay.toFixed(2),null],['Avg cook rate','$'+avgRate.toFixed(2)+'/hr',null],['Under-staffed peak hours',peakGap.length+' hrs',peakGap.length>2],['Cost to fix (1 extra cook)','$'+extraCost.toFixed(2)+'/shift',false]].map(([l,v,warn])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-2)">${l}</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${warn?'var(--red)':warn===false?'var(--accent)':'var(--text)'}">${v}</span></div>`).join('')}
     <div style="margin-top:10px;padding:10px;background:rgba(20,184,166,.08);border-radius:8px;border:1px solid rgba(20,184,166,.2)"><div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">The math</div><div style="font-size:11px;color:var(--text-2);line-height:1.5">1 extra cook for ${peakGap.length} peak hours = <strong style="color:var(--text)">$${extraCost.toFixed(2)}/shift</strong>. Ticket avg at peak drops toward 12-min target — protecting ${tByH[peakHour]?.length||0} covers at your busiest hour.</div></div>
   </div>`;
 
