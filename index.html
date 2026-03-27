@@ -1187,7 +1187,7 @@ const TARGET_META = {
   // ── Sales KPIs ──────────────────────────────────────────────────────────
   ppa:              { label:'PPA',              unit:'$',   desc:'Per Person Average',                          field:'target_ppa',            group:'Sales' },
   avg_check:        { label:'Avg Check',        unit:'$',   desc:'Average check size (all channels)',           field:'target_avg_check',      group:'Sales' },
-  ipc:              { label:'Items Per Check',  unit:'',    desc:'Total items ÷ total checks',                 field:'target_ipc',            group:'Sales' },
+  ipc:              { label:'Items Per Check',  unit:'',    desc:'Food & drink items ÷ dine-in checks',                 field:'target_ipc',            group:'Sales' },
   // ── Attach Rates ─────────────────────────────────────────────────────────
   starter_attach:   { label:'Starter Attach',   unit:'%',   desc:'Starter orders ÷ dine-in checks',            field:'target_starter_attach', group:'Attach' },
   dessert_attach:   { label:'Dessert Attach',   unit:'%',   desc:'Dessert orders ÷ dine-in checks',            field:'target_dessert_attach', group:'Attach' },
@@ -1375,6 +1375,7 @@ async function saveRowsToSupabase(rows) {
         drinks_per_check: r.drinks_per_check || 0,
         kitchen_labor_hrs: r.kitchen_labor_hrs || 0,
         food_items_sold: Math.round(r.food_items || r.food_items_sold || 0),
+        total_items_sold: Math.round(r.total_items_sold || 0),
         total_orders: Math.round(r.total_orders || 0),
         dine_in_orders: Math.round(r.dine_in_orders || 0),
         dine_in_guests: Math.round(r.dine_in_guests || 0),
@@ -1462,6 +1463,9 @@ const { data: weeks, error } = await sb.from('weeks_full').select('*').order('da
       sandwich_attach: parseFloat(w.sandwich_attach)||0,
       drinks_per_check: parseFloat(w.drinks_per_check)||0,
       food_items_sold: parseInt(w.total_food_items||w.food_items_sold)||0,
+          total_items_sold: parseInt(w.total_items_sold)||0,
+          total_items_sold: parseInt(w.total_items_sold)||0,
+          total_items_sold: parseInt(w.total_items_sold)||0,
       kitchen_labor_hrs: parseFloat(w.kitchen_labor_hrs)||0,
       lunch_sales: parseFloat(w.lunch_sales)||0,
       dinner_sales: parseFloat(w.dinner_sales)||0,
@@ -2154,6 +2158,7 @@ function buildRowFromToast(salesData, payrollList, productMixList) {
     burger_attach: Math.round(burgerAttach * 10) / 10,
     sandwich_attach: Math.round(sandwichAttach * 10) / 10,
     food_items: Math.round(fplhFoodItems),
+    total_items_sold: Math.round(totalFoodQty + totalDrinkQty),
     kitchen_labor_hrs: Math.round(lineCookHrs * 10) / 10,
     total_orders: totalOrders,
     dine_in_orders: dineInOrders,
@@ -2215,9 +2220,10 @@ function getWeeklyBlended(rows) {
       food_sales: sum('food_sales'),
       void_pct: Math.round(avg('void_pct')*10)/10,
       food_items_sold: sum('food_items_sold'),
+      total_items_sold: sum('total_items_sold'),
       total_orders: sum('total_orders'),
       dine_in_orders: sum('dine_in_orders'),
-      ipc: sum('total_orders') > 0 ? Math.round(sum('food_items_sold') / sum('total_orders') * 100) / 100 : 0,
+      ipc: sum('dine_in_orders') > 0 ? Math.round((sum('total_items_sold') || sum('food_items_sold')) / sum('dine_in_orders') * 100) / 100 : 0,
       top_items: rs.filter(r=>r.top_items?.length>0).flatMap(r=>r.top_items),
     };
     // Re-compute derived KPIs from summed values for accuracy
@@ -2479,7 +2485,7 @@ function renderDashboard() {
 
   // Menu tab KPIs
   const kpiMenu = [
-    { label:'Items/Check', value:latest.ipc||0, target:TARGETS.ipc?.target, unit:'', desc:'Menu Items Sold ÷ Total Checks', trend:wow(latest.ipc,prev.ipc), dbKey:'ipc' },
+    { label:'Items/Check', value:latest.ipc||0, target:TARGETS.ipc?.target, unit:'', desc:'Food & Drink Items ÷ Dine-In Checks', trend:wow(latest.ipc,prev.ipc), dbKey:'ipc' },
     { label:'Starter Attach', value:latest.starter_attach||0, target:TARGETS.starter_attach.target, unit:'%', desc:TARGETS.starter_attach.desc, trend:wow(latest.starter_attach,prev.starter_attach), dbKey:'starter_attach' },
     { label:'Cocktail Attach', value:latest.cocktail_attach||0, target:TARGETS.cocktail_attach.target, unit:'%', desc:'Liquor Sold ÷ Dine-In Checks', trend:wow(latest.cocktail_attach,prev.cocktail_attach), dbKey:'cocktail_attach' },
     { label:'Beer Attach', value:latest.beer_attach||0, target:TARGETS.beer_attach.target, unit:'%', desc:'Beers Sold ÷ Dine-In Checks', trend:wow(latest.beer_attach,prev.beer_attach), dbKey:'beer_attach' },
