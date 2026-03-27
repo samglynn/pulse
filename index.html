@@ -1191,9 +1191,9 @@ const TARGET_META = {
   // ── Attach Rates ─────────────────────────────────────────────────────────
   starter_attach:   { label:'Starter Attach',   unit:'%',   desc:'Starter orders ÷ dine-in checks',            field:'target_starter_attach', group:'Attach' },
   dessert_attach:   { label:'Dessert Attach',   unit:'%',   desc:'Dessert orders ÷ dine-in checks',            field:'target_dessert_attach', group:'Attach' },
-  burger_attach:    { label:'Burger Attach',    unit:'%',   desc:'Burger sales ÷ entrée sales',                field:'target_burger_attach',  group:'Attach' },
-  sandwich_attach:  { label:'Sandwich Attach',  unit:'%',   desc:'Sandwich sales ÷ entrée sales',              field:'target_sandwich_attach',group:'Attach' },
-  drink_attach:     { label:'Drinks/Check',     unit:'',    desc:'Alcoholic drinks ÷ check count',             field:'target_drink_attach',   group:'Attach' },
+  burger_attach:    { label:'Burger Attach',    unit:'%',   desc:'Burgers sold ÷ dine-in checks',              field:'target_burger_attach',  group:'Attach' },
+  sandwich_attach:  { label:'Sandwich Attach',  unit:'%',   desc:'Sandwiches sold ÷ dine-in checks',           field:'target_sandwich_attach',group:'Attach' },
+  drink_attach:     { label:'Drinks/Check',     unit:'',    desc:'Alcoholic drinks ÷ dine-in checks',          field:'target_drink_attach',   group:'Attach' },
   cocktail_attach:  { label:'Cocktail Attach',  unit:'%',   desc:'Liquor sold ÷ dine-in checks',     field:'target_cocktail_attach',group:'Attach' },
   beer_attach:      { label:'Beer Attach',      unit:'%',   desc:'Beers sold ÷ dine-in checks',         field:'target_beer_attach',    group:'Attach' },
   alcohol_mix_pct:  { label:'Alcohol Mix %',    unit:'%',   desc:'Alcohol sales ÷ net sales',                  field:'target_alcohol_mix_pct',group:'Attach' },
@@ -1377,6 +1377,8 @@ async function saveRowsToSupabase(rows) {
         food_items_sold: Math.round(r.food_items || r.food_items_sold || 0),
         total_orders: Math.round(r.total_orders || 0),
         dine_in_orders: Math.round(r.dine_in_orders || 0),
+        dine_in_guests: Math.round(r.dine_in_guests || 0),
+        dine_in_sales: Math.round(r.dine_in_sales || 0),
         alcohol_items: Math.round(r.alcohol_items || 0),
         alcohol_sales: r.alcohol_sales || 0,
         alcohol_mix_pct: r.alcohol_mix_pct || 0,
@@ -1463,6 +1465,10 @@ const { data: weeks, error } = await sb.from('weeks_full').select('*').order('da
       kitchen_labor_hrs: parseFloat(w.kitchen_labor_hrs)||0,
       lunch_sales: parseFloat(w.lunch_sales)||0,
       dinner_sales: parseFloat(w.dinner_sales)||0,
+      total_orders: parseInt(w.total_orders)||0,
+      dine_in_orders: parseInt(w.dine_in_orders)||0,
+      dine_in_guests: parseInt(w.dine_in_guests)||0,
+      dine_in_sales: parseFloat(w.dine_in_sales)||0,
       delivery_orders: parseInt(w.delivery_orders)||0,
       delivery_sales: parseFloat(w.delivery_sales)||0,
       takeout_orders: parseInt(w.takeout_orders)||0,
@@ -1562,6 +1568,10 @@ const { data: weeks } = await sb.from('weeks_full').select('*').order('date', { 
       kitchen_labor_hrs: parseFloat(w.kitchen_labor_hrs)||0,
       lunch_sales: parseFloat(w.lunch_sales)||0,
       dinner_sales: parseFloat(w.dinner_sales)||0,
+      total_orders: parseInt(w.total_orders)||0,
+      dine_in_orders: parseInt(w.dine_in_orders)||0,
+      dine_in_guests: parseInt(w.dine_in_guests)||0,
+      dine_in_sales: parseFloat(w.dine_in_sales)||0,
       delivery_orders: parseInt(w.delivery_orders)||0,
       delivery_sales: parseFloat(w.delivery_sales)||0,
       takeout_orders: parseInt(w.takeout_orders)||0,
@@ -1995,13 +2005,20 @@ function buildRowFromToast(salesData, payrollList, productMixList) {
     });
   }
 
-  // 3. Dine-in orders from "Dining options summary.csv"
-  let dineInOrders = 0;
+  // 3. Dine-in / Delivery / Takeout from "Dining options summary.csv"
+  let dineInOrders = 0, dineInGuests = 0, dineInSales = 0;
+  let deliveryOrders = 0, deliverySales = 0;
+  let takeoutOrders = 0, takeoutSales = 0;
   if (csv['Dining options summary.csv']) {
     const rows = parseCSV(csv['Dining options summary.csv']);
     rows.forEach(r => {
       const opt = (r['Dining option'] || '').toLowerCase();
-      if (opt.includes('dine in')) dineInOrders += parseFloat(r['Orders'] || 0);
+      const orders = parseFloat(r['Orders'] || 0);
+      const guests = parseFloat(r['Guests'] || 0);
+      const sales = parseFloat(r['Net amount'] || r['Net sales'] || 0);
+      if (opt.includes('dine in')) { dineInOrders += orders; dineInGuests += guests; dineInSales += sales; }
+      else if (opt.includes('delivery')) { deliveryOrders += orders; deliverySales += sales; }
+      else if (opt.includes('takeout') || opt.includes('take out') || opt.includes('take-out')) { takeoutOrders += orders; takeoutSales += sales; }
     });
   }
 
@@ -2110,7 +2127,7 @@ function buildRowFromToast(salesData, payrollList, productMixList) {
   const fplh = lineCookHrs > 0 && fplhFoodItems > 0 ? fplhFoodItems / lineCookHrs : 0;
   const laborPct = netSales > 0 ? (totalPay / netSales) * 100 : 0;
   const starterAttach = dineInOrders > 0 ? (starterQty / dineInOrders) * 100 : 0;
-  const drinkAttach = totalOrders > 0 ? alcoholItems / totalOrders : 0;
+  const drinkAttach = dineInOrders > 0 ? alcoholItems / dineInOrders : 0;
   const cocktailAttach = dineInOrders > 0 ? (cocktailQty / dineInOrders) * 100 : 0;
   const beerAttach = dineInOrders > 0 ? (beerQty / dineInOrders) * 100 : 0;
   const burgerAttach = dineInOrders > 0 ? (burgerQty / dineInOrders) * 100 : 0;
@@ -2140,6 +2157,13 @@ function buildRowFromToast(salesData, payrollList, productMixList) {
     kitchen_labor_hrs: Math.round(lineCookHrs * 10) / 10,
     total_orders: totalOrders,
     dine_in_orders: dineInOrders,
+    dine_in_guests: dineInGuests,
+    dine_in_sales: Math.round(dineInSales),
+    delivery_orders: deliveryOrders,
+    delivery_sales: Math.round(deliverySales),
+    takeout_orders: takeoutOrders,
+    takeout_sales: Math.round(takeoutSales),
+    off_premise_pct: netSales > 0 ? Math.round((deliverySales + takeoutSales) / netSales * 1000) / 10 : 0,
     alcohol_items: Math.round(alcoholItems),
   };
 }
@@ -2183,6 +2207,8 @@ function getWeeklyBlended(rows) {
       delivery_sales: sum('delivery_sales'),
       takeout_orders: sum('takeout_orders'),
       takeout_sales: sum('takeout_sales'),
+      dine_in_guests: sum('dine_in_guests'),
+      dine_in_sales: sum('dine_in_sales'),
       tips: sum('tips'),
       gross_sales: sum('gross_sales'),
       alcohol_sales: sum('alcohol_sales'),
@@ -2347,6 +2373,7 @@ function renderDashboard() {
         alcohol_mix_pct: Math.round(avgK('alcohol_mix_pct')*10)/10,
         rpg: Math.round(avgK('rpg')*100)/100,
         lunch_sales: sumK('lunch_sales'), dinner_sales: sumK('dinner_sales'),
+        dine_in_orders: sumK('dine_in_orders'), dine_in_guests: sumK('dine_in_guests'), dine_in_sales: sumK('dine_in_sales'),
         delivery_orders: sumK('delivery_orders'), delivery_sales: sumK('delivery_sales'),
         takeout_orders: sumK('takeout_orders'), takeout_sales: sumK('takeout_sales'),
         tips: sumK('tips'), gross_sales: sumK('gross_sales'),
@@ -2377,6 +2404,16 @@ function renderDashboard() {
         drink_attach: Math.round(avgP('drink_attach')*100)/100,
         food_cost: Math.round(avgP('food_cost')*10)/10,
         drinks_per_check: Math.round(avgP('drinks_per_check')*100)/100,
+        cocktail_attach: Math.round(avgP('cocktail_attach')*10)/10,
+        beer_attach: Math.round(avgP('beer_attach')*10)/10,
+        burger_attach: Math.round(avgP('burger_attach')*10)/10,
+        off_premise_pct: Math.round(avgP('off_premise_pct')*10)/10,
+        alcohol_mix_pct: Math.round(avgP('alcohol_mix_pct')*10)/10,
+        dine_in_sales: sumP('dine_in_sales'),
+        dine_in_orders: sumP('dine_in_orders'),
+        dine_in_guests: sumP('dine_in_guests'),
+        delivery_sales: sumP('delivery_sales'),
+        takeout_sales: sumP('takeout_sales'),
       };
     } else {
       prevWeek = {};
@@ -2429,8 +2466,13 @@ function renderDashboard() {
     { label:'Net Sales', value:latest.net_sales||0, unit:'$', desc:'Gross revenue', trend:wow(latest.net_sales,prev.net_sales) },
     { label:'Guest Count', value:latest.guests||0, unit:'', desc:'Total guests', trend:wow(latest.guests,prev.guests) },
     { label:'PPA', value:latest.ppa||0, target:TARGETS.ppa.target, unit:'$', desc:TARGETS.ppa.desc, trend:wow(latest.ppa,prev.ppa), dbKey:'ppa' },
-    { label:'Drinks/Check', value:latest.drinks_per_check||0, target:TARGETS.drink_attach.target, unit:'', desc:'Alcoholic Drinks ÷ Check Count', trend:wow(latest.drink_attach,prev.drink_attach), dbKey:'drink_attach' },
+    { label:'Drinks/Check', value:latest.drinks_per_check||0, target:TARGETS.drink_attach.target, unit:'', desc:'Alcoholic Drinks ÷ Dine-In Checks', trend:wow(latest.drink_attach,prev.drink_attach), dbKey:'drink_attach' },
     { label:'Alcohol Mix %', value:latest.alcohol_mix_pct||0, target:TARGETS.alcohol_mix_pct?.target, unit:'%', desc:'Alcohol Sales ÷ Net Sales · Higher = better margins', trend:wow(latest.alcohol_mix_pct,prev.alcohol_mix_pct), dbKey:'alcohol_mix_pct' },
+    { label:'Dine-In Sales', value:latest.dine_in_sales||0, unit:'$', desc:'Dine-in channel revenue', trend:wow(latest.dine_in_sales,prev.dine_in_sales) },
+    { label:'Dine-In Orders', value:latest.dine_in_orders||0, unit:'', desc:'Total dine-in checks', trend:wow(latest.dine_in_orders,prev.dine_in_orders) },
+    { label:'Dine-In Guests', value:latest.dine_in_guests||0, unit:'', desc:'Total dine-in guest count', trend:wow(latest.dine_in_guests,prev.dine_in_guests) },
+    { label:'Delivery Sales', value:latest.delivery_sales||0, unit:'$', desc:'Delivery channel revenue', trend:wow(latest.delivery_sales,prev.delivery_sales) },
+    { label:'Takeout Sales', value:latest.takeout_sales||0, unit:'$', desc:'Takeout channel revenue', trend:wow(latest.takeout_sales,prev.takeout_sales) },
     { label:'Off-Premise %', value:latest.off_premise_pct||0, target:TARGETS.off_premise_pct?.target, unit:'%', desc:'(Delivery + Takeout) ÷ Net Sales', invert:true, trend:wow(latest.off_premise_pct,prev.off_premise_pct), dbKey:'off_premise_pct' },
     { label:'Rev/Guest', value:latest.rpg||0, unit:'$', desc:'Gross revenue (incl tips & tax) ÷ Guests', trend:wow(latest.rpg,prev.rpg) },
   ];
@@ -2441,7 +2483,7 @@ function renderDashboard() {
     { label:'Starter Attach', value:latest.starter_attach||0, target:TARGETS.starter_attach.target, unit:'%', desc:TARGETS.starter_attach.desc, trend:wow(latest.starter_attach,prev.starter_attach), dbKey:'starter_attach' },
     { label:'Cocktail Attach', value:latest.cocktail_attach||0, target:TARGETS.cocktail_attach.target, unit:'%', desc:'Liquor Sold ÷ Dine-In Checks', trend:wow(latest.cocktail_attach,prev.cocktail_attach), dbKey:'cocktail_attach' },
     { label:'Beer Attach', value:latest.beer_attach||0, target:TARGETS.beer_attach.target, unit:'%', desc:'Beers Sold ÷ Dine-In Checks', trend:wow(latest.beer_attach,prev.beer_attach), dbKey:'beer_attach' },
-    { label:'Burger Attach', value:latest.burger_attach||0, target:TARGETS.burger_attach.target, unit:'%', desc:'Burger Sales ÷ Entrée Sales', trend:wow(latest.burger_attach,prev.burger_attach), dbKey:'burger_attach' },
+    { label:'Burger Attach', value:latest.burger_attach||0, target:TARGETS.burger_attach.target, unit:'%', desc:'Burgers Sold ÷ Dine-In Checks', trend:wow(latest.burger_attach,prev.burger_attach), dbKey:'burger_attach' },
     { label:'Food Cost %', value:latest.food_cost||0, target:TARGETS.food_cost.target, unit:'%', desc:TARGETS.food_cost.desc, invert:true, trend:wow(latest.food_cost,prev.food_cost), dbKey:'food_cost' },
   ];
 
@@ -3196,9 +3238,9 @@ function renderRevenueMix(wb) {
   const el = document.getElementById('revenue-mix');
   if (!el) return;
   const latest = wb[wb.length-1] || {};
-  if (!latest.dinner_sales && !latest.delivery_orders) { el.innerHTML = ''; return; }
+  if (!latest.dinner_sales && !latest.delivery_orders && !latest.dine_in_sales) { el.innerHTML = ''; return; }
 
-  const dinein = latest.net_sales - (latest.delivery_sales||0) - (latest.takeout_sales||0);
+  const dinein = latest.dine_in_sales || (latest.net_sales - (latest.delivery_sales||0) - (latest.takeout_sales||0));
   const total = latest.net_sales || 1;
   const dinePct = Math.round(dinein / total * 100);
   const delivPct = Math.round((latest.delivery_sales||0) / total * 100);
@@ -3212,7 +3254,7 @@ function renderRevenueMix(wb) {
   html += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
     <div style="font-size:13px;font-weight:700;margin-bottom:12px">📦 Channel Mix</div>
     <div style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Dine-In</span><span style="font-weight:700">$${Math.round(dinein).toLocaleString()} (${dinePct}%)</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Dine-In (${latest.dine_in_orders||0} orders · ${latest.dine_in_guests||0} guests)</span><span style="font-weight:700">$${Math.round(dinein).toLocaleString()} (${dinePct}%)</span></div>
       <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${dinePct}%;background:var(--green);border-radius:4px"></div></div>
     </div>
     <div style="margin-bottom:10px">
