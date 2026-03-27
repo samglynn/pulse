@@ -5625,8 +5625,6 @@ async function toastSyncAll() {
 
 // Toast API Sync
 
-</script></body>
-</html>
 +totalBOHPay.toFixed(2),null],['Avg cook rate','$'+avgRate.toFixed(2)+'/hr',null],['Under-staffed peak hours',peakGap.length+' hrs',peakGap.length>2],['Cost to fix (1 extra cook)','$'+extraCost.toFixed(2)+'/shift',false]].map(([l,v,warn])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-2)">${l}</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${warn?'var(--red)':warn===false?'var(--accent)':'var(--text)'}">${v}</span></div>`).join('')}
     <div style="margin-top:10px;padding:10px;background:rgba(20,184,166,.08);border-radius:8px;border:1px solid rgba(20,184,166,.2)"><div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">The math</div><div style="font-size:11px;color:var(--text-2);line-height:1.5">1 extra cook for ${peakGap.length} peak hours = <strong style="color:var(--text)">$${extraCost.toFixed(2)}/shift</strong>. Ticket avg at peak drops toward 12-min target — protecting ${tByH[peakHour]?.length||0} covers at your busiest hour.</div></div>
   </div>`;
