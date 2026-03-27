@@ -2317,7 +2317,7 @@ function renderDashboard() {
     priorEnd.setDate(priorEnd.getDate() - 1);
     const priorStart = new Date(priorEnd);
     priorStart.setDate(priorEnd.getDate() - (S.selectedDays.length - 1));
-    const fmtD = d => d.toISOString().split('T')[0];
+    const fmtD = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     const priorRows = wb.filter(w => w.weekFull >= fmtD(priorStart) && w.weekFull <= fmtD(priorEnd));
     if (priorRows.length > 0) {
       const sumP = k => priorRows.reduce((s,r) => s + (typeof r[k]==='number' ? r[k] : 0), 0);
@@ -2466,8 +2466,8 @@ function setDateRange(range) {
   if (!allDates.length) return;
   
   const today = new Date();
-  const fmt = d => d.toISOString().split('T')[0];
-  
+  const fmt = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+
   let startDate, endDate;
   if (range === 'today') {
     startDate = endDate = fmt(today);
@@ -2586,7 +2586,7 @@ document.addEventListener('click', e => {
 
 function dpGetDateRange(presetId) {
   const today = new Date();
-  const fmt = d => d.toISOString().split('T')[0];
+  const fmt = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   let start, end;
   if (presetId === 'today') { start = end = fmt(today); }
   else if (presetId === 'yesterday') { const y = new Date(today); y.setDate(y.getDate()-1); start = end = fmt(y); }
@@ -2714,7 +2714,7 @@ function renderDpCalendar() {
   titleEl.textContent = months[dpViewMonth] + ' ' + dpViewYear;
 
   const allDates = new Set(S.rows.map(r=>r.week_ending||r.date).filter(Boolean));
-  const today = new Date().toISOString().split('T')[0];
+  const _td = new Date(); const today = _td.getFullYear()+'-'+String(_td.getMonth()+1).padStart(2,'0')+'-'+String(_td.getDate()).padStart(2,'0');
   const rangeStart = document.getElementById('dp-start').value || dpCustomStart;
   const rangeEnd = document.getElementById('dp-end').value || dpCustomEnd;
 
@@ -5458,7 +5458,7 @@ function toggleToastSync() {
   }
 }
 
-function _toastFmt(d) { return d.toISOString().split('T')[0]; }
+function _toastFmt(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 
 function toastSetToday() {
   const today = _toastFmt(new Date());
