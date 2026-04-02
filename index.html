@@ -842,8 +842,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
           <!-- Empty state -->
           <div id="kitchen-empty" style="border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center">
             <div style="font-size:32px;margin-bottom:10px">📂</div>
-            <div style="font-size:14px;font-weight:700;color:var(--text-2);margin-bottom:6px">Drop Kitchen Details CSVs to get started</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">All data saves to your account and persists across sessions</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-2);margin-bottom:6px">No kitchen ticket data yet</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Data syncs automatically from Toast, or upload Kitchen Details CSVs manually</div>
             <label class="btn btn-primary" style="cursor:pointer;position:relative;display:inline-block">Upload Kitchen Details CSV<input type="file" accept=".csv" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="kitchenAddFiles(this.files)"></label>
           </div>
 
@@ -864,6 +864,15 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
             <div class="chart-grid" style="margin-bottom:16px">
               <div class="chart-card"><div class="chart-title">👤 Avg Ticket by Server</div><div class="chart-wrap"><canvas id="ch-kitchen-server"></canvas></div></div>
               <div class="chart-card"><div class="chart-title">📦 Dine-In vs Online</div><div class="chart-wrap"><canvas id="ch-kitchen-channel"></canvas></div></div>
+            </div>
+            <div class="chart-grid" style="margin-bottom:16px">
+              <div class="chart-card"><div class="chart-title">🍔 Top Items Sold</div><div class="chart-wrap"><canvas id="ch-kitchen-top-items"></canvas></div></div>
+              <div class="chart-card"><div class="chart-title">📊 Item Category Mix</div><div class="chart-wrap"><canvas id="ch-kitchen-item-cats"></canvas></div></div>
+            </div>
+            <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px">
+              <div class="chart-title" style="margin-bottom:12px">🥘 Menu Item Breakdown</div>
+              <div id="kitchen-item-kpis" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px"></div>
+              <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px" id="kitchen-items-table"></table></div>
             </div>
             <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px">
               <div class="chart-title" style="margin-bottom:12px">🚨 Outliers — Level 1 tickets &gt;15 min</div>
@@ -4914,6 +4923,84 @@ async function kitchenLoadFromSupabase() {
   });
 }
 
+async function kitchenLoadItemsFromSupabase(serviceDate, location) {
+  if (!sb) return [];
+  let query = sb.from('kitchen_ticket_items').select('*').order('fired_at', { ascending: true }).limit(20000);
+  if (serviceDate && serviceDate !== '__all__') {
+    query = query.eq('service_date', serviceDate);
+  }
+  if (location) query = query.eq('location', location);
+  const { data, error } = await query;
+  if (error || !data) return [];
+  return data;
+}
+
+function renderKitchenItemBreakdown(items, ticketCount) {
+  const CO = {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7B8094',font:{size:11}}},tooltip:{backgroundColor:'#1A1D27',borderColor:'#252839',borderWidth:1,titleColor:'#EFF1F5',bodyColor:'#B0B4C8',cornerRadius:10}},scales:{x:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}},y:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}}}};
+  if (!items.length) {
+    document.getElementById('kitchen-item-kpis').innerHTML = '<div style="color:var(--text-muted);font-size:13px">No item data available.</div>';
+    document.getElementById('kitchen-items-table').innerHTML = '';
+    return;
+  }
+  const mainItems = items.filter(i => i.item_category !== 'Modifier');
+  const byName = {};
+  mainItems.forEach(i => {
+    const n = i.item_name;
+    if (!byName[n]) byName[n] = { qty: 0, revenue: 0, isAlc: i.is_alcohol };
+    byName[n].qty += i.quantity || 1;
+    byName[n].revenue += (i.price || 0) * (i.quantity || 1);
+  });
+  const topItems = Object.entries(byName).sort((a,b) => b[1].qty - a[1].qty).slice(0, 15);
+  const totalItemsSold = mainItems.reduce((s,i) => s + (i.quantity || 1), 0);
+  const alcItems = mainItems.filter(i => i.is_alcohol);
+  const foodItems = mainItems.filter(i => !i.is_alcohol);
+  const alcQty = alcItems.reduce((s,i) => s + (i.quantity || 1), 0);
+  const foodQty = foodItems.reduce((s,i) => s + (i.quantity || 1), 0);
+  const alcRevenue = alcItems.reduce((s,i) => s + (i.price || 0) * (i.quantity || 1), 0);
+  const foodRevenue = foodItems.reduce((s,i) => s + (i.price || 0) * (i.quantity || 1), 0);
+  const modifiers = items.filter(i => i.item_category === 'Modifier');
+  const modRevenue = modifiers.reduce((s,i) => s + (i.price || 0) * (i.quantity || 1), 0);
+  const itemsPerTicket = ticketCount > 0 ? (totalItemsSold / ticketCount).toFixed(1) : '\u2014';
+  const kpis = [
+    { label: 'Total Items', value: totalItemsSold, icon: '\ud83c\udf7d' },
+    { label: 'Items/Ticket', value: itemsPerTicket, icon: '\ud83d\udccb' },
+    { label: 'Food Items', value: foodQty + ' ($' + foodRevenue.toFixed(0) + ')', icon: '\ud83e\udd69' },
+    { label: 'Alcohol Items', value: alcQty + ' ($' + alcRevenue.toFixed(0) + ')', icon: '\ud83c\udf7a' },
+    { label: 'Unique Items', value: Object.keys(byName).length, icon: '\ud83d\udcca' },
+    { label: 'Paid Mods', value: modifiers.length + ' ($' + modRevenue.toFixed(0) + ')', icon: '\u2795' },
+  ];
+  document.getElementById('kitchen-item-kpis').innerHTML = kpis.map(k => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;min-width:110px;flex:1">
+      <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:2px">${k.icon} ${k.label}</div>
+      <div style="font-size:18px;font-weight:800;color:var(--accent)">${k.value}</div>
+    </div>`).join('');
+  if (S.charts['k-top-items']) S.charts['k-top-items'].destroy();
+  S.charts['k-top-items'] = new Chart(document.getElementById('ch-kitchen-top-items'), {
+    type: 'bar', data: { labels: topItems.map(([n]) => n.length > 22 ? n.slice(0,20) + '\u2026' : n),
+      datasets: [{ label: 'Qty Sold', data: topItems.map(([,v]) => v.qty),
+        backgroundColor: topItems.map(([,v]) => v.isAlc ? 'rgba(249,168,38,.8)' : 'rgba(99,102,241,.8)'), borderRadius: 5 }] },
+    options: { ...CO, indexAxis: 'y', scales: { y: { ticks: { color: '#6B7085', font: { size: 9 } }, grid: { color: '#25283944' } }, x: { ticks: { color: '#6B7085', font: { size: 10 } }, grid: { color: '#25283944' } } } }
+  });
+  if (S.charts['k-item-cats']) S.charts['k-item-cats'].destroy();
+  const totalRev = foodRevenue + alcRevenue + modRevenue;
+  S.charts['k-item-cats'] = new Chart(document.getElementById('ch-kitchen-item-cats'), {
+    type: 'doughnut', data: { labels: ['Food', 'Alcohol', 'Paid Modifiers'],
+      datasets: [{ data: [foodRevenue, alcRevenue, modRevenue],
+        backgroundColor: ['rgba(99,102,241,.8)', 'rgba(249,168,38,.8)', 'rgba(20,184,166,.6)'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#7B8094', font: { size: 11 }, padding: 12 } },
+      tooltip: { backgroundColor: '#1A1D27', borderColor: '#252839', borderWidth: 1, titleColor: '#EFF1F5', bodyColor: '#B0B4C8', cornerRadius: 10,
+        callbacks: { label: ctx => ctx.label + ': $' + ctx.parsed.toFixed(0) + ' (' + (totalRev > 0 ? (ctx.parsed / totalRev * 100).toFixed(0) : 0) + '%)' } } } }
+  });
+  const top20 = topItems.slice(0, 20);
+  document.getElementById('kitchen-items-table').innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)">' +
+    ['Item', 'Qty', 'Revenue', 'Type'].map(h => `<th style="padding:6px 10px;font-size:10px;font-weight:700;color:var(--accent);text-align:left">${h}</th>`).join('') +
+    '</tr></thead><tbody>' + top20.map(([name, v]) => {
+      const safeName = escapeHtml(name);
+      const type = v.isAlc ? '<span style="background:rgba(249,168,38,.2);color:var(--yellow);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">DRINK</span>' : '<span style="background:rgba(99,102,241,.2);color:#6366F1;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">FOOD</span>';
+      return `<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 10px;font-size:12px;font-weight:600">${safeName}</td><td style="padding:6px 10px;font-size:12px;font-weight:700;color:var(--accent)">${v.qty}</td><td style="padding:6px 10px;font-size:12px;color:var(--text-2)">$${v.revenue.toFixed(2)}</td><td style="padding:6px 10px">${type}</td></tr>`;
+    }).join('') + '</tbody>';
+}
+
 async function initKitchenPage() {
   document.getElementById('kitchen-empty').style.display = 'none';
   document.getElementById('kitchen-record-count').textContent = 'Loading...';
@@ -5211,6 +5298,19 @@ function renderKitchenDashboard(rows) {
     dineInAvg:dIn.length?(avg(dIn.map(r=>r._secs))/60).toFixed(1):null,
     peakWindows:Object.entries(bkts).sort((a,b)=>b[1].count-a[1].count).slice(0,3).map(([k,v])=>({time:v.label,count:v.count,avg:(v.total/v.count/60).toFixed(1)}))
   };
+
+  // Load and render item-level data for the current selection
+  (async () => {
+    try {
+      let serviceDate = null;
+      if (KS.day !== '__all__') {
+        const rowWithDate = rows.find(r => r.daySort);
+        serviceDate = rowWithDate ? rowWithDate.daySort : null;
+      }
+      const itemData = await kitchenLoadItemsFromSupabase(serviceDate, KS.loc);
+      renderKitchenItemBreakdown(itemData, lvl1.length);
+    } catch(e) { console.error('Item breakdown error:', e); }
+  })();
 }
 
 // ══════════════════════════════════════════════
