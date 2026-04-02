@@ -3,11 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.supabase.co https://ws-api.toasttab.com; img-src 'self' data:; frame-src 'none';">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>HeyRai — Restaurant AI</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" integrity="sha384-HS/sUFZexXk91zcjy7zGIBg3tNDxgxF8YbcifixByxxtxQoF2o8GBBT9p6DdGlAR" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -2435,8 +2437,11 @@ function renderDashboard() {
     prevWeek = wb[wb.length-2]||{};
     weekRangeText = wb.length > 0 ? wb[0].weekFull + ' to ' + wb[wb.length-1].weekFull + ' (' + wb.length + ' days)' : '';
   } else if (currentWeekVal === 'latest' || !currentWeekVal) {
-    displayWeek = wb[wb.length-1]||{};
-    prevWeek = wb[wb.length-2]||{};
+    // Find the most recent day that actually has data (net_sales > 0)
+    const latestWithData = [...wb].reverse().find(w => w.net_sales > 0);
+    displayWeek = latestWithData || wb[wb.length-1] || {};
+    const dwIdx = wb.indexOf(displayWeek);
+    prevWeek = dwIdx > 0 ? wb[dwIdx-1] : wb[wb.length-2] || {};
     weekRangeText = displayWeek.weekFull || '';
   } else {
     const idx = wb.findIndex(w => w.weekFull === currentWeekVal);
@@ -3682,7 +3687,7 @@ async function runCoaching() {
   } catch (err) {
     document.getElementById('coaching-loading').style.display = 'none';
     document.getElementById('coaching-error').style.display = 'block';
-    document.getElementById('coaching-error').innerHTML = err.message + '<br><button class="btn btn-sm" onclick="runCoaching()" style="margin-top:10px">Retry</button>';
+    document.getElementById('coaching-error').innerHTML = escapeHtml(err.message) + '<br><button class="btn btn-sm" onclick="runCoaching()" style="margin-top:10px">Retry</button>';
   }
 }
 
@@ -3693,10 +3698,13 @@ function nextMode() {
 }
 
 function renderMarkdown(text) {
+  // Sanitize first: escape HTML, then apply safe markdown formatting
+  const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   return text.split('\n').map(line => {
-    if (line.startsWith('## ')) return `<h3>${line.slice(3)}</h3>`;
-    if (line.startsWith('- ')||line.startsWith('* ')) return `<li>${boldify(line.slice(2))}</li>`;
-    if (line.trim()) return `<p>${boldify(line)}</p>`;
+    const safe = esc(line);
+    if (line.startsWith('## ')) return `<h3>${boldify(esc(line.slice(3)))}</h3>`;
+    if (line.startsWith('- ')||line.startsWith('* ')) return `<li>${boldify(esc(line.slice(2)))}</li>`;
+    if (line.trim()) return `<p>${boldify(safe)}</p>`;
     return '';
   }).join('').replace(/(<li>.*?<\/li>)+/g, m => `<ul>${m}</ul>`);
 }
@@ -4461,7 +4469,7 @@ async function sendChat() {
   } catch (err) {
     const thinkEl = document.getElementById(thinkingId);
     if (thinkEl) thinkEl.remove();
-    messagesEl.innerHTML += `<div style="background:rgba(232,80,91,.1);border-radius:12px;padding:10px 14px;max-width:85%;font-size:12px;color:var(--red)">${err.message}</div>`;
+    messagesEl.innerHTML += `<div style="background:rgba(232,80,91,.1);border-radius:12px;padding:10px 14px;max-width:85%;font-size:12px;color:var(--red)">${escapeHtml(err.message)}</div>`;
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 }
@@ -4763,7 +4771,7 @@ RULES:
         <button class="btn btn-sm" onclick="navigator.clipboard.writeText(document.querySelector('#preshift-content .coaching-content').innerText).then(()=>this.textContent='✓ Copied')">📋 Copy to Clipboard</button>
       </div>`;
   } catch (err) {
-    contentEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red)">${err.message}<br><button class="btn btn-sm" onclick="generatePreShift()" style="margin-top:10px">Retry</button></div>`;
+    contentEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red)">${escapeHtml(err.message)}<br><button class="btn btn-sm" onclick="generatePreShift()" style="margin-top:10px">Retry</button></div>`;
   }
 }
 
@@ -5455,8 +5463,8 @@ async function runLaborAI() {
     const res=await fetch(SUPABASE_URL+'/functions/v1/ai-coaching',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||''),'apikey':SUPABASE_ANON},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
     const json=await res.json();
     const text=json.content?.map(b=>b.text||'').join('\n')||'No response';
-    document.getElementById('labor-ai-result').innerHTML=text.replace(/\n/g,'<br>').replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-  } catch(err){document.getElementById('labor-ai-result').innerHTML='<div style="color:var(--red)">Error: '+err.message+'</div>';}
+    document.getElementById('labor-ai-result').innerHTML=renderMarkdown(text);
+  } catch(err){document.getElementById('labor-ai-result').innerHTML='<div style="color:var(--red)">Error: '+escapeHtml(err.message)+'</div>';}
   document.getElementById('labor-ai-loading').style.display='none';
 }
 
@@ -5572,8 +5580,8 @@ async function runKitchenAI() {
     const res=await fetch(SUPABASE_URL+'/functions/v1/ai-coaching',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||''),'apikey':SUPABASE_ANON},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const json=await res.json();
     const text=json.content?.map(b=>b.text||'').join('\n')||'No response';
-    document.getElementById('kitchen-ai-result').innerHTML=text.replace(/\n/g,'<br>').replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-  } catch(err){document.getElementById('kitchen-ai-result').innerHTML='<div style="color:var(--red)">Error: '+err.message+'</div>';}
+    document.getElementById('kitchen-ai-result').innerHTML=renderMarkdown(text);
+  } catch(err){document.getElementById('kitchen-ai-result').innerHTML='<div style="color:var(--red)">Error: '+escapeHtml(err.message)+'</div>';}
   document.getElementById('kitchen-ai-loading').style.display='none';
 }
 
