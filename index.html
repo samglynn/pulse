@@ -2437,7 +2437,6 @@ function renderDashboard() {
     prevWeek = wb[wb.length-2]||{};
     weekRangeText = wb.length > 0 ? wb[0].weekFull + ' to ' + wb[wb.length-1].weekFull + ' (' + wb.length + ' days)' : '';
   } else if (currentWeekVal === 'latest' || !currentWeekVal) {
-    // Find the most recent day that actually has data (net_sales > 0)
     const latestWithData = [...wb].reverse().find(w => w.net_sales > 0);
     displayWeek = latestWithData || wb[wb.length-1] || {};
     const dwIdx = wb.indexOf(displayWeek);
@@ -3698,7 +3697,6 @@ function nextMode() {
 }
 
 function renderMarkdown(text) {
-  // Sanitize first: escape HTML, then apply safe markdown formatting
   const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   return text.split('\n').map(line => {
     const safe = esc(line);
@@ -5463,7 +5461,7 @@ async function runLaborAI() {
     const res=await fetch(SUPABASE_URL+'/functions/v1/ai-coaching',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||''),'apikey':SUPABASE_ANON},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
     const json=await res.json();
     const text=json.content?.map(b=>b.text||'').join('\n')||'No response';
-    document.getElementById('labor-ai-result').innerHTML=renderMarkdown(text);
+    document.getElementById('labor-ai-result').innerHTML=renderMarkdown(text)replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
   } catch(err){document.getElementById('labor-ai-result').innerHTML='<div style="color:var(--red)">Error: '+escapeHtml(err.message)+'</div>';}
   document.getElementById('labor-ai-loading').style.display='none';
 }
@@ -5580,7 +5578,7 @@ async function runKitchenAI() {
     const res=await fetch(SUPABASE_URL+'/functions/v1/ai-coaching',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||''),'apikey':SUPABASE_ANON},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const json=await res.json();
     const text=json.content?.map(b=>b.text||'').join('\n')||'No response';
-    document.getElementById('kitchen-ai-result').innerHTML=renderMarkdown(text);
+    document.getElementById('kitchen-ai-result').innerHTML=renderMarkdown(text)replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
   } catch(err){document.getElementById('kitchen-ai-result').innerHTML='<div style="color:var(--red)">Error: '+escapeHtml(err.message)+'</div>';}
   document.getElementById('kitchen-ai-loading').style.display='none';
 }
