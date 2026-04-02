@@ -1198,15 +1198,15 @@ const TARGET_META = {
   // ── Sales KPIs ──────────────────────────────────────────────────────────
   ppa:              { label:'PPA',              unit:'$',   desc:'Per Person Average',                          field:'target_ppa',            group:'Sales' },
   avg_check:        { label:'Avg Check',        unit:'$',   desc:'Average check size (all channels)',           field:'target_avg_check',      group:'Sales' },
-  ipc:              { label:'Items Per Check',  unit:'',    desc:'Food & drink items ÷ dine-in checks',                 field:'target_ipc',            group:'Sales' },
+  ipc:              { label:'Items Per Check',  unit:'',    desc:'Food & drink items ÷ dine-in checks',        field:'target_ipc',            group:'Sales' },
   // ── Attach Rates ─────────────────────────────────────────────────────────
   starter_attach:   { label:'Starter Attach',   unit:'%',   desc:'Starter orders ÷ dine-in checks',            field:'target_starter_attach', group:'Attach' },
   dessert_attach:   { label:'Dessert Attach',   unit:'%',   desc:'Dessert orders ÷ dine-in checks',            field:'target_dessert_attach', group:'Attach' },
   burger_attach:    { label:'Burger Attach',    unit:'%',   desc:'Burgers sold ÷ dine-in checks',              field:'target_burger_attach',  group:'Attach' },
   sandwich_attach:  { label:'Sandwich Attach',  unit:'%',   desc:'Sandwiches sold ÷ dine-in checks',           field:'target_sandwich_attach',group:'Attach' },
   drink_attach:     { label:'Drinks/Check',     unit:'',    desc:'Alcoholic drinks ÷ dine-in checks',          field:'target_drink_attach',   group:'Attach' },
-  cocktail_attach:  { label:'Cocktail Attach',  unit:'%',   desc:'Liquor sold ÷ dine-in checks',     field:'target_cocktail_attach',group:'Attach' },
-  beer_attach:      { label:'Beer Attach',      unit:'%',   desc:'Beers sold ÷ dine-in checks',         field:'target_beer_attach',    group:'Attach' },
+  cocktail_attach:  { label:'Cocktail Attach',  unit:'%',   desc:'Liquor sold ÷ dine-in checks',               field:'target_cocktail_attach',group:'Attach' },
+  beer_attach:      { label:'Beer Attach',      unit:'%',   desc:'Beers sold ÷ dine-in checks',                field:'target_beer_attach',    group:'Attach' },
   alcohol_mix_pct:  { label:'Alcohol Mix %',    unit:'%',   desc:'Alcohol sales ÷ net sales',                  field:'target_alcohol_mix_pct',group:'Attach' },
   // ── Labor & Efficiency ────────────────────────────────────────────────────
   splh:             { label:'SPLH',             unit:'$',   desc:'Sales per labor hour',                        field:'target_splh',           group:'Labor' },
@@ -1474,9 +1474,7 @@ const { data: weeks, error } = await sb.from('weeks_full').select('*').order('da
       sandwich_attach: parseFloat(w.sandwich_attach)||0,
       drinks_per_check: parseFloat(w.drinks_per_check)||0,
       food_items_sold: parseInt(w.total_food_items||w.food_items_sold)||0,
-          total_items_sold: parseInt(w.total_items_sold)||0,
-          total_items_sold: parseInt(w.total_items_sold)||0,
-          total_items_sold: parseInt(w.total_items_sold)||0,
+      total_items_sold: parseInt(w.total_items_sold)||0,
       kitchen_labor_hrs: parseFloat(w.kitchen_labor_hrs)||0,
       lunch_sales: parseFloat(w.lunch_sales)||0,
       dinner_sales: parseFloat(w.dinner_sales)||0,
@@ -1580,6 +1578,7 @@ const { data: weeks } = await sb.from('weeks_full').select('*').order('date', { 
       sandwich_attach: parseFloat(w.sandwich_attach)||0,
       drinks_per_check: parseFloat(w.drinks_per_check)||0,
       food_items_sold: parseInt(w.total_food_items||w.food_items_sold)||0,
+      total_items_sold: parseInt(w.total_items_sold)||0,
       kitchen_labor_hrs: parseFloat(w.kitchen_labor_hrs)||0,
       lunch_sales: parseFloat(w.lunch_sales)||0,
       dinner_sales: parseFloat(w.dinner_sales)||0,
@@ -2231,9 +2230,9 @@ function getWeeklyBlended(rows) {
       food_sales: sum('food_sales'),
       void_pct: Math.round(avg('void_pct')*10)/10,
       food_items_sold: sum('food_items_sold'),
-      total_items_sold: sum('total_items_sold'),
       total_orders: sum('total_orders'),
       dine_in_orders: sum('dine_in_orders'),
+      total_items_sold: sum('total_items_sold'),
       ipc: sum('dine_in_orders') > 0 ? Math.round((sum('total_items_sold') || sum('food_items_sold')) / sum('dine_in_orders') * 100) / 100 : 0,
       top_items: rs.filter(r=>r.top_items?.length>0).flatMap(r=>r.top_items),
     };
@@ -2446,6 +2445,7 @@ function renderDashboard() {
     prevWeek = wb[wb.length-2]||{};
     weekRangeText = wb.length > 0 ? wb[0].weekFull + ' to ' + wb[wb.length-1].weekFull + ' (' + wb.length + ' days)' : '';
   } else if (currentWeekVal === 'latest' || !currentWeekVal) {
+    // Find the most recent day that actually has data (net_sales > 0)
     const latestWithData = [...wb].reverse().find(w => w.net_sales > 0);
     displayWeek = latestWithData || wb[wb.length-1] || {};
     const dwIdx = wb.indexOf(displayWeek);
@@ -3706,6 +3706,7 @@ function nextMode() {
 }
 
 function renderMarkdown(text) {
+  // Sanitize first: escape HTML, then apply safe markdown formatting
   const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   return text.split('\n').map(line => {
     const safe = esc(line);
@@ -4937,11 +4938,14 @@ async function kitchenLoadItemsFromSupabase(serviceDate, location) {
 
 function renderKitchenItemBreakdown(items, ticketCount) {
   const CO = {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7B8094',font:{size:11}}},tooltip:{backgroundColor:'#1A1D27',borderColor:'#252839',borderWidth:1,titleColor:'#EFF1F5',bodyColor:'#B0B4C8',cornerRadius:10}},scales:{x:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}},y:{ticks:{color:'#6B7085',font:{size:10}},grid:{color:'#25283944'}}}};
+
   if (!items.length) {
     document.getElementById('kitchen-item-kpis').innerHTML = '<div style="color:var(--text-muted);font-size:13px">No item data available.</div>';
     document.getElementById('kitchen-items-table').innerHTML = '';
     return;
   }
+
+  // Aggregate items (excluding modifiers for top items chart)
   const mainItems = items.filter(i => i.item_category !== 'Modifier');
   const byName = {};
   mainItems.forEach(i => {
@@ -4950,6 +4954,7 @@ function renderKitchenItemBreakdown(items, ticketCount) {
     byName[n].qty += i.quantity || 1;
     byName[n].revenue += (i.price || 0) * (i.quantity || 1);
   });
+
   const topItems = Object.entries(byName).sort((a,b) => b[1].qty - a[1].qty).slice(0, 15);
   const totalItemsSold = mainItems.reduce((s,i) => s + (i.quantity || 1), 0);
   const alcItems = mainItems.filter(i => i.is_alcohol);
@@ -4960,37 +4965,55 @@ function renderKitchenItemBreakdown(items, ticketCount) {
   const foodRevenue = foodItems.reduce((s,i) => s + (i.price || 0) * (i.quantity || 1), 0);
   const modifiers = items.filter(i => i.item_category === 'Modifier');
   const modRevenue = modifiers.reduce((s,i) => s + (i.price || 0) * (i.quantity || 1), 0);
-  const itemsPerTicket = ticketCount > 0 ? (totalItemsSold / ticketCount).toFixed(1) : '\u2014';
+  const itemsPerTicket = ticketCount > 0 ? (totalItemsSold / ticketCount).toFixed(1) : '—';
+
+  // KPI cards
   const kpis = [
-    { label: 'Total Items', value: totalItemsSold, icon: '\ud83c\udf7d' },
-    { label: 'Items/Ticket', value: itemsPerTicket, icon: '\ud83d\udccb' },
-    { label: 'Food Items', value: foodQty + ' ($' + foodRevenue.toFixed(0) + ')', icon: '\ud83e\udd69' },
-    { label: 'Alcohol Items', value: alcQty + ' ($' + alcRevenue.toFixed(0) + ')', icon: '\ud83c\udf7a' },
-    { label: 'Unique Items', value: Object.keys(byName).length, icon: '\ud83d\udcca' },
-    { label: 'Paid Mods', value: modifiers.length + ' ($' + modRevenue.toFixed(0) + ')', icon: '\u2795' },
+    { label: 'Total Items', value: totalItemsSold, icon: '🍽' },
+    { label: 'Items/Ticket', value: itemsPerTicket, icon: '📋' },
+    { label: 'Food Items', value: foodQty + ' ($' + foodRevenue.toFixed(0) + ')', icon: '🥩' },
+    { label: 'Alcohol Items', value: alcQty + ' ($' + alcRevenue.toFixed(0) + ')', icon: '🍺' },
+    { label: 'Unique Items', value: Object.keys(byName).length, icon: '📊' },
+    { label: 'Paid Mods', value: modifiers.length + ' ($' + modRevenue.toFixed(0) + ')', icon: '➕' },
   ];
   document.getElementById('kitchen-item-kpis').innerHTML = kpis.map(k => `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;min-width:110px;flex:1">
       <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:2px">${k.icon} ${k.label}</div>
       <div style="font-size:18px;font-weight:800;color:var(--accent)">${k.value}</div>
     </div>`).join('');
+
+  // Top Items horizontal bar chart
   if (S.charts['k-top-items']) S.charts['k-top-items'].destroy();
   S.charts['k-top-items'] = new Chart(document.getElementById('ch-kitchen-top-items'), {
-    type: 'bar', data: { labels: topItems.map(([n]) => n.length > 22 ? n.slice(0,20) + '\u2026' : n),
-      datasets: [{ label: 'Qty Sold', data: topItems.map(([,v]) => v.qty),
-        backgroundColor: topItems.map(([,v]) => v.isAlc ? 'rgba(249,168,38,.8)' : 'rgba(99,102,241,.8)'), borderRadius: 5 }] },
+    type: 'bar',
+    data: {
+      labels: topItems.map(([n]) => n.length > 22 ? n.slice(0,20) + '…' : n),
+      datasets: [{
+        label: 'Qty Sold',
+        data: topItems.map(([,v]) => v.qty),
+        backgroundColor: topItems.map(([,v]) => v.isAlc ? 'rgba(249,168,38,.8)' : 'rgba(99,102,241,.8)'),
+        borderRadius: 5
+      }]
+    },
     options: { ...CO, indexAxis: 'y', scales: { y: { ticks: { color: '#6B7085', font: { size: 9 } }, grid: { color: '#25283944' } }, x: { ticks: { color: '#6B7085', font: { size: 10 } }, grid: { color: '#25283944' } } } }
   });
+
+  // Category mix doughnut
   if (S.charts['k-item-cats']) S.charts['k-item-cats'].destroy();
-  const totalRev = foodRevenue + alcRevenue + modRevenue;
   S.charts['k-item-cats'] = new Chart(document.getElementById('ch-kitchen-item-cats'), {
-    type: 'doughnut', data: { labels: ['Food', 'Alcohol', 'Paid Modifiers'],
-      datasets: [{ data: [foodRevenue, alcRevenue, modRevenue],
-        backgroundColor: ['rgba(99,102,241,.8)', 'rgba(249,168,38,.8)', 'rgba(20,184,166,.6)'], borderWidth: 0 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#7B8094', font: { size: 11 }, padding: 12 } },
-      tooltip: { backgroundColor: '#1A1D27', borderColor: '#252839', borderWidth: 1, titleColor: '#EFF1F5', bodyColor: '#B0B4C8', cornerRadius: 10,
-        callbacks: { label: ctx => ctx.label + ': $' + ctx.parsed.toFixed(0) + ' (' + (totalRev > 0 ? (ctx.parsed / totalRev * 100).toFixed(0) : 0) + '%)' } } } }
+    type: 'doughnut',
+    data: {
+      labels: ['Food', 'Alcohol', 'Paid Modifiers'],
+      datasets: [{
+        data: [foodRevenue, alcRevenue, modRevenue],
+        backgroundColor: ['rgba(99,102,241,.8)', 'rgba(249,168,38,.8)', 'rgba(20,184,166,.6)'],
+        borderWidth: 0
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#7B8094', font: { size: 11 }, padding: 12 } }, tooltip: { backgroundColor: '#1A1D27', borderColor: '#252839', borderWidth: 1, titleColor: '#EFF1F5', bodyColor: '#B0B4C8', cornerRadius: 10, callbacks: { label: ctx => ctx.label + ': $' + ctx.parsed.toFixed(0) + ' (' + (ctx.parsed / (foodRevenue + alcRevenue + modRevenue) * 100).toFixed(0) + '%)' } } } }
   });
+
+  // Items table — top 20
   const top20 = topItems.slice(0, 20);
   document.getElementById('kitchen-items-table').innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)">' +
     ['Item', 'Qty', 'Revenue', 'Type'].map(h => `<th style="padding:6px 10px;font-size:10px;font-weight:700;color:var(--accent);text-align:left">${h}</th>`).join('') +
@@ -5302,8 +5325,10 @@ function renderKitchenDashboard(rows) {
   // Load and render item-level data for the current selection
   (async () => {
     try {
+      // Get the service_date from the filtered rows (daySort = YYYY-MM-DD)
       let serviceDate = null;
       if (KS.day !== '__all__') {
+        // Find the actual date from the row data
         const rowWithDate = rows.find(r => r.daySort);
         serviceDate = rowWithDate ? rowWithDate.daySort : null;
       }
@@ -5335,8 +5360,8 @@ async function initLaborPage() {
   const lc = {'warren':'var(--accent)','newport':'var(--cyan)','providence':'var(--green)'};
   const locEl = document.getElementById('labor-loc-tabs');
   const dayEl = document.getElementById('labor-day-tabs');
-  if (locEl) locEl.innerHTML = locs.map(l=>`<button class="btn btn-sm" onclick="laborSetLoc('${l}')" style="${l===LP.loc?'background:'+(lc[l]||'var(--accent)')+';border-color:'+(lc[l]||'var(--accent)')+';color:#000':''}">${l.charAt(0).toUpperCase()+l.slice(1)}</button>`).join('');
-  if (dayEl) dayEl.innerHTML = days.map(d=>`<button class="btn btn-sm ${d===LP.day?'btn-active':''}" onclick="laborSetDay('${d.replace(/'/g,"\\'")}')"> ${d}</button>`).join('');
+  if (locEl) locEl.innerHTML = locs.map(l=>{const sl=escapeHtml(l);return`<button class="btn btn-sm" onclick="laborSetLoc('${sl}')" style="${l===LP.loc?'background:'+(lc[l]||'var(--accent)')+';border-color:'+(lc[l]||'var(--accent)')+';color:#000':''}">${sl.charAt(0).toUpperCase()+sl.slice(1)}</button>`;}).join('');
+  if (dayEl) dayEl.innerHTML = days.map(d=>{const sd=escapeHtml(d.replace(/'/g,"\\'"));return`<button class="btn btn-sm ${d===LP.day?'btn-active':''}" onclick="laborSetDay('${sd}')"> ${escapeHtml(d)}</button>`;}).join('');
 
   // Sync KS selection to LP selection for renderLaborIntelligence
   if (LP.loc) KS.loc = LP.loc;
@@ -5561,7 +5586,7 @@ async function runLaborAI() {
     const res=await fetch(SUPABASE_URL+'/functions/v1/ai-coaching',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||''),'apikey':SUPABASE_ANON},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
     const json=await res.json();
     const text=json.content?.map(b=>b.text||'').join('\n')||'No response';
-    document.getElementById('labor-ai-result').innerHTML=renderMarkdown(text)replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    document.getElementById('labor-ai-result').innerHTML=renderMarkdown(text);
   } catch(err){document.getElementById('labor-ai-result').innerHTML='<div style="color:var(--red)">Error: '+escapeHtml(err.message)+'</div>';}
   document.getElementById('labor-ai-loading').style.display='none';
 }
@@ -5678,7 +5703,7 @@ async function runKitchenAI() {
     const res=await fetch(SUPABASE_URL+'/functions/v1/ai-coaching',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||''),'apikey':SUPABASE_ANON},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const json=await res.json();
     const text=json.content?.map(b=>b.text||'').join('\n')||'No response';
-    document.getElementById('kitchen-ai-result').innerHTML=renderMarkdown(text)replace(/## (.+)/g,'<h3 style="font-size:14px;font-weight:800;color:var(--text);margin:16px 0 6px">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    document.getElementById('kitchen-ai-result').innerHTML=renderMarkdown(text);
   } catch(err){document.getElementById('kitchen-ai-result').innerHTML='<div style="color:var(--red)">Error: '+escapeHtml(err.message)+'</div>';}
   document.getElementById('kitchen-ai-loading').style.display='none';
 }
