@@ -9,10 +9,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.101.1/dist/umd/supabase.min.js" integrity="sha384-0VpB0wAYDdhWCEv3+IjT0Z9Kgpvszkf70RFX3ro7l4QR5nywxsMaOpmvZKsfRF8I" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrty="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
+:root 
   --bg:#0C0E14; --surface:#14161E; --surface-2:#1A1D27; --border:#252839;
   --text:#EFF1F5; --text-2:#B0B4C8; --text-muted:#6B7085;
   --accent:#6366F1; --green:#14B8A6; --red:#E8505B; --yellow:#F9A826; --purple:#A78BFA; --pink:#EC4899; --cyan:#22D3EE;
@@ -2556,7 +2556,7 @@ function renderDashboard() {
 
   // Menu tab KPIs
   const kpiMenu = [
-  {key:"drink_attach",label:"Drinks/Check",desc:"Avg alcoholic drinks per dine-in check",fmt:"dec2",source:"weeks_extended",field:"drinks_per_check"},
+  { label:'Drinks/Check', value:latest.drinks_per_check||0, target:null, unit:'', desc:'Avg alcoholic drinks per dine-in check' },
     { label:'Items/Check', value:latest.ipc||0, target:TARGETS.ipc?.target, unit:'', desc:'Food & Drink Items ÷ Dine-In Checks', trend:wow(latest.ipc,prev.ipc), dbKey:'ipc' },
     { label:'Starter Attach', value:latest.starter_attach||0, target:TARGETS.starter_attach.target, unit:'%', desc:TARGETS.starter_attach.desc, trend:wow(latest.starter_attach,prev.starter_attach), dbKey:'starter_attach' },
     { label:'Cocktail Attach', value:latest.cocktail_attach||0, target:TARGETS.cocktail_attach.target, unit:'%', desc:'Liquor Sold ÷ Dine-In Checks', trend:wow(latest.cocktail_attach,prev.cocktail_attach), dbKey:'cocktail_attach' },
@@ -3209,6 +3209,7 @@ function renderDataGaps() {
 }
 
 function renderKPI(k) {
+  if(k.value===undefined||k.value===null)k.value=0;
   const isNoData = (k.value === 0 || k.value === '0') && k.label !== 'Net Sales' && k.label !== 'Guest Count';
   const good = k.target==null || isNoData ? true : k.invert ? k.value<=k.target : k.value>=k.target;
   const color = isNoData ? 'var(--text-muted)' : k.target==null ? 'var(--accent)' : good ? 'var(--green)' : 'var(--red)';
@@ -3818,7 +3819,7 @@ const GROUP_IDS = { performance:'performance', kitchen:'kitchen', ai:'ai', 'sett
 
 function navTo(page) {
   const allPages = ['dashboard','performance','laborhub','kitchen','scoreboard','ai','kitchenlabor',
-                    'sales','menu','labor','savings','preshift','chat','coaching','settings','knowledge'];
+                    'sales','menu','labor','savings','preshift','chat','coaching','settings','knowledge','prepforecast'];
   const titles = {
     dashboard:'Overview',performance:'Performance',laborhub:'Labor',kitchen:'Kitchen',
     scoreboard:'Scoreboard',ai:'HeyRai AI',settings:'Targets',knowledge:'Knowledge'
