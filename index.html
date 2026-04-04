@@ -5982,18 +5982,18 @@ async function initForecastLocs(){
     container.innerHTML='';
     _forecastLocs.forEach(function(loc,i){
       var btn=document.createElement('button');
-      btn.className='btn btn-sm'+(i===0?' active-loc':'');
+      btn.className='btn btn-sm'+(loc.slug==='warren'?' active-loc':'');
       btn.textContent=loc.name;
-      btn.style.cssText=i===0?'background:var(--accent);color:#000;border-color:var(--accent)':'';
+      btn.style.cssText=loc.slug==='warren'?'background:var(--accent);color:#000;border-color:var(--accent)':'';
       btn.onclick=function(){
         container.querySelectorAll('button').forEach(function(b){b.className='btn btn-sm';b.style.cssText=''});
         btn.className='btn btn-sm active-loc';
         btn.style.cssText='background:var(--accent);color:#000;border-color:var(--accent)';
-        _forecastLocId=loc.id;_forecastData=null;loadPrepForecast();
+        _forecastLocId=loc.slug;_forecastData=null;loadPrepForecast();
       };
       container.appendChild(btn);
     });
-    if(!_forecastLocId)_forecastLocId=_forecastLocs[0].id;
+    if(!_forecastLocId){var w=_forecastLocs.find(function(l){return l.slug==='warren'});_forecastLocId=w?w.slug:_forecastLocs[0].slug;}
   }
   return _forecastLocs;
 }
@@ -6018,7 +6018,7 @@ async function loadPrepForecast(){
   try{
     var allItems=[];var more=true;var offset=0;
     while(more){
-      var r=await sb.from('kitchen_ticket_items').select('item_name,quantity,business_date,station').eq('location_id',_forecastLocId).gte('business_date',fromDate).order('business_date',{ascending:true}).range(offset,offset+999);
+      var r=await sb.from('kitchen_ticket_items').select('item_name,quantity,service_date,menu_group').eq('location',_forecastLocId).gte('service_date',fromDate).order('service_date',{ascending:true}).range(offset,offset+999);
       var data=r.data||[];
       allItems=allItems.concat(data);
       if(data.length<1000)more=false;else offset+=1000;
@@ -6032,7 +6032,7 @@ function processForecast(allItems){
   if(!allItems.length){content.innerHTML='<div class="forecast-empty">No kitchen ticket data found for the last 8 weeks. Data syncs daily from Toast.</div>';return}
   var itemMap={};var dateSet={};
   allItems.forEach(function(row){
-    var name=row.item_name||'Unknown';var qty=row.quantity||1;var station=row.station||'Other';var bd=row.business_date;
+    var name=row.item_name||'Unknown';var qty=row.quantity||1;var station=row.menu_group||'Other';var bd=row.service_date;
     var dow=new Date(bd+'T12:00:00').getDay();
     if(!itemMap[name])itemMap[name]={station:station,days:{0:{total:0,dates:{}},1:{total:0,dates:{}},2:{total:0,dates:{}},3:{total:0,dates:{}},4:{total:0,dates:{}},5:{total:0,dates:{}},6:{total:0,dates:{}}}};
     itemMap[name].days[dow].total+=qty;itemMap[name].days[dow].dates[bd]=1;
