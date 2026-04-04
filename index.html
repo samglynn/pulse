@@ -327,38 +327,55 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 /* == Forecast Page == */
 .forecast-page{padding:0 24px}
 .forecast-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:20px 0}
-.forecast-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px}
-.forecast-stat .stat-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
-.forecast-stat .stat-value{font-size:28px;font-weight:700;color:var(--text);margin:4px 0}
+.forecast-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden}
+.forecast-stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.forecast-stat:nth-child(1)::after{background:var(--accent)}
+.forecast-stat:nth-child(2)::after{background:var(--green)}
+.forecast-stat:nth-child(3)::after{background:var(--yellow)}
+.forecast-stat:nth-child(4)::after{background:var(--red)}
+.forecast-stat .stat-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.forecast-stat .stat-value{font-size:28px;font-weight:700;color:var(--text);margin:6px 0 2px}
 .forecast-stat .stat-sub{font-size:13px;color:var(--accent)}
-.forecast-charts{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+.forecast-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
 .forecast-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
 .forecast-chart-card h4{margin:0 0 12px;font-size:14px;color:var(--text-muted);font-weight:500}
-.forecast-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.forecast-loc-btn{padding:8px 20px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:13px;transition:all .2s}
-.forecast-loc-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.forecast-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.forecast-dept-btn{padding:8px 20px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:13px;transition:all .2s;font-weight:500}
+.forecast-dept-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.forecast-dept-btn.dept-food.active{background:#10b981;border-color:#10b981}
+.forecast-dept-btn.dept-bev.active{background:#8b5cf6;border-color:#8b5cf6}
 .forecast-cat-select{background:var(--surface);color:var(--text);border:1px solid var(--border);padding:8px 14px;border-radius:8px;font-size:13px}
 .forecast-dl-btn{background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;margin-left:auto}
-.forecast-tier{margin-bottom:20px}
-.forecast-tier-header{display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer;user-select:none}
+.forecast-tier{margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.forecast-tier-header{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border)}
 .forecast-tier-header h4{margin:0;font-size:14px;font-weight:600}
 .forecast-tier-badge{font-size:11px;padding:2px 10px;border-radius:10px;font-weight:600}
 .tier-high .forecast-tier-badge{background:rgba(227,78,78,.15);color:var(--red)}
 .tier-med .forecast-tier-badge{background:rgba(246,168,38,.15);color:var(--yellow)}
 .tier-low .forecast-tier-badge{background:rgba(20,184,166,.15);color:var(--green)}
 .forecast-table{width:100%;border-collapse:separate;border-spacing:0}
-.forecast-table th{text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg)}
-.forecast-table td{padding:8px 12px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)}
-.forecast-table tr:hover td{background:rgba(255,255,255,.03)}
+.forecast-table th{text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)}
+.forecast-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)}
+.forecast-table tr:hover td{background:rgba(99,102,241,.06)}
 .forecast-item-name{font-weight:500;color:var(--text);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.forecast-spark{display:flex;align-items:flex-end;gap:2px;height:24px}
-.forecast-spark-bar{width:14px;border-radius:2px 2px 0 0;background:var(--accent);opacity:.7;min-height:1px;transition:opacity .2s}
-.forecast-spark-bar:hover{opacity:1}
-.forecast-spark-bar.empty{background:var(--border);opacity:.3}
-.forecast-day-val{font-size:12px;color:var(--text-muted);text-align:center;min-width:32px}
-.forecast-day-val.high{color:var(--accent);font-weight:600}
+.forecast-heatcell{text-align:center;min-width:44px;border-radius:4px;font-weight:500;font-size:13px;position:relative}
+.forecast-heatcell .hc-val{position:relative;z-index:1;padding:4px 6px;border-radius:4px;display:inline-block;min-width:28px}
+.hc-0{color:var(--text-muted);opacity:.35}
+.hc-1{color:#a5b4fc}
+.hc-1 .hc-val{background:rgba(99,102,241,.08)}
+.hc-2{color:#818cf8}
+.hc-2 .hc-val{background:rgba(99,102,241,.15)}
+.hc-3{color:#6366f1}
+.hc-3 .hc-val{background:rgba(99,102,241,.25)}
+.hc-4{color:#fff}
+.hc-4 .hc-val{background:rgba(99,102,241,.45)}
 .forecast-week-total{font-weight:700;color:var(--text);font-size:14px;text-align:right}
-.forecast-table .day-header{text-align:center;min-width:32px}
+.forecast-pct{font-size:11px;color:var(--text-muted);margin-left:4px}
+.forecast-bar-wrap{width:100%;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:4px}
+.forecast-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.forecast-table .day-header{text-align:center;min-width:44px}
+.forecast-closed-tag{font-size:10px;color:var(--text-muted);opacity:.4;text-transform:uppercase;letter-spacing:.5px}
+.forecast-nodata{text-align:center;padding:60px 20px;color:var(--text-muted)}
 @media(max-width:768px){.forecast-summary{grid-template-columns:repeat(2,1fr)}.forecast-charts{grid-template-columns:1fr}}
 
 </style>
@@ -1073,20 +1090,19 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 <p id="forecast-date-range" style="margin:4px 0 0;color:var(--text-muted);font-size:13px"></p>
 </div>
 <div class="forecast-controls">
-<div id="forecast-loc-btns"></div>
+<div id="forecast-dept-btns" style="display:flex;gap:6px"></div>
 <select id="forecast-cat-filter" class="forecast-cat-select" onchange="filterForecast()"><option value="">All Categories</option></select>
-<button class="forecast-dl-btn" onclick="downloadForecastCSV()">Download CSV</button>
+<button class="forecast-dl-btn" onclick="downloadForecastCSV()">Export CSV</button>
 </div>
 </div>
 <div id="forecast-summary" class="forecast-summary"></div>
 <div class="forecast-charts">
-<div class="forecast-chart-card"><h4>Top 15 Items by Weekly Volume</h4><canvas id="ch-forecast-top"></canvas></div>
-<div class="forecast-chart-card"><h4>Volume by Day of Week</h4><canvas id="ch-forecast-dow"></canvas></div>
+<div class="forecast-chart-card"><h4>Top 15 Items — Predicted Weekly Volume</h4><canvas id="ch-forecast-top"></canvas></div>
+<div class="forecast-chart-card"><h4>Daily Volume Distribution</h4><canvas id="ch-forecast-dow"></canvas></div>
 </div>
 <div id="forecast-tiers"></div>
 </div>
 </div>
-
         <!-- PAGE: Knowledge -->
         <div id="tab-knowledge" style="display:none">
           <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:22px">
@@ -5995,20 +6011,7 @@ navTo=function(page){
 };
 
 // == PREP ORDER FORECAST ==
-let _forecastData=[], _forecastFiltered=[], _forecastTopChart=null, _forecastDowChart=null, _forecastLoc='all';
-function initForecastLocs(){
-  const c=document.getElementById('forecast-loc-btns');
-  if(!c)return;
-  c.innerHTML='';
-  const locs=['all',...(window._locs||[])];
-  locs.forEach(l=>{
-    const b=document.createElement('button');
-    b.className='forecast-loc-btn'+(l===_forecastLoc?' active':'');
-    b.textContent=l==='all'?'All Locations':l.charAt(0).toUpperCase()+l.slice(1);
-    b.onclick=()=>{_forecastLoc=l;document.querySelectorAll('.forecast-loc-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');filterForecast()};
-    c.appendChild(b);
-  });
-}
+let _forecastData=[], _forecastFiltered=[], _forecastTopChart=null, _forecastDowChart=null, _forecastActiveDays=[];
 async function loadPrepForecast(){
   try{
     const now=new Date(), end=new Date(now);
@@ -6016,7 +6019,7 @@ async function loadPrepForecast(){
     const start=new Date(now);start.setDate(start.getDate()-42);
     const fmt=d=>d.toISOString().split('T')[0];
     const dr=document.getElementById('forecast-date-range');
-    if(dr)dr.textContent='Forecast: '+fmt(now)+' to '+fmt(end)+' (based on 6-week history)';
+    if(dr)dr.textContent='Next 7 days: '+fmt(now)+' \u2192 '+fmt(end)+' \u00b7 Based on 6-week rolling average';
     let all=[],page=0,pageSize=1000,more=true;
     while(more){
       const{data,error}=await sb.from('kitchen_ticket_items').select('item_name,menu_group,quantity,service_date,location').gte('service_date',fmt(start)).lte('service_date',fmt(now)).range(page*pageSize,(page+1)*pageSize-1);
@@ -6025,41 +6028,66 @@ async function loadPrepForecast(){
       more=data&&data.length===pageSize;page++;
     }
     _forecastData=processForecast(all,now,end);
-    initForecastLocs();
-    const cats=[...new Set(all.map(r=>r.menu_group).filter(Boolean))].sort();
+    const cats=[...new Set(_forecastData.map(r=>r.group).filter(Boolean))].sort();
     const sel=document.getElementById('forecast-cat-filter');
     if(sel){sel.innerHTML='<option value="">All Categories</option>';cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)})}
+    initForecastDepts();
     filterForecast();
   }catch(e){console.error('Forecast load error:',e)}
 }
+const _bevKeywords=['beer','wine','cocktail','margarita','marg','mimosa','sangria','spritz','seltzer','coke','diet coke','sprite','lemonade','tea','coffee','espresso','latte','cappuccino','mocha','juice','water','soda','pepsi','dr pepper','fanta','ginger ale','tonic','club soda','red bull','byo','martini','old fashioned','manhattan','negroni','daiquiri','mojito','paloma','mule','highball','shot','draft','ipa','lager','ale','stout','pilsner','porter','cider','prosecco','champagne','rose','chardonnay','cabernet','pinot','merlot','sauvignon','riesling','zinfandel','moscato','hennessy','patron','tito','jack daniel','crown royal','fireball','jagermeister','baileys','kahlua','amaretto','rum','vodka','whiskey','bourbon','tequila','gin','brandy','cognac','scotch','mezcal','sake','soju','kombucha','smoothie','shake','float','arnold palmer'];
+function classifyDept(name,menuGroup){
+  const n=(name||'').toLowerCase();
+  const g=(menuGroup||'').toLowerCase();
+  if(g.includes('beverage')||g.includes('drink')||g.includes('bar')||g.includes('beer')||g.includes('wine')||g.includes('cocktail')||g.includes('liquor')||g.includes('spirit'))return'Beverage';
+  for(const kw of _bevKeywords){if(n===kw||n.includes(kw+' ')||n.includes(' '+kw)||n.startsWith(kw))return'Beverage'}
+  return'Food';
+}
 function processForecast(rows,now,end){
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const items={};
+  const globalDayTotals=[0,0,0,0,0,0,0];
   rows.forEach(r=>{
     if(!r.item_name)return;
-    const key=r.item_name+'|'+(r.location||'');
-    if(!items[key])items[key]={name:r.item_name,location:r.location||'unknown',group:r.menu_group||'Other',byDay:[0,0,0,0,0,0,0],count:0,weeks:new Set()};
+    const key=r.item_name;
+    if(!items[key])items[key]={name:r.item_name,group:r.menu_group||'Other',dept:classifyDept(r.item_name,r.menu_group),byDay:[0,0,0,0,0,0,0],count:0};
     const d=new Date(r.service_date+'T00:00:00');
     const dow=d.getDay();
     const qty=Number(r.quantity)||1;
     items[key].byDay[dow]+=qty;
     items[key].count+=qty;
-    const wk=Math.floor((now-d)/(7*86400000));
-    items[key].weeks.add(wk);
+    globalDayTotals[dow]+=qty;
   });
+  _forecastActiveDays=[];
   const numWeeks=6;
+  for(let i=0;i<7;i++){if(globalDayTotals[i]>0)_forecastActiveDays.push(i)}
   return Object.values(items).map(it=>{
     const avg=it.byDay.map(v=>Math.round(v/numWeeks));
-    const weekTotal=avg.reduce((a,b)=>a+b,0);
+    const activeAvg=_forecastActiveDays.map(i=>avg[i]);
+    const weekTotal=activeAvg.reduce((a,b)=>a+b,0);
     const futureDays=[];
-    for(let i=0;i<7;i++){const dd=new Date(now);dd.setDate(dd.getDate()+i);futureDays.push({day:days[dd.getDay()],date:dd,qty:avg[dd.getDay()]})}
-    return{...it,avg,weekTotal,futureDays};
+    for(let i=0;i<7;i++){const dd=new Date(now);dd.setDate(dd.getDate()+i);const dow=dd.getDay();if(_forecastActiveDays.includes(dow)){futureDays.push({day:dayNames[dow],date:dd,qty:avg[dow],dow:dow})}}
+    return{...it,avg,weekTotal,futureDays,activeAvg};
   }).sort((a,b)=>b.weekTotal-a.weekTotal);
+}
+let _forecastDept='all';
+function initForecastDepts(){
+  const c=document.getElementById('forecast-dept-btns');
+  if(!c)return;
+  const depts=[{key:'all',label:'All'},{key:'Food',label:'\ud83c\udf54 Food',cls:'dept-food'},{key:'Beverage',label:'\ud83c\udf78 Beverage',cls:'dept-bev'}];
+  c.innerHTML='';
+  depts.forEach(d=>{
+    const b=document.createElement('button');
+    b.className='forecast-dept-btn'+(d.cls?' '+d.cls:'')+(d.key===_forecastDept?' active':'');
+    b.textContent=d.label;
+    b.onclick=()=>{_forecastDept=d.key;c.querySelectorAll('.forecast-dept-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');filterForecast()};
+    c.appendChild(b);
+  });
 }
 function filterForecast(){
   const cat=document.getElementById('forecast-cat-filter')?.value||'';
   _forecastFiltered=_forecastData.filter(it=>{
-    if(_forecastLoc!=='all'&&it.location!==_forecastLoc)return false;
+    if(_forecastDept!=='all'&&it.dept!==_forecastDept)return false;
     if(cat&&it.group!==cat)return false;
     return true;
   });
@@ -6075,15 +6103,20 @@ function renderForecastSummary(){
   if(!c)return;
   const totalItems=_forecastFiltered.length;
   const totalVol=_forecastFiltered.reduce((a,b)=>a+b.weekTotal,0);
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const dayTotals=[0,0,0,0,0,0,0];
   _forecastFiltered.forEach(it=>it.avg.forEach((v,i)=>dayTotals[i]+=v));
-  const busiestIdx=dayTotals.indexOf(Math.max(...dayTotals));
+  const activeDayTotals=_forecastActiveDays.map(i=>dayTotals[i]);
+  const maxDayVal=Math.max(...activeDayTotals);
+  const busiestIdx=_forecastActiveDays[activeDayTotals.indexOf(maxDayVal)];
   const topItem=_forecastFiltered[0];
+  const foodCount=_forecastFiltered.filter(i=>i.dept==='Food').length;
+  const bevCount=_forecastFiltered.filter(i=>i.dept==='Beverage').length;
+  const deptBreak=_forecastDept==='all'?'<span style="color:var(--green)">'+foodCount+' food</span> \u00b7 <span style="color:#8b5cf6">'+bevCount+' bev</span>':'';
   c.innerHTML=`
-    <div class="forecast-stat"><div class="stat-label">Total Items</div><div class="stat-value">${totalItems}</div><div class="stat-sub">unique items tracked</div></div>
+    <div class="forecast-stat"><div class="stat-label">Total Items</div><div class="stat-value">${totalItems}</div><div class="stat-sub">${deptBreak||'unique items tracked'}</div></div>
     <div class="forecast-stat"><div class="stat-label">Weekly Volume</div><div class="stat-value">${totalVol.toLocaleString()}</div><div class="stat-sub">predicted units/week</div></div>
-    <div class="forecast-stat"><div class="stat-label">Busiest Day</div><div class="stat-value">${days[busiestIdx]}</div><div class="stat-sub">${dayTotals[busiestIdx].toLocaleString()} units avg</div></div>
+    <div class="forecast-stat"><div class="stat-label">Busiest Day</div><div class="stat-value">${dayNames[busiestIdx]||'-'}</div><div class="stat-sub">${maxDayVal?maxDayVal.toLocaleString()+' units avg':''}</div></div>
     <div class="forecast-stat"><div class="stat-label">Top Item</div><div class="stat-value" style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${topItem?topItem.name:'-'}</div><div class="stat-sub">${topItem?topItem.weekTotal+'/week':''}</div></div>`;
 }
 function renderForecastCharts(){
@@ -6091,45 +6124,58 @@ function renderForecastCharts(){
   const dowCtx=document.getElementById('ch-forecast-dow');
   if(!topCtx||!dowCtx)return;
   const top15=_forecastFiltered.slice(0,15);
+  const barColors=top15.map(i=>i.dept==='Beverage'?'rgba(139,92,246,.75)':'rgba(16,185,129,.75)');
   if(_forecastTopChart)_forecastTopChart.destroy();
-  _forecastTopChart=new Chart(topCtx,{type:'bar',data:{labels:top15.map(i=>i.name.length>25?i.name.slice(0,22)+'...':i.name),datasets:[{data:top15.map(i=>i.weekTotal),backgroundColor:'rgba(99,102,241,.7)',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(255,255,255,.5)'}},y:{grid:{display:false},ticks:{color:'rgba(255,255,255,.7)',font:{size:11}}}}}});
-  topCtx.parentElement.style.height='380px';
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const dayTotals=[0,0,0,0,0,0,0];
-  _forecastFiltered.forEach(it=>it.avg.forEach((v,i)=>dayTotals[i]+=v));
+  _forecastTopChart=new Chart(topCtx,{type:'bar',data:{labels:top15.map(i=>i.name.length>28?i.name.slice(0,25)+'...':i.name),datasets:[{data:top15.map(i=>i.weekTotal),backgroundColor:barColors,borderRadius:4,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){const it=top15[ctx.dataIndex];return it.name+': '+it.weekTotal+'/wk ('+it.dept+')'}}}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(255,255,255,.5)'}},y:{grid:{display:false},ticks:{color:'rgba(255,255,255,.7)',font:{size:11}}}}}});
+  topCtx.parentElement.style.height='420px';
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const foodByDay=[0,0,0,0,0,0,0],bevByDay=[0,0,0,0,0,0,0];
+  _forecastFiltered.forEach(it=>it.avg.forEach((v,i)=>{if(it.dept==='Beverage')bevByDay[i]+=v;else foodByDay[i]+=v}));
+  const activeLabels=_forecastActiveDays.map(i=>dayNames[i]);
+  const activeFoodVals=_forecastActiveDays.map(i=>foodByDay[i]);
+  const activeBevVals=_forecastActiveDays.map(i=>bevByDay[i]);
   if(_forecastDowChart)_forecastDowChart.destroy();
-  _forecastDowChart=new Chart(dowCtx,{type:'bar',data:{labels:days,datasets:[{data:dayTotals,backgroundColor:days.map((_,i)=>i===dayTotals.indexOf(Math.max(...dayTotals))?'rgba(99,102,241,.9)':'rgba(99,102,241,.4)'),borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'rgba(255,255,255,.7)'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(255,255,255,.5)'}}}}});
-  dowCtx.parentElement.style.height='380px';
+  _forecastDowChart=new Chart(dowCtx,{type:'bar',data:{labels:activeLabels,datasets:[{label:'Food',data:activeFoodVals,backgroundColor:'rgba(16,185,129,.65)',borderRadius:4},{label:'Beverage',data:activeBevVals,backgroundColor:'rgba(139,92,246,.65)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'rgba(255,255,255,.7)',usePointStyle:true,pointStyle:'circle',padding:16}}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'rgba(255,255,255,.7)',font:{size:12}}},y:{stacked:true,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(255,255,255,.5)'}}}}});
+  dowCtx.parentElement.style.height='420px';
+}
+function heatClass(val,max){
+  if(!val||val===0)return'hc-0';
+  const pct=val/max;
+  if(pct>=.75)return'hc-4';
+  if(pct>=.5)return'hc-3';
+  if(pct>=.25)return'hc-2';
+  return'hc-1';
 }
 function renderForecastTiers(){
   const c=document.getElementById('forecast-tiers');
   if(!c)return;
+  if(!_forecastFiltered.length){c.innerHTML='<div class="forecast-nodata">No items found for this filter.</div>';return}
   const tiers=[
     {name:'High Volume',cls:'tier-high',items:_forecastFiltered.filter(i=>i.weekTotal>=50)},
     {name:'Medium Volume',cls:'tier-med',items:_forecastFiltered.filter(i=>i.weekTotal>=15&&i.weekTotal<50)},
-    {name:'Low Volume',cls:'tier-low',items:_forecastFiltered.filter(i=>i.weekTotal<15)}
+    {name:'Low Volume',cls:'tier-low',items:_forecastFiltered.filter(i=>i.weekTotal>0&&i.weekTotal<15)}
   ];
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const dayHeaders=_forecastFiltered[0]?_forecastFiltered[0].futureDays.map(d=>d.day):days;
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayHeaders=_forecastFiltered[0]?_forecastFiltered[0].futureDays.map(d=>d.day):[];
+  const topTotal=_forecastFiltered[0]?_forecastFiltered[0].weekTotal:1;
   let html='';
   tiers.forEach(t=>{
     if(!t.items.length)return;
+    const tierVol=t.items.reduce((a,b)=>a+b.weekTotal,0);
     html+=`<div class="forecast-tier ${t.cls}">
-      <div class="forecast-tier-header"><h4>${t.name}</h4><span class="forecast-tier-badge">${t.items.length} items</span></div>
-      <table class="forecast-table"><thead><tr><th style="width:200px">Item</th><th>Trend</th>`;
+      <div class="forecast-tier-header"><h4>${t.name}</h4><span class="forecast-tier-badge">${t.items.length} items</span><span style="margin-left:auto;font-size:12px;color:var(--text-muted)">${tierVol.toLocaleString()} units/wk</span></div>
+      <table class="forecast-table"><thead><tr><th style="width:200px">Item</th><th>Dept</th><th style="width:120px">Share</th>`;
     dayHeaders.forEach(d=>{html+=`<th class="day-header">${d}</th>`});
-    html+=`<th style="text-align:right">Week Total</th></tr></thead><tbody>`;
+    html+=`<th style="text-align:right">Total</th></tr></thead><tbody>`;
     t.items.forEach(it=>{
-      const maxDay=Math.max(...it.avg,1);
-      html+=`<tr><td class="forecast-item-name" title="${it.name}">${it.name}</td><td><div class="forecast-spark">`;
-      it.avg.forEach(v=>{
-        const h=Math.round((v/maxDay)*22)||0;
-        html+=`<div class="forecast-spark-bar${v===0?' empty':''}" style="height:${Math.max(h,1)}px"></div>`;
-      });
-      html+=`</div></td>`;
+      const maxDay=Math.max(...it.futureDays.map(d=>d.qty),1);
+      const pct=Math.round(it.weekTotal/topTotal*100);
+      const barColor=it.dept==='Beverage'?'#8b5cf6':'#10b981';
+      html+=`<tr><td class="forecast-item-name" title="${it.name}">${it.name}</td>`;
+      html+=`<td><span style="font-size:11px;padding:2px 8px;border-radius:8px;background:${it.dept==='Beverage'?'rgba(139,92,246,.15)':'rgba(16,185,129,.15)'};color:${it.dept==='Beverage'?'#8b5cf6':'#10b981'}">${it.dept==='Beverage'?'Bev':'Food'}</span></td>`;
+      html+=`<td><div class="forecast-bar-wrap"><div class="forecast-bar-fill" style="width:${pct}%;background:${barColor}"></div></div></td>`;
       it.futureDays.forEach(fd=>{
-        const isHigh=fd.qty>=maxDay*0.8&&fd.qty>0;
-        html+=`<td class="forecast-day-val${isHigh?' high':''}">${fd.qty}</td>`;
+        html+=`<td class="forecast-heatcell ${heatClass(fd.qty,maxDay)}"><span class="hc-val">${fd.qty}</span></td>`;
       });
       html+=`<td class="forecast-week-total">${it.weekTotal}</td></tr>`;
     });
@@ -6139,18 +6185,19 @@ function renderForecastTiers(){
 }
 function downloadForecastCSV(){
   if(!_forecastFiltered.length)return;
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  let csv='Item,Category,Location,'+days.join(',')+',Week Total\n';
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const activeDayNames=_forecastActiveDays.map(i=>dayNames[i]);
+  let csv='Item,Department,Category,'+activeDayNames.join(',')+',Week Total\n';
   _forecastFiltered.forEach(it=>{
-    csv+=`"${it.name}","${it.group}","${it.location}",${it.avg.join(',')},${it.weekTotal}\n`;
+    const vals=_forecastActiveDays.map(i=>it.avg[i]);
+    csv+=`"${it.name}","${it.dept}","${it.group}",${vals.join(',')},${it.weekTotal}\n`;
   });
   const blob=new Blob([csv],{type:'text/csv'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='prep_forecast.csv';
+  a.download='prep_forecast_'+new Date().toISOString().split('T')[0]+'.csv';
   a.click();
 }
-
 </script>
 <!-- Bottom Tab Bar (Mobile) -->
 <div class="bottom-tab-bar" id="bottom-tab-bar">
