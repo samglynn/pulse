@@ -16,7 +16,7 @@
   --bg:#0C0E14; --surface:#14161E; --surface-2:#1A1D27; --border:#252839;
   --text:#EFF1F5; --text-2:#B0B4C8; --text-muted:#6B7085;
   --accent:#6366F1; --green:#14B8A6; --red:#E8505B; --yellow:#F9A826; --purple:#A78BFA; --pink:#EC4899; --cyan:#22D3EE;
-  --radius:14px; --sidebar-w:240px;
+  --radius:14px; --sidebar-w:60px;--sidebar-expanded-w:240px
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;line-height:1.5;overflow-x:hidden}
@@ -68,26 +68,33 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 
 /* ── Layout Shell ── */
 .app-shell{display:flex;min-height:100vh}
-.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:transform .25s}
-.sidebar-brand{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
-.sidebar-brand .badge{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent)}
-.sidebar-brand h2{font-size:16px;font-weight:800;letter-spacing:-0.02em;margin-top:2px}
-.sidebar-nav{flex:1;padding:8px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all .15s;letter-spacing:-.01em}
-.nav-item:hover{background:var(--surface-2);color:var(--text)}
-.nav-item.active{background:rgba(99,102,241,.12);color:var(--accent);font-weight:600}
-.nav-item .icon{font-size:11px;width:16px;text-align:center;opacity:.5;font-style:normal;flex-shrink:0}
-.nav-item.active .icon{opacity:1}
-.active-loc{background:var(--accent)!important;border-color:var(--accent)!important;color:#000!important;font-weight:700!important}
-.upload-status-ok{color:var(--green)!important;font-weight:600}
-.upload-status-err{color:var(--red)!important;font-weight:600}
-.nav-divider{height:1px;background:var(--border);margin:6px 4px}
-.sidebar-footer{padding:12px 14px;border-top:1px solid var(--border)}
-.sidebar-user{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted)}
-.sidebar-user .avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
-
-.main-content{margin-left:var(--sidebar-w);flex:1;min-width:0}
-.top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:40;gap:12px;flex-wrap:wrap}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:width .25s ease;overflow:hidden}
+.sidebar:hover{width:var(--sidebar-expanded-w)}
+.sidebar-brand{padding:14px 12px 12px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden}
+.sidebar-brand .badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 7px;border-radius:4px;opacity:0;transition:opacity .2s .1s}
+.sidebar:hover .sidebar-brand .badge{opacity:1}
+.sidebar-brand h2{font-size:15px;font-weight:700;letter-spacing:-.02em;margin:6px 0 0;white-space:nowrap;opacity:0;transition:opacity .2s .1s}
+.sidebar:hover .sidebar-brand h2{opacity:1}
+.sidebar:hover .brand-text{opacity:1}
+.active-loc span:not(:first-child){opacity:0;transition:opacity .2s .1s}
+.sidebar:hover .active-loc span:not(:first-child){opacity:1}
+.sidebar-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all .15s;letter-spacing:-.01em;white-space:nowrap;overflow:hidden}
+.nav-item:hover{background:var(--hover);color:var(--text)}
+.nav-item.active{background:rgba(99,102,241,.1);color:var(--accent);font-weight:600}
+.nav-item .icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:16px;border-radius:6px;background:var(--hover);flex-shrink:0;transition:all .2s}
+.nav-item.active .icon{background:rgba(99,102,241,.15)}
+.nav-item span:not(.icon){opacity:0;transition:opacity .2s .1s}
+.sidebar:hover .nav-item span:not(.icon){opacity:1}
+.active-loc{display:flex;align-items:center;gap:6px;padding:6px 10px;margin:0 6px 6px;border-radius:6px;font-size:11px;font-weight:600;color:var(--accent);background:rgba(99,102,241,.08);white-space:nowrap;overflow:hidden}
+.upload-status-ok{color:var(--green);font-size:11px;padding:2px 10px;white-space:nowrap;overflow:hidden}
+.upload-status-err{color:var(--red);font-size:11px;padding:2px 10px;white-space:nowrap;overflow:hidden}
+.nav-divider{height:1px;background:var(--border);margin:6px 10px}
+.sidebar-footer{padding:8px 6px;border-top:1px solid var(--border);overflow:hidden}
+.sidebar-user{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:12px;font-weight:500;color:var(--text-muted);white-space:nowrap;overflow:hidden}
+.sidebar-user .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.main-content{margin-left:var(--sidebar-w);flex:1;min-width:0;transition:margin-left .25s ease}
+.top-bar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:40;transition:left .25s ease}
 .top-bar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .top-bar-right{display:flex;align-items:center;gap:8px}
 .page-content{padding:24px}
@@ -99,14 +106,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 
 @media(max-width:768px){
   /* Core layout */
-  .sidebar{transform:translateX(-100%);width:260px}
+  .sidebar{transform:translateX(-100%);width:var(--sidebar-expanded-w)}
   .sidebar.open{transform:translateX(0)}
   .sidebar-overlay.open{display:block}
   .mobile-header{display:flex}
   .main-content{margin-left:0}
 
   /* Top bar */
-  .top-bar{padding:8px 10px;gap:6px;display:flex;flex-wrap:wrap}
+  .top-bar{left:0;padding:8px 10px;gap:6px;display:flex;flex-wrap:wrap}
   .top-bar-left{gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
   .top-bar-left .btn-sm{padding:4px 8px;font-size:10px;white-space:nowrap;flex-shrink:0}
   .top-bar-left select{min-width:100px;font-size:10px;padding:4px 6px}
@@ -485,9 +492,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
-      <div class="sidebar-brand" style="padding:20px 16px 16px;border-bottom:1px solid var(--border)">
-        <div style="font-size:15px;font-weight:800;letter-spacing:-.02em">HeyRai</div>
-        <div style="font-size:10px;font-weight:600;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-top:1px">Restaurant AI</div>
+      <div class="sidebar-brand" style="padding:14px 12px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;overflow:hidden">
+        <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">H</div>
+        <div class="brand-text" style="white-space:nowrap;overflow:hidden;opacity:0;transition:opacity .2s .1s"><div style="font-size:15px;font-weight:800;letter-spacing:-.02em">HeyRai</div><div style="font-size:9px;font-weight:600;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-top:2px">RESTAURANT AI</div></div>
+      </div>
       </div>
       <div class="sidebar-nav">
 
@@ -3908,6 +3916,19 @@ const PAGE_GROUPS = {
   settings:'settings-group', knowledge:'settings-group',
 };
 const GROUP_IDS = { performance:'performance', kitchen:'kitchen', ai:'ai', 'settings-group':'settings' };
+
+/* Sidebar collapse/expand hover — shift top-bar & main-content */
+(function(){
+  const sb=document.getElementById('sidebar');
+  const tb=document.querySelector('.top-bar');
+  const mc=document.querySelector('.main-content');
+  if(!sb||!tb)return;
+  const mq=window.matchMedia('(max-width:768px)');
+  function onEnter(){if(!mq.matches){tb.style.left='var(--sidebar-expanded-w)';if(mc)mc.style.marginLeft='var(--sidebar-expanded-w)';}}
+  function onLeave(){if(!mq.matches){tb.style.left='var(--sidebar-w)';if(mc)mc.style.marginLeft='var(--sidebar-w)';}}
+  sb.addEventListener('mouseenter',onEnter);
+  sb.addEventListener('mouseleave',onLeave);
+})();
 
 function navTo(page) {
   const allPages = ['dashboard','performance','laborhub','kitchen','scoreboard','ai','kitchenlabor',
