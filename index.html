@@ -1053,6 +1053,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 <div class="forecast-week-label" id="forecast-week-label">Loading forecast week...</div>
 </div>
 <div class="forecast-controls">
+<div id="forecast-loc-btns" style="display:flex;gap:6px"></div>
 <select id="forecast-category-filter" onchange="filterForecast()"><option value="all">All Categories</option></select>
 <button class="btn-primary" onclick="downloadForecastCSV()">Download CSV</button>
 </div>
@@ -5969,41 +5970,66 @@ navTo=function(page){
 // == PREP ORDER FORECAST ==
 var _forecastData=null;
 var _forecastCategories=[];
+var _forecastLocId=null;
+var _forecastLocs=null;
 
-function loadPrepForecast(){
+async function initForecastLocs(){
+  if(_forecastLocs)return _forecastLocs;
+  var r=await sb.from('locations').select('id,name,slug');
+  _forecastLocs=r.data||[];
+  var container=document.getElementById('forecast-loc-btns');
+  if(container&&_forecastLocs.length){
+    container.innerHTML='';
+    _forecastLocs.forEach(function(loc,i){
+      var btn=document.createElement('button');
+      btn.className='btn btn-sm'+(i===0?' active-loc':'');
+      btn.textContent=loc.name;
+      btn.style.cssText=i===0?'background:var(--accent);color:#000;border-color:var(--accent)':'';
+      btn.onclick=function(){
+        container.querySelectorAll('button').forEach(function(b){b.className='btn btn-sm';b.style.cssText=''});
+        btn.className='btn btn-sm active-loc';
+        btn.style.cssText='background:var(--accent);color:#000;border-color:var(--accent)';
+        _forecastLocId=loc.id;_forecastData=null;loadPrepForecast();
+      };
+      container.appendChild(btn);
+    });
+    if(!_forecastLocId)_forecastLocId=_forecastLocs[0].id;
+  }
+  return _forecastLocs;
+}
+
+async function loadPrepForecast(){
   var content=document.getElementById('forecast-content');
   var label=document.getElementById('forecast-week-label');
   if(!content)return;
+  await initForecastLocs();
   if(_forecastData){renderForecast(_forecastData);return}
   content.innerHTML='<div class="forecast-loading">Loading 8 weeks of kitchen data...</div>';
   var today=new Date();
-  var eightWeeksAgo=new Date(today);
-  eightWeeksAgo.setDate(today.getDate()-56);
+  var eightWeeksAgo=new Date(today);eightWeeksAgo.setDate(today.getDate()-56);
   var fromDate=eightWeeksAgo.toISOString().split('T')[0];
   var dayOfWeek=today.getDay();
   var daysUntilMon=dayOfWeek===0?1:(8-dayOfWeek);
   var nextMon=new Date(today);nextMon.setDate(today.getDate()+daysUntilMon);
   var nextSun=new Date(nextMon);nextSun.setDate(nextMon.getDate()+6);
   var fmtD=function(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})};
-  if(label)label.textContent='Forecast for '+fmtD(nextMon)+' - '+fmtD(nextSun);
-  var locId=typeof currentLocationId!=='undefined'?currentLocationId:null;
-  if(!locId){content.innerHTML='<div class="forecast-empty">Select a location first.</div>';return}
-  var SB='https://wogtyrgckqoopzoziwbr.supabase.co';
-  var SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZ3R5cmdja3Fvb3B6b3ppd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTAxNTgsImV4cCI6MjA4ODk4NjE1OH0.9VQHHo9NX7Jf3cUpnljsXBI0jBQxjVzjPuqfQ8vGczI';
-  function fetchAll(offset,all){
-    var url=SB+'/rest/v1/kitchen_ticket_items?select=item_name,quantity,business_date,station&location_id=eq.'+locId+'&business_date=gte.'+fromDate+'&order=business_date.asc&limit=1000&offset='+offset;
-    fetch(url,{headers:{'apikey':SK,'Authorization':'Bearer '+SK}}).then(function(r){return r.json()}).then(function(data){
-      all=all.concat(data);
-      if(data.length===1000)fetchAll(offset+1000,all);
-      else processForecast(all);
-    }).catch(function(err){content.innerHTML='<div class="forecast-empty">Error: '+err.message+'</div>'});
-  }
-  fetchAll(0,[]);
+  if(label)label.textContent='Forecast for '+fmtD(nextMon)+' \u2013 '+fmtD(nextSun);
+  if(!_forecastLocId){content.innerHTML='<div class="forecast-empty">No locations found.</div>';return}
+  try{
+    var allItems=[];var more=true;var offset=0;
+    while(more){
+      var r=await sb.from('kitchen_ticket_items').select('item_name,quantity,business_date,station').eq('location_id',_forecastLocId).gte('business_date',fromDate).order('business_date',{ascending:true}).range(offset,offset+999);
+      var data=r.data||[];
+      allItems=allItems.concat(data);
+      if(data.length<1000)more=false;else offset+=1000;
+    }
+    processForecast(allItems);
+  }catch(err){content.innerHTML='<div class="forecast-empty">Error: '+err.message+'</div>'}
 }
 
 function processForecast(allItems){
   var content=document.getElementById('forecast-content');
-  if(!allItems.length){content.innerHTML='<div class="forecast-empty">No kitchen ticket data found for the last 8 weeks.</div>';return}
+  if(!allItems.length){content.innerHTML='<div class="forecast-empty">No kitchen ticket data found for the last 8 weeks. Data syncs daily from Toast.</div>';return}
   var itemMap={};var dateSet={};
   allItems.forEach(function(row){
     var name=row.item_name||'Unknown';var qty=row.quantity||1;var station=row.station||'Other';var bd=row.business_date;
@@ -6016,8 +6042,7 @@ function processForecast(allItems){
   Object.keys(itemMap).forEach(function(name){
     var info=itemMap[name];var row={name:name,station:info.station,days:[]};var weekTotal=0;
     for(var d=0;d<7;d++){var numDates=Object.keys(dateSet[d]||{}).length||1;var avg=Math.round(info.days[d].total/numDates);row.days.push(avg);weekTotal+=avg}
-    row.weekTotal=weekTotal;
-    if(weekTotal>0){forecast.push(row);categories[info.station]=1}
+    row.weekTotal=weekTotal;if(weekTotal>0){forecast.push(row);categories[info.station]=1}
   });
   forecast.sort(function(a,b){return b.weekTotal-a.weekTotal});
   _forecastData=forecast;_forecastCategories=Object.keys(categories).sort();
