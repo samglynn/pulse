@@ -324,23 +324,42 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 .bottom-tab-bar{display:block}
 .page-content{padding-bottom:70px}
 }
-/* == Prep Forecast Page == */
-.forecast-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
-.forecast-controls select,.forecast-controls button{padding:8px 14px;border-radius:8px;font-size:13px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
-.forecast-controls .btn-primary{background:var(--accent);color:#fff;border:none;cursor:pointer;font-weight:600}
-.forecast-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
-.forecast-table{width:100%;border-collapse:collapse;font-size:13px}
-.forecast-table th{background:var(--surface-2);padding:10px 14px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);position:sticky;top:0;border-bottom:2px solid var(--border)}
-.forecast-table td{padding:8px 14px;border-bottom:1px solid var(--border)}
-.forecast-table tr:hover{background:var(--surface-2)}
-.forecast-table .item-name{font-weight:600;color:var(--text)}
-.forecast-table .day-val{text-align:center;min-width:50px}
-.forecast-table .total-col{font-weight:700;background:rgba(99,102,241,.06);text-align:center}
-.forecast-loading{text-align:center;padding:40px;color:var(--text-muted)}
-.forecast-empty{text-align:center;padding:40px;color:var(--text-muted)}
-.forecast-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px}
-.forecast-header h3{font-size:18px;font-weight:700;margin:0}
-.forecast-week-label{font-size:13px;color:var(--text-muted)}
+/* == Forecast Page == */
+.forecast-page{padding:0 24px}
+.forecast-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:20px 0}
+.forecast-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px}
+.forecast-stat .stat-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.forecast-stat .stat-value{font-size:28px;font-weight:700;color:var(--text);margin:4px 0}
+.forecast-stat .stat-sub{font-size:13px;color:var(--accent)}
+.forecast-charts{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+.forecast-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.forecast-chart-card h4{margin:0 0 12px;font-size:14px;color:var(--text-muted);font-weight:500}
+.forecast-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.forecast-loc-btn{padding:8px 20px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:13px;transition:all .2s}
+.forecast-loc-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.forecast-cat-select{background:var(--surface);color:var(--text);border:1px solid var(--border);padding:8px 14px;border-radius:8px;font-size:13px}
+.forecast-dl-btn{background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;margin-left:auto}
+.forecast-tier{margin-bottom:20px}
+.forecast-tier-header{display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer;user-select:none}
+.forecast-tier-header h4{margin:0;font-size:14px;font-weight:600}
+.forecast-tier-badge{font-size:11px;padding:2px 10px;border-radius:10px;font-weight:600}
+.tier-high .forecast-tier-badge{background:rgba(227,78,78,.15);color:var(--red)}
+.tier-med .forecast-tier-badge{background:rgba(246,168,38,.15);color:var(--yellow)}
+.tier-low .forecast-tier-badge{background:rgba(20,184,166,.15);color:var(--green)}
+.forecast-table{width:100%;border-collapse:separate;border-spacing:0}
+.forecast-table th{text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg)}
+.forecast-table td{padding:8px 12px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)}
+.forecast-table tr:hover td{background:rgba(255,255,255,.03)}
+.forecast-item-name{font-weight:500;color:var(--text);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.forecast-spark{display:flex;align-items:flex-end;gap:2px;height:24px}
+.forecast-spark-bar{width:14px;border-radius:2px 2px 0 0;background:var(--accent);opacity:.7;min-height:1px;transition:opacity .2s}
+.forecast-spark-bar:hover{opacity:1}
+.forecast-spark-bar.empty{background:var(--border);opacity:.3}
+.forecast-day-val{font-size:12px;color:var(--text-muted);text-align:center;min-width:32px}
+.forecast-day-val.high{color:var(--accent);font-weight:600}
+.forecast-week-total{font-weight:700;color:var(--text);font-size:14px;text-align:right}
+.forecast-table .day-header{text-align:center;min-width:32px}
+@media(max-width:768px){.forecast-summary{grid-template-columns:repeat(2,1fr)}.forecast-charts{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -1047,18 +1066,25 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 
 <!-- PAGE: Prep Forecast -->
 <div id="tab-prepforecast" style="display:none">
-<div class="forecast-header">
+<div class="forecast-page">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:8px">
 <div>
-<h3>Prep Order Forecast</h3>
-<div class="forecast-week-label" id="forecast-week-label">Loading forecast week...</div>
+<h3 style="margin:0;font-size:22px;font-weight:700">Prep Forecast</h3>
+<p id="forecast-date-range" style="margin:4px 0 0;color:var(--text-muted);font-size:13px"></p>
 </div>
 <div class="forecast-controls">
-<div id="forecast-loc-btns" style="display:flex;gap:6px"></div>
-<select id="forecast-category-filter" onchange="filterForecast()"><option value="all">All Categories</option></select>
-<button class="btn-primary" onclick="downloadForecastCSV()">Download CSV</button>
+<div id="forecast-loc-btns"></div>
+<select id="forecast-cat-filter" class="forecast-cat-select" onchange="filterForecast()"><option value="">All Categories</option></select>
+<button class="forecast-dl-btn" onclick="downloadForecastCSV()">Download CSV</button>
 </div>
 </div>
-<div id="forecast-content"><div class="forecast-loading">Loading forecast data...</div></div>
+<div id="forecast-summary" class="forecast-summary"></div>
+<div class="forecast-charts">
+<div class="forecast-chart-card"><h4>Top 15 Items by Weekly Volume</h4><canvas id="ch-forecast-top"></canvas></div>
+<div class="forecast-chart-card"><h4>Volume by Day of Week</h4><canvas id="ch-forecast-dow"></canvas></div>
+</div>
+<div id="forecast-tiers"></div>
+</div>
 </div>
 
         <!-- PAGE: Knowledge -->
@@ -5969,124 +5995,160 @@ navTo=function(page){
 };
 
 // == PREP ORDER FORECAST ==
-var _forecastData=null;
-var _forecastCategories=[];
-var _forecastLocId=null;
-var _forecastLocs=null;
-
-async function initForecastLocs(){
-  if(_forecastLocs)return _forecastLocs;
-  var r=await sb.from('locations').select('id,name,slug');
-  _forecastLocs=r.data||[];
-  var container=document.getElementById('forecast-loc-btns');
-  if(container&&_forecastLocs.length){
-    container.innerHTML='';
-    _forecastLocs.forEach(function(loc,i){
-      var btn=document.createElement('button');
-      btn.className='btn btn-sm'+(loc.slug==='warren'?' active-loc':'');
-      btn.textContent=loc.name;
-      btn.style.cssText=loc.slug==='warren'?'background:var(--accent);color:#000;border-color:var(--accent)':'';
-      btn.onclick=function(){
-        container.querySelectorAll('button').forEach(function(b){b.className='btn btn-sm';b.style.cssText=''});
-        btn.className='btn btn-sm active-loc';
-        btn.style.cssText='background:var(--accent);color:#000;border-color:var(--accent)';
-        _forecastLocId=loc.slug;_forecastData=null;loadPrepForecast();
-      };
-      container.appendChild(btn);
-    });
-    if(!_forecastLocId){var w=_forecastLocs.find(function(l){return l.slug==='warren'});_forecastLocId=w?w.slug:_forecastLocs[0].slug;}
-  }
-  return _forecastLocs;
+let _forecastData=[], _forecastFiltered=[], _forecastTopChart=null, _forecastDowChart=null, _forecastLoc='all';
+function initForecastLocs(){
+  const c=document.getElementById('forecast-loc-btns');
+  if(!c)return;
+  c.innerHTML='';
+  const locs=['all',...(window._locs||[])];
+  locs.forEach(l=>{
+    const b=document.createElement('button');
+    b.className='forecast-loc-btn'+(l===_forecastLoc?' active':'');
+    b.textContent=l==='all'?'All Locations':l.charAt(0).toUpperCase()+l.slice(1);
+    b.onclick=()=>{_forecastLoc=l;document.querySelectorAll('.forecast-loc-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');filterForecast()};
+    c.appendChild(b);
+  });
 }
-
 async function loadPrepForecast(){
-  var content=document.getElementById('forecast-content');
-  var label=document.getElementById('forecast-week-label');
-  if(!content)return;
-  await initForecastLocs();
-  if(_forecastData){renderForecast(_forecastData);return}
-  content.innerHTML='<div class="forecast-loading">Loading 8 weeks of kitchen data...</div>';
-  var today=new Date();
-  var eightWeeksAgo=new Date(today);eightWeeksAgo.setDate(today.getDate()-56);
-  var fromDate=eightWeeksAgo.toISOString().split('T')[0];
-  var dayOfWeek=today.getDay();
-  var daysUntilMon=dayOfWeek===0?1:(8-dayOfWeek);
-  var nextMon=new Date(today);nextMon.setDate(today.getDate()+daysUntilMon);
-  var nextSun=new Date(nextMon);nextSun.setDate(nextMon.getDate()+6);
-  var fmtD=function(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})};
-  if(label)label.textContent='Forecast for '+fmtD(nextMon)+' \u2013 '+fmtD(nextSun);
-  if(!_forecastLocId){content.innerHTML='<div class="forecast-empty">No locations found.</div>';return}
   try{
-    var allItems=[];var more=true;var offset=0;
+    const now=new Date(), end=new Date(now);
+    end.setDate(end.getDate()+7);
+    const start=new Date(now);start.setDate(start.getDate()-42);
+    const fmt=d=>d.toISOString().split('T')[0];
+    const dr=document.getElementById('forecast-date-range');
+    if(dr)dr.textContent='Forecast: '+fmt(now)+' to '+fmt(end)+' (based on 6-week history)';
+    let all=[],page=0,pageSize=1000,more=true;
     while(more){
-      var r=await sb.from('kitchen_ticket_items').select('item_name,quantity,service_date,menu_group').eq('location',_forecastLocId).gte('service_date',fromDate).order('service_date',{ascending:true}).range(offset,offset+999);
-      var data=r.data||[];
-      allItems=allItems.concat(data);
-      if(data.length<1000)more=false;else offset+=1000;
+      const{data,error}=await sb.from('kitchen_ticket_items').select('item_name,menu_group,quantity,service_date,location').gte('service_date',fmt(start)).lte('service_date',fmt(now)).range(page*pageSize,(page+1)*pageSize-1);
+      if(error)throw error;
+      if(data)all=all.concat(data);
+      more=data&&data.length===pageSize;page++;
     }
-    processForecast(allItems);
-  }catch(err){content.innerHTML='<div class="forecast-empty">Error: '+err.message+'</div>'}
+    _forecastData=processForecast(all,now,end);
+    initForecastLocs();
+    const cats=[...new Set(all.map(r=>r.menu_group).filter(Boolean))].sort();
+    const sel=document.getElementById('forecast-cat-filter');
+    if(sel){sel.innerHTML='<option value="">All Categories</option>';cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)})}
+    filterForecast();
+  }catch(e){console.error('Forecast load error:',e)}
 }
-
-function processForecast(allItems){
-  var content=document.getElementById('forecast-content');
-  if(!allItems.length){content.innerHTML='<div class="forecast-empty">No kitchen ticket data found for the last 8 weeks. Data syncs daily from Toast.</div>';return}
-  var itemMap={};var dateSet={};
-  allItems.forEach(function(row){
-    var name=row.item_name||'Unknown';var qty=row.quantity||1;var station=row.menu_group||'Other';var bd=row.service_date;
-    var dow=new Date(bd+'T12:00:00').getDay();
-    if(!itemMap[name])itemMap[name]={station:station,days:{0:{total:0,dates:{}},1:{total:0,dates:{}},2:{total:0,dates:{}},3:{total:0,dates:{}},4:{total:0,dates:{}},5:{total:0,dates:{}},6:{total:0,dates:{}}}};
-    itemMap[name].days[dow].total+=qty;itemMap[name].days[dow].dates[bd]=1;
-    if(!dateSet[dow])dateSet[dow]={};dateSet[dow][bd]=1;
+function processForecast(rows,now,end){
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const items={};
+  rows.forEach(r=>{
+    if(!r.item_name)return;
+    const key=r.item_name+'|'+(r.location||'');
+    if(!items[key])items[key]={name:r.item_name,location:r.location||'unknown',group:r.menu_group||'Other',byDay:[0,0,0,0,0,0,0],count:0,weeks:new Set()};
+    const d=new Date(r.service_date+'T00:00:00');
+    const dow=d.getDay();
+    const qty=Number(r.quantity)||1;
+    items[key].byDay[dow]+=qty;
+    items[key].count+=qty;
+    const wk=Math.floor((now-d)/(7*86400000));
+    items[key].weeks.add(wk);
   });
-  var forecast=[];var categories={};
-  Object.keys(itemMap).forEach(function(name){
-    var info=itemMap[name];var row={name:name,station:info.station,days:[]};var weekTotal=0;
-    for(var d=0;d<7;d++){var numDates=Object.keys(dateSet[d]||{}).length||1;var avg=Math.round(info.days[d].total/numDates);row.days.push(avg);weekTotal+=avg}
-    row.weekTotal=weekTotal;if(weekTotal>0){forecast.push(row);categories[info.station]=1}
-  });
-  forecast.sort(function(a,b){return b.weekTotal-a.weekTotal});
-  _forecastData=forecast;_forecastCategories=Object.keys(categories).sort();
-  var sel=document.getElementById('forecast-category-filter');
-  if(sel){sel.innerHTML='<option value="all">All Categories ('+forecast.length+' items)</option>';
-    _forecastCategories.forEach(function(cat){var count=forecast.filter(function(r){return r.station===cat}).length;sel.innerHTML+='<option value="'+cat+'">'+cat+' ('+count+')</option>'})
-  }
-  renderForecast(forecast);
+  const numWeeks=6;
+  return Object.values(items).map(it=>{
+    const avg=it.byDay.map(v=>Math.round(v/numWeeks));
+    const weekTotal=avg.reduce((a,b)=>a+b,0);
+    const futureDays=[];
+    for(let i=0;i<7;i++){const dd=new Date(now);dd.setDate(dd.getDate()+i);futureDays.push({day:days[dd.getDay()],date:dd,qty:avg[dd.getDay()]})}
+    return{...it,avg,weekTotal,futureDays};
+  }).sort((a,b)=>b.weekTotal-a.weekTotal);
 }
-
 function filterForecast(){
-  if(!_forecastData)return;var sel=document.getElementById('forecast-category-filter');
-  var val=sel?sel.value:'all';var filtered=val==='all'?_forecastData:_forecastData.filter(function(r){return r.station===val});
-  renderForecast(filtered);
-}
-
-function renderForecast(data){
-  var content=document.getElementById('forecast-content');
-  if(!content||!data.length){if(content)content.innerHTML='<div class="forecast-empty">No items match the selected filter.</div>';return}
-  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var h='<div class="forecast-table-wrap"><table class="forecast-table"><thead><tr><th>Menu Item</th><th>Station</th>';
-  dn.forEach(function(d){h+='<th class="day-val">'+d+'</th>'});
-  h+='<th class="total-col">Week Total</th></tr></thead><tbody>';
-  data.forEach(function(row){
-    h+='<tr><td class="item-name">'+row.name+'</td><td>'+row.station+'</td>';
-    for(var d=0;d<7;d++){var v=row.days[d];h+='<td class="day-val"'+(v>0?'':' style="color:var(--text-muted)"')+'>'+v+'</td>'}
-    h+='<td class="total-col">'+row.weekTotal+'</td></tr>';
+  const cat=document.getElementById('forecast-cat-filter')?.value||'';
+  _forecastFiltered=_forecastData.filter(it=>{
+    if(_forecastLoc!=='all'&&it.location!==_forecastLoc)return false;
+    if(cat&&it.group!==cat)return false;
+    return true;
   });
-  h+='</tbody></table></div>';
-  h+='<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">Based on '+(_forecastData?_forecastData.length:data.length)+' menu items over the last 8 weeks of sales data.</div>';
-  content.innerHTML=h;
+  renderForecast();
 }
-
+function renderForecast(){
+  renderForecastSummary();
+  renderForecastCharts();
+  renderForecastTiers();
+}
+function renderForecastSummary(){
+  const c=document.getElementById('forecast-summary');
+  if(!c)return;
+  const totalItems=_forecastFiltered.length;
+  const totalVol=_forecastFiltered.reduce((a,b)=>a+b.weekTotal,0);
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayTotals=[0,0,0,0,0,0,0];
+  _forecastFiltered.forEach(it=>it.avg.forEach((v,i)=>dayTotals[i]+=v));
+  const busiestIdx=dayTotals.indexOf(Math.max(...dayTotals));
+  const topItem=_forecastFiltered[0];
+  c.innerHTML=`
+    <div class="forecast-stat"><div class="stat-label">Total Items</div><div class="stat-value">${totalItems}</div><div class="stat-sub">unique items tracked</div></div>
+    <div class="forecast-stat"><div class="stat-label">Weekly Volume</div><div class="stat-value">${totalVol.toLocaleString()}</div><div class="stat-sub">predicted units/week</div></div>
+    <div class="forecast-stat"><div class="stat-label">Busiest Day</div><div class="stat-value">${days[busiestIdx]}</div><div class="stat-sub">${dayTotals[busiestIdx].toLocaleString()} units avg</div></div>
+    <div class="forecast-stat"><div class="stat-label">Top Item</div><div class="stat-value" style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${topItem?topItem.name:'-'}</div><div class="stat-sub">${topItem?topItem.weekTotal+'/week':''}</div></div>`;
+}
+function renderForecastCharts(){
+  const topCtx=document.getElementById('ch-forecast-top');
+  const dowCtx=document.getElementById('ch-forecast-dow');
+  if(!topCtx||!dowCtx)return;
+  const top15=_forecastFiltered.slice(0,15);
+  if(_forecastTopChart)_forecastTopChart.destroy();
+  _forecastTopChart=new Chart(topCtx,{type:'bar',data:{labels:top15.map(i=>i.name.length>25?i.name.slice(0,22)+'...':i.name),datasets:[{data:top15.map(i=>i.weekTotal),backgroundColor:'rgba(99,102,241,.7)',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(255,255,255,.5)'}},y:{grid:{display:false},ticks:{color:'rgba(255,255,255,.7)',font:{size:11}}}}}});
+  topCtx.parentElement.style.height='380px';
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayTotals=[0,0,0,0,0,0,0];
+  _forecastFiltered.forEach(it=>it.avg.forEach((v,i)=>dayTotals[i]+=v));
+  if(_forecastDowChart)_forecastDowChart.destroy();
+  _forecastDowChart=new Chart(dowCtx,{type:'bar',data:{labels:days,datasets:[{data:dayTotals,backgroundColor:days.map((_,i)=>i===dayTotals.indexOf(Math.max(...dayTotals))?'rgba(99,102,241,.9)':'rgba(99,102,241,.4)'),borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'rgba(255,255,255,.7)'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'rgba(255,255,255,.5)'}}}}});
+  dowCtx.parentElement.style.height='380px';
+}
+function renderForecastTiers(){
+  const c=document.getElementById('forecast-tiers');
+  if(!c)return;
+  const tiers=[
+    {name:'High Volume',cls:'tier-high',items:_forecastFiltered.filter(i=>i.weekTotal>=50)},
+    {name:'Medium Volume',cls:'tier-med',items:_forecastFiltered.filter(i=>i.weekTotal>=15&&i.weekTotal<50)},
+    {name:'Low Volume',cls:'tier-low',items:_forecastFiltered.filter(i=>i.weekTotal<15)}
+  ];
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayHeaders=_forecastFiltered[0]?_forecastFiltered[0].futureDays.map(d=>d.day):days;
+  let html='';
+  tiers.forEach(t=>{
+    if(!t.items.length)return;
+    html+=`<div class="forecast-tier ${t.cls}">
+      <div class="forecast-tier-header"><h4>${t.name}</h4><span class="forecast-tier-badge">${t.items.length} items</span></div>
+      <table class="forecast-table"><thead><tr><th style="width:200px">Item</th><th>Trend</th>`;
+    dayHeaders.forEach(d=>{html+=`<th class="day-header">${d}</th>`});
+    html+=`<th style="text-align:right">Week Total</th></tr></thead><tbody>`;
+    t.items.forEach(it=>{
+      const maxDay=Math.max(...it.avg,1);
+      html+=`<tr><td class="forecast-item-name" title="${it.name}">${it.name}</td><td><div class="forecast-spark">`;
+      it.avg.forEach(v=>{
+        const h=Math.round((v/maxDay)*22)||0;
+        html+=`<div class="forecast-spark-bar${v===0?' empty':''}" style="height:${Math.max(h,1)}px"></div>`;
+      });
+      html+=`</div></td>`;
+      it.futureDays.forEach(fd=>{
+        const isHigh=fd.qty>=maxDay*0.8&&fd.qty>0;
+        html+=`<td class="forecast-day-val${isHigh?' high':''}">${fd.qty}</td>`;
+      });
+      html+=`<td class="forecast-week-total">${it.weekTotal}</td></tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  });
+  c.innerHTML=html;
+}
 function downloadForecastCSV(){
-  if(!_forecastData||!_forecastData.length){alert('No forecast data to download.');return}
-  var sel=document.getElementById('forecast-category-filter');var val=sel?sel.value:'all';
-  var data=val==='all'?_forecastData:_forecastData.filter(function(r){return r.station===val});
-  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var csv='Menu Item,Station,'+dn.join(',')+',Week Total\n';
-  data.forEach(function(row){csv+='"'+row.name.replace(/"/g,'""')+'","'+row.station.replace(/"/g,'""')+'",'+row.days.join(',')+','+row.weekTotal+'\n'});
-  var blob=new Blob([csv],{type:'text/csv'});var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download='prep-forecast-'+new Date().toISOString().split('T')[0]+'.csv';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  if(!_forecastFiltered.length)return;
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let csv='Item,Category,Location,'+days.join(',')+',Week Total\n';
+  _forecastFiltered.forEach(it=>{
+    csv+=`"${it.name}","${it.group}","${it.location}",${it.avg.join(',')},${it.weekTotal}\n`;
+  });
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='prep_forecast.csv';
+  a.click();
 }
 
 </script>
