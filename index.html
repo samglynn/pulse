@@ -378,6 +378,39 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 .forecast-nodata{text-align:center;padding:60px 20px;color:var(--text-muted)}
 @media(max-width:768px){.forecast-summary{grid-template-columns:repeat(2,1fr)}.forecast-charts{grid-template-columns:1fr}}
 
+.expect-today{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;position:relative;overflow:hidden}
+.expect-today::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),#10b981,var(--yellow))}
+.expect-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.expect-header h4{margin:0;font-size:16px;font-weight:700;color:var(--text)}
+.expect-header .expect-date{font-size:13px;color:var(--text-muted)}
+.expect-grid{display:grid;grid-template-columns:1fr 2fr;gap:20px}
+.expect-prediction{display:flex;flex-direction:column;gap:12px}
+.expect-pred-card{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:14px 16px}
+.expect-pred-card .ep-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);font-weight:600}
+.expect-pred-card .ep-value{font-size:26px;font-weight:700;color:var(--text);margin:4px 0 0}
+.expect-pred-card .ep-sub{font-size:12px;color:var(--accent)}
+.expect-week-table{width:100%}
+.expect-week-table table{width:100%;border-collapse:separate;border-spacing:0}
+.expect-week-table th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);padding:8px 10px;text-align:center;border-bottom:1px solid var(--border)}
+.expect-week-table th:first-child{text-align:left}
+.expect-week-table td{padding:10px;text-align:center;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)}
+.expect-week-table td:first-child{text-align:left;font-weight:500;color:var(--text)}
+.expect-actual{font-weight:600;color:var(--text)}
+.expect-predicted{color:var(--accent);font-weight:500}
+.expect-diff-pos{color:var(--green);font-size:12px;font-weight:600}
+.expect-diff-neg{color:var(--red);font-size:12px;font-weight:600}
+.expect-diff-na{color:var(--text-muted);font-size:11px;opacity:.5}
+.expect-today-row{background:rgba(99,102,241,.08)}
+.expect-today-row td{border-top:2px solid var(--accent);border-bottom:2px solid var(--accent)}
+.expect-top-items{margin-top:16px}
+.expect-top-items h5{font-size:13px;color:var(--text-muted);margin:0 0 10px;font-weight:500}
+.expect-top-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.expect-top-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;font-size:13px}
+.expect-top-item .eti-rank{font-size:11px;font-weight:700;color:var(--accent);min-width:20px}
+.expect-top-item .eti-name{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.expect-top-item .eti-qty{color:var(--text-muted);font-size:12px;font-weight:600}
+@media(max-width:768px){.expect-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -1096,6 +1129,23 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 </div>
 </div>
 <div id="forecast-summary" class="forecast-summary"></div>
+<div id="expect-today-section" class="expect-today">
+<div class="expect-header">
+<h4>What to Expect Today</h4>
+<div style="display:flex;align-items:center;gap:10px">
+<span class="expect-date" id="expect-today-date"></span>
+<button id="slack-send-btn" onclick="sendExpectToSlack()" style="background:#4A154B;color:#fff;border:none;padding:7px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zm10.122 2.521a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zm-1.268 0a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zm-2.523 10.122a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zm0-1.268a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/></svg>Send to Slack</button>
+</div>
+</div>
+<div class="expect-grid">
+<div class="expect-prediction" id="expect-pred-cards"></div>
+<div class="expect-week-table" id="expect-week-wrap"></div>
+</div>
+<div class="expect-top-items">
+<h5>Top Items to Prep Today</h5>
+<div class="expect-top-list" id="expect-top-list"></div>
+</div>
+</div>
 <div class="forecast-charts">
 <div class="forecast-chart-card"><h4>Top 15 Items — Predicted Weekly Volume</h4><canvas id="ch-forecast-top"></canvas></div>
 <div class="forecast-chart-card"><h4>Daily Volume Distribution</h4><canvas id="ch-forecast-dow"></canvas></div>
@@ -6032,7 +6082,8 @@ async function loadPrepForecast(){
     const sel=document.getElementById('forecast-cat-filter');
     if(sel){sel.innerHTML='<option value="">All Categories</option>';cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)})}
     initForecastDepts();
-    filterForecast();
+    
+    loadExpectToday();filterForecast();
   }catch(e){console.error('Forecast load error:',e)}
 }
 const _bevKeywords=['beer','wine','cocktail','margarita','marg','mimosa','sangria','spritz','seltzer','coke','diet coke','sprite','lemonade','tea','coffee','espresso','latte','cappuccino','mocha','juice','water','soda','pepsi','dr pepper','fanta','ginger ale','tonic','club soda','red bull','byo','martini','old fashioned','manhattan','negroni','daiquiri','mojito','paloma','mule','highball','shot','draft','ipa','lager','ale','stout','pilsner','porter','cider','prosecco','champagne','rose','chardonnay','cabernet','pinot','merlot','sauvignon','riesling','zinfandel','moscato','hennessy','patron','tito','jack daniel','crown royal','fireball','jagermeister','baileys','kahlua','amaretto','rum','vodka','whiskey','bourbon','tequila','gin','brandy','cognac','scotch','mezcal','sake','soju','kombucha','smoothie','shake','float','arnold palmer'];
@@ -6197,6 +6248,150 @@ function downloadForecastCSV(){
   a.href=URL.createObjectURL(blob);
   a.download='prep_forecast_'+new Date().toISOString().split('T')[0]+'.csv';
   a.click();
+}
+async function loadExpectToday(){
+  try{
+    const now=new Date(),dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const todayDow=now.getDay(),todayName=dayNames[todayDow];
+    const fmt=d=>d.toISOString().split('T')[0];
+    document.getElementById('expect-today-date').textContent=todayName+', '+now.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    const weekStart=new Date(now);weekStart.setDate(weekStart.getDate()-weekStart.getDay());
+    const histStart=new Date(now);histStart.setDate(histStart.getDate()-42);
+    let hist=[],pg=0,more=true;
+    while(more){const{data,error}=await sb.from('kitchen_ticket_items').select('item_name,menu_group,quantity,service_date').gte('service_date',fmt(histStart)).lte('service_date',fmt(now)).range(pg*1000,(pg+1)*1000-1);if(error)throw error;if(data)hist=hist.concat(data);more=data&&data.length===1000;pg++}
+    let actuals=[],pg2=0,more2=true;
+    while(more2){const{data,error}=await sb.from('kitchen_ticket_items').select('item_name,quantity,service_date').gte('service_date',fmt(weekStart)).lte('service_date',fmt(now)).range(pg2*1000,(pg2+1)*1000-1);if(error)throw error;if(data)actuals=actuals.concat(data);more2=data&&data.length===1000;pg2++}
+    const numWeeks=6;
+    const predByDay=[0,0,0,0,0,0,0];
+    hist.forEach(r=>{const d=new Date(r.service_date+'T00:00:00');predByDay[d.getDay()]+=Number(r.quantity)||1});
+    const avgByDay=predByDay.map(v=>Math.round(v/numWeeks));
+    const actualByDate={};
+    actuals.forEach(r=>{const d=r.service_date;if(!actualByDate[d])actualByDate[d]={qty:0,items:{}};actualByDate[d].qty+=Number(r.quantity)||1;const n=r.item_name;if(!actualByDate[d].items[n])actualByDate[d].items[n]=0;actualByDate[d].items[n]+=Number(r.quantity)||1});
+    const todayPred=avgByDay[todayDow];
+    const todayStr=fmt(now);
+    const todayActual=actualByDate[todayStr]?.qty||0;
+    const weekPredTotal=avgByDay.reduce((a,b)=>a+b,0);
+    const weekActualTotal=Object.values(actualByDate).reduce((a,b)=>a+b.qty,0);
+    renderExpectPredCards(todayPred,todayActual,todayName,weekPredTotal,weekActualTotal);
+    renderExpectWeekTable(now,weekStart,dayNames,avgByDay,actualByDate);
+    renderExpectTopItems(hist,todayDow,numWeeks);
+  }catch(e){console.error('Expect today error:',e)}
+}
+function renderExpectPredCards(todayPred,todayActual,todayName,weekPred,weekActual){
+  const c=document.getElementById('expect-pred-cards');
+  if(!c)return;
+  const todayPct=todayActual&&todayPred?Math.round((todayActual/todayPred)*100):0;
+  const todayStatus=todayActual===0?'No data yet':todayPct>=100?'On track':''+todayPct+'% of prediction';
+  const weekPct=weekActual&&weekPred?Math.round((weekActual/weekPred)*100):0;
+  c.innerHTML=`
+    <div class="expect-pred-card">
+      <div class="ep-label">${todayName}'s Prediction</div>
+      <div class="ep-value">${todayPred.toLocaleString()} <span style="font-size:14px;color:var(--text-muted)">units</span></div>
+      <div class="ep-sub">${todayActual>0?'Actual so far: '+todayActual.toLocaleString()+' ('+todayPct+'%)':todayStatus}</div>
+    </div>
+    <div class="expect-pred-card">
+      <div class="ep-label">This Week So Far</div>
+      <div class="ep-value">${weekActual.toLocaleString()} <span style="font-size:14px;color:var(--text-muted)">of ${weekPred.toLocaleString()}</span></div>
+      <div class="ep-sub">${weekPct}% of weekly prediction</div>
+    </div>`;
+}
+function renderExpectWeekTable(now,weekStart,dayNames,avgByDay,actualByDate){
+  const c=document.getElementById('expect-week-wrap');
+  if(!c)return;
+  const fmt=d=>d.toISOString().split('T')[0];
+  const todayDow=now.getDay();
+  let html='<table><thead><tr><th>Day</th><th>Predicted</th><th>Actual</th><th>Diff</th></tr></thead><tbody>';
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart);d.setDate(d.getDate()+i);
+    const ds=fmt(d);
+    const pred=avgByDay[i];
+    const actual=actualByDate[ds]?.qty||0;
+    const isToday=i===todayDow;
+    const isPast=d<now&&!isToday;
+    const isFuture=d>now;
+    const diff=actual-pred;
+    const diffStr=actual===0&&(isToday||isFuture)?'<span class="expect-diff-na">\u2014</span>':diff>0?'<span class="expect-diff-pos">+'+diff+'</span>':diff<0?'<span class="expect-diff-neg">'+diff+'</span>':'<span class="expect-diff-na">0</span>';
+    const rowCls=isToday?' class="expect-today-row"':'';
+    const dayLabel=dayNames[i]+(isToday?' \u2190 Today':'');
+    html+=`<tr${rowCls}><td>${dayLabel}</td><td class="expect-predicted">${pred>0?pred.toLocaleString():'\u2014'}</td><td class="expect-actual">${actual>0?actual.toLocaleString():(isPast&&pred>0?'<span style="color:var(--text-muted);opacity:.4">closed</span>':'\u2014')}</td><td>${diffStr}</td></tr>`;
+  }
+  html+='</tbody></table>';
+  c.innerHTML=html;
+}
+function renderExpectTopItems(hist,todayDow,numWeeks){
+  const c=document.getElementById('expect-top-list');
+  if(!c)return;
+  const items={};
+  hist.forEach(r=>{
+    if(!r.item_name)return;
+    const d=new Date(r.service_date+'T00:00:00');
+    if(d.getDay()!==todayDow)return;
+    if(!items[r.item_name])items[r.item_name]=0;
+    items[r.item_name]+=Number(r.quantity)||1;
+  });
+  const sorted=Object.entries(items).map(([name,qty])=>({name,qty:Math.round(qty/numWeeks)})).sort((a,b)=>b.qty-a.qty).slice(0,12);
+  c.innerHTML=sorted.map((it,i)=>`<div class="expect-top-item"><span class="eti-rank">#${i+1}</span><span class="eti-name">${it.name}</span><span class="eti-qty">${it.qty}</span></div>`).join('');
+}
+function formatExpectSlackMessage(){
+  const dateEl=document.getElementById('expect-today-date');
+  const dateStr=dateEl?dateEl.textContent:'Today';
+  const predCards=document.getElementById('expect-pred-cards');
+  const cards=predCards?.querySelectorAll('.expect-pred-card')||[];
+  let msg='*What to Expect Today* — '+dateStr+'\n\n';
+  cards.forEach(c=>{
+    const label=c.querySelector('.ep-label')?.textContent||'';
+    const value=c.querySelector('.ep-value')?.textContent||'';
+    const sub=c.querySelector('.ep-sub')?.textContent||'';
+    msg+='>*'+label+'*: '+value.trim()+'\n>'+sub+'\n\n';
+  });
+  const table=document.getElementById('expect-week-wrap')?.querySelector('table');
+  if(table){
+    msg+='*Weekly Breakdown*\n```\n';
+    const rows=table.querySelectorAll('tbody tr');
+    msg+='Day        Predicted  Actual  Diff\n';
+    msg+='─────────────────────────────────\n';
+    rows.forEach(r=>{
+      const cells=r.querySelectorAll('td');
+      const day=(cells[0]?.textContent||'').padEnd(12);
+      const pred=(cells[1]?.textContent||'—').padEnd(10);
+      const actual=(cells[2]?.textContent||'—').padEnd(8);
+      const diff=cells[3]?.textContent||'';
+      msg+=day+pred+actual+diff+'\n';
+    });
+    msg+='```\n\n';
+  }
+  const topItems=document.querySelectorAll('.expect-top-item');
+  if(topItems.length){
+    msg+='*Top Items to Prep Today*\n';
+    topItems.forEach(it=>{
+      const rank=it.querySelector('.eti-rank')?.textContent||'';
+      const name=it.querySelector('.eti-name')?.textContent||'';
+      const qty=it.querySelector('.eti-qty')?.textContent||'';
+      msg+=rank+' '+name+' — '+qty+'\n';
+    });
+  }
+  return msg;
+}
+async function sendExpectToSlack(){
+  const webhookUrl=localStorage.getItem('slack_webhook_url');
+  if(!webhookUrl){
+    const url=prompt('Enter your Slack Incoming Webhook URL:');
+    if(!url)return;
+    localStorage.setItem('slack_webhook_url',url);
+  }
+  const msg=formatExpectSlackMessage();
+  const btn=document.getElementById('slack-send-btn');
+  if(btn){btn.textContent='Sending...';btn.disabled=true}
+  try{
+    const wh=localStorage.getItem('slack_webhook_url');
+    const resp=await fetch(wh,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:msg,mrkdwn:true})});
+    if(resp.ok){if(btn){btn.textContent='Sent!';setTimeout(()=>{btn.textContent='Send to Slack';btn.disabled=false},2000)}}
+    else{alert('Failed to send. Check your webhook URL.');if(btn){btn.textContent='Send to Slack';btn.disabled=false}}
+  }catch(e){
+    const msg2=formatExpectSlackMessage();
+    navigator.clipboard.writeText(msg2).then(()=>alert('Could not reach Slack directly (CORS). Message copied to clipboard — paste it into your Slack channel!')).catch(()=>alert('Could not send. Copy the message manually.'));
+    if(btn){btn.textContent='Send to Slack';btn.disabled=false}
+  }
 }
 </script>
 <!-- Bottom Tab Bar (Mobile) -->
