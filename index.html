@@ -305,6 +305,45 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 }
 .nav-sub-item:hover { color: var(--text-2); background: var(--surface-2); }
 .nav-sub-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(99,102,241,.06); font-weight: 600; }
+
+/* ── Bottom Tab Bar (Mobile) ── */
+.bottom-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:60;background:var(--surface);border-top:1px solid var(--border);padding:4px 0 env(safe-area-inset-bottom, 4px);box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+.bottom-tab-bar .tab-items{display:flex;justify-content:space-around;align-items:center}
+.bottom-tab-bar .tab-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px;border-radius:8px;cursor:pointer;transition:all .15s;color:var(--text-muted);text-decoration:none;border:none;background:none;font-family:inherit;min-width:48px}
+.bottom-tab-bar .tab-item .tab-icon{font-size:18px;line-height:1}
+.bottom-tab-bar .tab-item .tab-label{font-size:9px;font-weight:600;letter-spacing:.02em;white-space:nowrap}
+.bottom-tab-bar .tab-item.active{color:var(--accent)}
+.bottom-tab-bar .tab-item.active .tab-icon{transform:scale(1.1)}
+.bottom-tab-bar .tab-item:hover{color:var(--accent)}
+.bottom-tab-bar .more-menu{display:none;position:absolute;bottom:100%;right:8px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px;box-shadow:0 -4px 20px rgba(0,0,0,.15);min-width:160px;margin-bottom:8px}
+.bottom-tab-bar .more-menu.open{display:block}
+.bottom-tab-bar .more-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text-2);transition:background .15s;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.bottom-tab-bar .more-item:hover{background:var(--surface-2)}
+.bottom-tab-bar .more-item .tab-icon{font-size:14px;width:20px;text-align:center}
+
+@media(max-width:768px){
+.bottom-tab-bar{display:block}
+.page-content{padding-bottom:70px}
+}
+
+/* ── Prep Forecast Page ── */
+.forecast-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.forecast-controls select,.forecast-controls button{padding:8px 14px;border-radius:8px;font-size:13px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.forecast-controls .btn-primary{background:var(--accent);color:#fff;border:none;cursor:pointer;font-weight:600}
+.forecast-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+.forecast-table{width:100%;border-collapse:collapse;font-size:13px}
+.forecast-table th{background:var(--surface-2);padding:10px 14px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);position:sticky;top:0;border-bottom:2px solid var(--border)}
+.forecast-table td{padding:8px 14px;border-bottom:1px solid var(--border)}
+.forecast-table tr:hover{background:var(--surface-2)}
+.forecast-table .item-name{font-weight:600;color:var(--text)}
+.forecast-table .day-val{text-align:center;min-width:50px}
+.forecast-table .total-col{font-weight:700;background:rgba(99,102,241,.06);text-align:center}
+.forecast-loading{text-align:center;padding:40px;color:var(--text-muted)}
+.forecast-empty{text-align:center;padding:40px;color:var(--text-muted)}
+.forecast-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.forecast-header h3{font-size:18px;font-weight:700;margin:0}
+.forecast-week-label{font-size:13px;color:var(--text-muted)}
+
 </style>
 </head>
 <body>
@@ -1007,7 +1046,23 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 
         </div><!-- /tab-kitchenlabor -->
 
-        <!-- PAGE: Knowledge -->
+        
+<!-- PAGE: Prep Forecast -->
+<div id="tab-prepforecast" style="display:none">
+<div class="forecast-header">
+<div>
+<h3>Prep Order Forecast</h3>
+<div class="forecast-week-label" id="forecast-week-label">Loading forecast week...</div>
+</div>
+<div class="forecast-controls">
+<select id="forecast-category-filter" onchange="filterForecast()"><option value="all">All Categories</option></select>
+<button class="btn-primary" onclick="downloadForecastCSV()">Download CSV</button>
+</div>
+</div>
+<div id="forecast-content"><div class="forecast-loading">Loading forecast data...</div></div>
+</div>
+
+<!-- PAGE: Knowledge -->
         <div id="tab-knowledge" style="display:none">
           <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:22px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -5893,5 +5948,252 @@ async function toastSyncAll() {
 
 // Toast API Sync
 
-</script></body>
+
+
+// ══════════════════════════════════════
+// MOBILE BOTTOM TAB BAR
+// ══════════════════════════════════════
+
+function toggleMoreMenu(e) {
+  e && e.stopPropagation();
+  const m = document.getElementById('more-menu');
+  m.classList.toggle('open');
+}
+function closeMoreMenu() {
+  const m = document.getElementById('more-menu');
+  if (m) m.classList.remove('open');
+}
+// Close more menu when tapping outside
+document.addEventListener('click', function(e) {
+  const bar = document.getElementById('bottom-tab-bar');
+  if (bar && !bar.contains(e.target)) closeMoreMenu();
+});
+
+// Update bottom tab bar active state
+function updateBottomTab(page) {
+  const tabs = document.querySelectorAll('.bottom-tab-bar .tab-item');
+  const mainPages = ['dashboard','performance','kitchen','laborhub'];
+  tabs.forEach(t => {
+    const bp = t.getAttribute('data-btab');
+    if (bp === 'more') {
+      t.classList.toggle('active', !mainPages.includes(page) && page !== 'dashboard');
+    } else {
+      t.classList.toggle('active', bp === page);
+    }
+  });
+}
+
+// Patch navTo to also update bottom tab + auto-close sidebar on mobile
+const _origNavTo = navTo;
+navTo = function(page) {
+  _origNavTo(page);
+  updateBottomTab(page);
+  // Auto-close sidebar on mobile
+  if (window.innerWidth <= 768) {
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('sidebar-overlay');
+    if (sb) sb.classList.remove('open');
+    if (ov) ov.classList.remove('open');
+  }
+  // Load prep forecast when navigating to it
+  if (page === 'prepforecast') loadPrepForecast();
+};
+
+
+
+// ══════════════════════════════════════
+// PREP ORDER FORECAST
+// ══════════════════════════════════════
+
+let _forecastData = null;
+let _forecastCategories = [];
+
+async function loadPrepForecast() {
+  const content = document.getElementById('forecast-content');
+  const label = document.getElementById('forecast-week-label');
+  if (!content) return;
+  if (_forecastData) { renderForecast(_forecastData); return; }
+  content.innerHTML = '<div class="forecast-loading">Loading 8 weeks of kitchen data...</div>';
+
+  try {
+    // Calculate date range: 8 weeks back from today
+    const today = new Date();
+    const eightWeeksAgo = new Date(today);
+    eightWeeksAgo.setDate(today.getDate() - 56);
+    const fromDate = eightWeeksAgo.toISOString().split('T')[0];
+
+    // Next week date range
+    const nextMon = new Date(today);
+    nextMon.setDate(today.getDate() + (8 - today.getDay()) % 7);
+    if (nextMon <= today) nextMon.setDate(nextMon.getDate() + 7);
+    // Actually get next Monday
+    const dayOfWeek = today.getDay();
+    const daysUntilMon = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
+    nextMon.setTime(today.getTime());
+    nextMon.setDate(today.getDate() + daysUntilMon);
+    const nextSun = new Date(nextMon);
+    nextSun.setDate(nextMon.getDate() + 6);
+
+    const fmtDate = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    if (label) label.textContent = 'Forecast for ' + fmtDate(nextMon) + ' - ' + fmtDate(nextSun);
+
+    // Get current location
+    const locId = typeof currentLocationId !== 'undefined' ? currentLocationId : null;
+    if (!locId) { content.innerHTML = '<div class="forecast-empty">Select a location first.</div>'; return; }
+
+    // Query kitchen_ticket_items from Supabase
+    const SB_URL = window.SUPABASE_URL || 'https://wogtyrgckqoopzoziwbr.supabase.co';
+    const SB_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZ3R5cmdja3Fvb3B6b3ppd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTAxNTgsImV4cCI6MjA4ODk4NjE1OH0.9VQHHo9NX7Jf3cUpnljsXBI0jBQxjVzjPuqfQ8vGczI';
+
+    // Fetch kitchen ticket items for last 8 weeks
+    let allItems = [];
+    let offset = 0;
+    const limit = 1000;
+    while (true) {
+      const url = SB_URL + '/rest/v1/kitchen_ticket_items?select=item_name,quantity,business_date,station&location_id=eq.' + locId + '&business_date=gte.' + fromDate + '&order=business_date.asc&limit=' + limit + '&offset=' + offset;
+      const resp = await fetch(url, { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } });
+      const data = await resp.json();
+      if (!data.length) break;
+      allItems = allItems.concat(data);
+      if (data.length < limit) break;
+      offset += limit;
+    }
+
+    if (!allItems.length) {
+      content.innerHTML = '<div class="forecast-empty">No kitchen ticket data found for the last 8 weeks. Data syncs daily from Toast.</div>';
+      return;
+    }
+
+    // Process: group by item, then by day-of-week (0=Sun..6=Sat)
+    // Count occurrences per day-of-week to compute average
+    const itemMap = {};
+    const dateSet = {};
+    for (const row of allItems) {
+      const name = row.item_name || 'Unknown';
+      const qty = row.quantity || 1;
+      const station = row.station || 'Other';
+      const bd = row.business_date;
+      const dow = new Date(bd + 'T12:00:00').getDay();
+
+      if (!itemMap[name]) itemMap[name] = { station, days: {0:{total:0,dates:{}},1:{total:0,dates:{}},2:{total:0,dates:{}},3:{total:0,dates:{}},4:{total:0,dates:{}},5:{total:0,dates:{}},6:{total:0,dates:{}}} };
+      itemMap[name].days[dow].total += qty;
+      itemMap[name].days[dow].dates[bd] = 1;
+      if (!dateSet[dow]) dateSet[dow] = {};
+      dateSet[dow][bd] = 1;
+    }
+
+    // Compute averages: total qty / number of unique dates for that DOW
+    const forecast = [];
+    const categories = new Set();
+    for (const [name, info] of Object.entries(itemMap)) {
+      const row = { name, station: info.station, days: [] };
+      let weekTotal = 0;
+      for (let d = 0; d < 7; d++) {
+        const numDates = Object.keys(dateSet[d] || {}).length || 1;
+        const avg = Math.round(info.days[d].total / numDates);
+        row.days.push(avg);
+        weekTotal += avg;
+      }
+      row.weekTotal = weekTotal;
+      if (weekTotal > 0) {
+        forecast.push(row);
+        categories.add(info.station);
+      }
+    }
+
+    // Sort by weekly total descending
+    forecast.sort((a, b) => b.weekTotal - a.weekTotal);
+
+    _forecastData = forecast;
+    _forecastCategories = [...categories].sort();
+
+    // Populate category filter
+    const sel = document.getElementById('forecast-category-filter');
+    if (sel) {
+      sel.innerHTML = '<option value="all">All Categories (' + forecast.length + ' items)</option>';
+      for (const cat of _forecastCategories) {
+        const count = forecast.filter(r => r.station === cat).length;
+        sel.innerHTML += '<option value="' + cat + '">' + cat + ' (' + count + ')</option>';
+      }
+    }
+
+    renderForecast(forecast);
+  } catch (err) {
+    content.innerHTML = '<div class="forecast-empty">Error loading forecast: ' + err.message + '</div>';
+  }
+}
+
+function filterForecast() {
+  if (!_forecastData) return;
+  const sel = document.getElementById('forecast-category-filter');
+  const val = sel ? sel.value : 'all';
+  const filtered = val === 'all' ? _forecastData : _forecastData.filter(r => r.station === val);
+  renderForecast(filtered);
+}
+
+function renderForecast(data) {
+  const content = document.getElementById('forecast-content');
+  if (!content || !data.length) {
+    if (content) content.innerHTML = '<div class="forecast-empty">No items match the selected filter.</div>';
+    return;
+  }
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = '<div class="forecast-table-wrap"><table class="forecast-table"><thead><tr><th>Menu Item</th><th>Station</th>';
+  for (const d of dayNames) html += '<th class="day-val">' + d + '</th>';
+  html += '<th class="total-col">Week Total</th></tr></thead><tbody>';
+  for (const row of data) {
+    html += '<tr><td class="item-name">' + row.name + '</td><td>' + row.station + '</td>';
+    for (let d = 0; d < 7; d++) {
+      const v = row.days[d];
+      html += '<td class="day-val" style="' + (v > 0 ? '' : 'color:var(--text-muted)') + '">' + v + '</td>';
+    }
+    html += '<td class="total-col">' + row.weekTotal + '</td></tr>';
+  }
+  html += '</tbody></table></div>';
+  html += '<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">Based on ' + (_forecastData ? _forecastData.length : data.length) + ' menu items over the last 8 weeks of sales data. Averages rounded to nearest whole number.</div>';
+  content.innerHTML = html;
+}
+
+function downloadForecastCSV() {
+  if (!_forecastData || !_forecastData.length) { alert('No forecast data to download. Navigate to the Prep Forecast page first.'); return; }
+  const sel = document.getElementById('forecast-category-filter');
+  const val = sel ? sel.value : 'all';
+  const data = val === 'all' ? _forecastData : _forecastData.filter(r => r.station === val);
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let csv = 'Menu Item,Station,' + dayNames.join(',') + ',Week Total\n';
+  for (const row of data) {
+    csv += '"' + row.name.replace(/"/g,'""') + '","' + row.station.replace(/"/g,'""') + '",' + row.days.join(',') + ',' + row.weekTotal + '\n';
+  }
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const today = new Date().toISOString().split('T')[0];
+  a.download = 'prep-forecast-' + today + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+</script>
+<!-- Bottom Tab Bar (Mobile) -->
+<div class="bottom-tab-bar" id="bottom-tab-bar">
+<div class="tab-items">
+<button class="tab-item active" onclick="navTo('dashboard');closeMoreMenu()" data-btab="dashboard"><span class="tab-icon">&#9678;</span><span class="tab-label">Overview</span></button>
+<button class="tab-item" onclick="navTo('performance');closeMoreMenu()" data-btab="performance"><span class="tab-icon">&#9650;</span><span class="tab-label">Sales</span></button>
+<button class="tab-item" onclick="navTo('kitchen');closeMoreMenu()" data-btab="kitchen"><span class="tab-icon">&#9832;</span><span class="tab-label">Kitchen</span></button>
+<button class="tab-item" onclick="navTo('laborhub');closeMoreMenu()" data-btab="laborhub"><span class="tab-icon">&#9029;</span><span class="tab-label">Labor</span></button>
+<button class="tab-item" onclick="toggleMoreMenu(event)" data-btab="more"><span class="tab-icon">&#8943;</span><span class="tab-label">More</span></button>
+</div>
+<div class="more-menu" id="more-menu">
+<button class="more-item" onclick="navTo('prepforecast');closeMoreMenu()"><span class="tab-icon">&#128230;</span> Prep Forecast</button>
+<button class="more-item" onclick="navTo('scoreboard');closeMoreMenu()"><span class="tab-icon">&#127942;</span> Scoreboard</button>
+<button class="more-item" onclick="navTo('ai');closeMoreMenu()"><span class="tab-icon">&#129302;</span> HeyRai AI</button>
+<button class="more-item" onclick="navTo('settings');closeMoreMenu()"><span class="tab-icon">&#9881;</span> Settings</button>
+<button class="more-item" onclick="navTo('knowledge');closeMoreMenu()"><span class="tab-icon">&#128218;</span> Knowledge</button>
+</div>
+</div>
+
+</body>
 </html>
