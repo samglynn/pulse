@@ -6815,6 +6815,7 @@ async function sendExpectToSlack(){
     psInit = true;
     try {
       var loc = (S.locFilter && S.locFilter !== 'all') ? S.locFilter.toLowerCase() : 'warren';
+      var psError = function(msg){ var el=document.getElementById('preshift-kpis'); if(el) el.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted)">'+msg+'</div>'; };
       // Date badge
       var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
       var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -6833,6 +6834,7 @@ async function sendExpectToSlack(){
         var e = extMap[r.date] || {};
         return Object.assign({}, r, e);
       });
+      if(!rows.length){ psError('No sales data found. Upload weekly data to get started.'); return; }
 
       var last8 = rows.slice(-8);
       var latest = rows[rows.length - 1] || {};
@@ -6868,7 +6870,7 @@ async function sendExpectToSlack(){
         else focuses.push('\uD83D\uDFE2 <b>PPA is strong</b> at $' + (latest.ppa||0).toFixed(2) + '. Let\'s keep that check average climbing!');
         var laborPct = latest.labor_pct || 0;
         if(laborPct > 25) focuses.push('\u26A0\uFE0F <b>Labor is running hot</b> at ' + laborPct.toFixed(1) + '%. Watch cuts closely today.');
-        else focuses.push('\uD83D\uDFE2 <b>Labor is in check</b> at ' + (laborPct*100).toFixed(1) + '%. Great scheduling!');
+        else focuses.push('\uD83D\uDFE2 <b>Labor is in check</b> at ' + laborPct.toFixed(1) + '%. Great scheduling!');
         focusEl.innerHTML = focuses.join('<br style="margin:8px 0">');
       }
 
@@ -6904,7 +6906,7 @@ async function sendExpectToSlack(){
 
       // CHARTS
       renderPreshiftCharts(last8);
-    } catch(err) { console.error('PreShift page error:', err); }
+    } catch(err) { console.error('PreShift page error:', err); psError('Something went wrong loading data. Try refreshing the page.'); psInit=false; }
   };
 
   window.renderPreshiftCharts = function(data) {
@@ -6957,6 +6959,7 @@ async function sendExpectToSlack(){
     coachInit = true;
     try {
       var loc = (S.locFilter && S.locFilter !== 'all') ? S.locFilter.toLowerCase() : 'warren';
+      var coachError = function(msg){ var el=document.getElementById('coaching-team-kpis'); if(el) el.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted)">'+msg+'</div>'; };
       // Get weekly data with extended
       var {data:wData} = await sb.from('weeks').select('*').eq('location', loc).order('date',{ascending:true});
       var {data:wExt} = await sb.from('weeks_extended').select('*').eq('location', loc).order('date',{ascending:true});
@@ -7061,11 +7064,14 @@ async function sendExpectToSlack(){
 
       // CHARTS
       renderCoachCharts(last8);
-    } catch(err) { console.error('Coaching page error:', err); }
+    } catch(err) { console.error('Coaching page error:', err); coachError('Something went wrong loading data. Try refreshing the page.'); coachInit=false; }
   };
 
   window.coachPageUpdate = function() {
     coachInit = false;
+    // Destroy existing charts before re-render
+    if(coachCharts.labor){ coachCharts.labor.destroy(); coachCharts.labor=null; }
+    if(coachCharts.sched){ coachCharts.sched.destroy(); coachCharts.sched=null; }
     loadCoachingPage();
   };
 
