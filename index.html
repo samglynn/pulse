@@ -502,6 +502,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
         <div class="nav-item" data-page="kitchen" onclick="navTo('kitchen')"><span class="icon">🍳</span>Kitchen</div>
         <div class="nav-item" data-page="prepforecast" onclick="navTo('prepforecast')"><span class="icon">📦</span>Prep Forecast</div>
         <div class="nav-item" data-page="scoreboard" onclick="navTo('scoreboard')"><span class="icon">🏆</span>Scoreboard</div>
+                <div class="nav-item" data-page="preshiftpage" onclick="navTo('preshiftpage')"><span class="icon">🎤</span>Pre-Shift</div>
+        <div class="nav-item" data-page="coachingpage" onclick="navTo('coachingpage')"><span class="icon">🧠</span>Coaching</div>
         <div class="nav-item" data-page="ai" onclick="navTo('ai')"><span class="icon">🤖</span>HeyRai AI</div>
 
         <div class="nav-divider" style="margin-top:8px"></div>
@@ -893,7 +895,124 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
         </div>
 
         <!-- PAGE: Targets -->
-        <div id="tab-settings" style="display:none">
+        
+     <div id="tab-preshiftpage" style="display:none">
+       <div style="max-width:1100px;margin:0 auto">
+         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+           <div>
+             <h2 style="font-size:22px;font-weight:800;margin:0">🎤 Pre-Shift Briefing</h2>
+             <p style="font-size:13px;color:var(--muted);margin:4px 0 0">Your daily game plan — what to focus on, what to push, and how to win today</p>
+           </div>
+           <div id="preshift-date-badge" style="background:var(--accent);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700"></div>
+         </div>
+
+         <!-- Quick Pulse KPIs -->
+         <div id="preshift-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px"></div>
+
+         <!-- Today's Focus & Talking Points -->
+         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px" class="preshift-grid-2col">
+           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
+             <h3 style="font-size:15px;font-weight:700;margin:0 0 12px">🎯 Today's Focus Areas</h3>
+             <div id="preshift-focus" style="font-size:13px;line-height:1.7"></div>
+           </div>
+           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
+             <h3 style="font-size:15px;font-weight:700;margin:0 0 12px">💬 Talking Points for the Team</h3>
+             <div id="preshift-talking" style="font-size:13px;line-height:1.7"></div>
+           </div>
+         </div>
+
+         <!-- Trend Charts Row -->
+         <h3 style="font-size:16px;font-weight:700;margin:0 0 14px">📈 How We're Trending</h3>
+         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px" class="preshift-grid-2col">
+           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px">
+             <h4 style="font-size:13px;font-weight:700;margin:0 0 10px;color:var(--muted)">Sales & Guest Trends (Last 8 Weeks)</h4>
+             <canvas id="preshift-chart-sales" height="200"></canvas>
+           </div>
+           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px">
+             <h4 style="font-size:13px;font-weight:700;margin:0 0 10px;color:var(--muted)">Attach Rate Progress</h4>
+             <canvas id="preshift-chart-attach" height="200"></canvas>
+           </div>
+         </div>
+
+         <!-- Menu Intel & VIPs -->
+         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px" class="preshift-grid-2col">
+           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
+             <h3 style="font-size:15px;font-weight:700;margin:0 0 12px">🍽 Menu Push Items</h3>
+             <div id="preshift-menu" style="font-size:13px;line-height:1.7"></div>
+           </div>
+           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
+             <h3 style="font-size:15px;font-weight:700;margin:0 0 12px">⚡ Quick Wins to Hit Today</h3>
+             <div id="preshift-wins" style="font-size:13px;line-height:1.7"></div>
+           </div>
+         </div>
+
+         <!-- Motivational Close -->
+         <div id="preshift-closer" style="background:linear-gradient(135deg,var(--accent),#6c5ce7);color:#fff;border-radius:14px;padding:24px;text-align:center;margin-bottom:20px">
+           <div style="font-size:24px;margin-bottom:8px">🔥</div>
+           <div id="preshift-motto" style="font-size:16px;font-weight:700"></div>
+         </div>
+       </div>
+       <style>.preshift-grid-2col{grid-template-columns:1fr 1fr}@media(max-width:700px){.preshift-grid-2col{grid-template-columns:1fr!important}}</style>
+     </div>
+
+
+     <div id="tab-coachingpage" style="display:none">
+       <div style="max-width:1100px;margin:0 auto">
+         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+           <div>
+             <h2 style="font-size:22px;font-weight:800;margin:0">🧠 Coaching Dashboard</h2>
+             <p style="font-size:13px;color:var(--muted);margin:4px 0 0">Individual performance rankings, trends & action plans for your team</p>
+           </div>
+           <select id="coaching-period-select" onchange="coachPageUpdate()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px">
+             <option value="4">Last 4 Weeks</option>
+             <option value="8" selected>Last 8 Weeks</option>
+             <option value="all">All Time</option>
+           </select>
+         </div>
+
+         <!-- Team KPI Summary -->
+         <div id="coaching-team-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px"></div>
+
+         <!-- Trend Charts -->
+         <h3 style="font-size:16px;font-weight:700;margin:0 0 14px">📈 Team Trends</h3>
+         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px" class="coach-grid-2col">
+           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px">
+             <h4 style="font-size:13px;font-weight:700;margin:0 0 10px;color:var(--muted)">Labor Efficiency (SPLH & Labor %)</h4>
+             <canvas id="coach-chart-labor" height="200"></canvas>
+           </div>
+           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px">
+             <h4 style="font-size:13px;font-weight:700;margin:0 0 10px;color:var(--muted)">Schedule Accuracy</h4>
+             <canvas id="coach-chart-sched" height="200"></canvas>
+           </div>
+         </div>
+
+         <!-- Individual Rankings -->
+         <h3 style="font-size:16px;font-weight:700;margin:0 0 14px">🏆 Individual Rankings</h3>
+         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px" class="coach-grid-2col">
+           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
+             <h4 style="font-size:14px;font-weight:700;margin:0 0 14px">💰 Top Performers by Hours</h4>
+             <div id="coaching-rank-hours" style="font-size:13px"></div>
+           </div>
+           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
+             <h4 style="font-size:14px;font-weight:700;margin:0 0 14px">⭐ Server Efficiency</h4>
+             <div id="coaching-rank-efficiency" style="font-size:13px"></div>
+           </div>
+         </div>
+
+         <!-- Action Plans -->
+         <h3 style="font-size:16px;font-weight:700;margin:0 0 14px">📋 Coaching Action Plans</h3>
+         <div id="coaching-actions" style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:24px"></div>
+
+         <!-- Coaching Insight -->
+         <div id="coaching-insight" style="background:linear-gradient(135deg,#00b894,#00cec9);color:#fff;border-radius:14px;padding:24px;text-align:center;margin-bottom:20px">
+           <div style="font-size:24px;margin-bottom:8px">💡</div>
+           <div id="coaching-tip" style="font-size:15px;font-weight:600"></div>
+         </div>
+       </div>
+       <style>.coach-grid-2col{grid-template-columns:1fr 1fr}@media(max-width:700px){.coach-grid-2col{grid-template-columns:1fr!important}}</style>
+     </div>
+
+<div id="tab-settings" style="display:none">
           <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:22px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
               <div style="font-size:15px;font-weight:800">Edit KPI Targets</div>
@@ -3961,10 +4080,11 @@ const GROUP_IDS = { performance:'performance', kitchen:'kitchen', ai:'ai', 'sett
 
 function navTo(page) {
   const allPages = ['dashboard','performance','laborhub','kitchen','scoreboard','ai','kitchenlabor',
-                    'sales','menu','labor','savings','preshift','chat','coaching','settings','knowledge','prepforecast'];
+                    'sales','menu','labor','savings','preshift','chat','coaching','settings','knowledge','prepforecast','preshiftpage','coachingpage'];
   const titles = {
     dashboard:'Overview',performance:'Performance',laborhub:'Labor',kitchen:'Kitchen',
-    scoreboard:'Scoreboard',ai:'HeyRai AI',settings:'Targets',knowledge:'Knowledge'
+    scoreboard:'Scoreboard',ai:'HeyRai AI',settings:'Targets',knowledge:'Knowledge',
+    preshiftpage:'Pre-Shift Briefing',coachingpage:'Coaching'
   };
   const hubMap = {
     sales:'performance',menu:'performance',savings:'performance',labor:'laborhub',
@@ -6672,6 +6792,311 @@ async function sendExpectToSlack(){
     if(btn){btn.textContent='Send to Slack';btn.disabled=false}
   }
 }
+
+
+// ============ NAV HOOKS FOR PRE-SHIFT & COACHING PAGES ============
+(function(){
+  var _prevNavTo = navTo;
+  navTo = function(page) {
+    _prevNavTo(page);
+    if(page === 'preshiftpage' && typeof loadPreshiftPage === 'function') loadPreshiftPage();
+    if(page === 'coachingpage' && typeof loadCoachingPage === 'function') loadCoachingPage();
+  };
+})();
+
+
+// ============ PRE-SHIFT BRIEFING PAGE ============
+(function(){
+  var psInit = false;
+  var psCharts = {};
+
+  window.loadPreshiftPage = async function() {
+    if(psInit) return;
+    psInit = true;
+    try {
+      // Date badge
+      var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var now = new Date();
+      var dEl = document.getElementById('preshift-date-badge');
+      if(dEl) dEl.textContent = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();
+
+      // Get weekly data
+      var loc = (S.locFilter || 'warren').toLowerCase();
+      var {data:wData} = await sb.from('weeks').select('*').eq('location', loc).order('week_ending',{ascending:true});
+      var {data:wExt} = await sb.from('weeks_extended').select('*').eq('location', loc).order('week_ending',{ascending:true});
+
+      // Merge extended data
+      var extMap = {};
+      (wExt||[]).forEach(function(r){ extMap[r.week_ending] = r; });
+      var rows = (wData||[]).filter(function(r){ return r.net_sales > 0; }).map(function(r){
+        var e = extMap[r.week_ending] || {};
+        return Object.assign({}, r, e);
+      });
+
+      var last8 = rows.slice(-8);
+      var latest = rows[rows.length - 1] || {};
+      var prev = rows[rows.length - 2] || {};
+
+      // KPIs
+      var kpiEl = document.getElementById('preshift-kpis');
+      if(kpiEl) {
+        var kpis = [
+          {label:'Avg Weekly Sales', val:'$'+Math.round(latest.net_sales||0).toLocaleString(), delta: prev.net_sales ? Math.round((latest.net_sales-prev.net_sales)/prev.net_sales*100) : 0, icon:'\uD83D\uDCB0'},
+          {label:'PPA', val:'$'+(latest.ppa||0).toFixed(2), delta: prev.ppa ? Math.round((latest.ppa-prev.ppa)/prev.ppa*100) : 0, icon:'\uD83C\uDF7D'},
+          {label:'Avg Guests', val:Math.round(latest.guests||0).toLocaleString(), delta: prev.guests ? Math.round((latest.guests-prev.guests)/prev.guests*100) : 0, icon:'\uD83D\uDC65'},
+          {label:'SPLH', val:'$'+(latest.splh||0).toFixed(0), delta: prev.splh ? Math.round((latest.splh-prev.splh)/prev.splh*100) : 0, icon:'\u23F1'},
+          {label:'Starter Attach', val:((latest.starter_attach||0)*100).toFixed(1)+'%', delta: prev.starter_attach ? Math.round(((latest.starter_attach-prev.starter_attach)/prev.starter_attach)*100) : 0, icon:'\uD83E\uDD57'},
+          {label:'Drink Attach', val:((latest.drink_attach||0)*100).toFixed(1)+'%', delta: prev.drink_attach ? Math.round(((latest.drink_attach-prev.drink_attach)/prev.drink_attach)*100) : 0, icon:'\uD83C\uDF78'}
+        ];
+        kpiEl.innerHTML = kpis.map(function(k){
+          var color = k.delta > 0 ? '#00b894' : k.delta < 0 ? '#d63031' : 'var(--muted)';
+          var arrow = k.delta > 0 ? '\u25B2' : k.delta < 0 ? '\u25BC' : '';
+          return '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center"><div style="font-size:20px;margin-bottom:4px">'+k.icon+'</div><div style="font-size:18px;font-weight:800">'+k.val+'</div><div style="font-size:11px;color:var(--muted);margin:2px 0">'+k.label+'</div><div style="font-size:11px;color:'+color+';font-weight:600">'+arrow+' '+Math.abs(k.delta)+'% vs last wk</div></div>';
+        }).join('');
+      }
+
+      // Focus Areas
+      var focusEl = document.getElementById('preshift-focus');
+      if(focusEl) {
+        var focuses = [];
+        if((latest.starter_attach||0) < 0.30) focuses.push('\uD83D\uDD34 <b>Starters need a push!</b> We\'re at ' + ((latest.starter_attach||0)*100).toFixed(1) + '% attach. Suggest an app to every table — lead with the top seller.');
+        else focuses.push('\uD83D\uDFE2 <b>Starters looking solid</b> at ' + ((latest.starter_attach||0)*100).toFixed(1) + '%. Keep the momentum!');
+        if((latest.drink_attach||0) < 0.50) focuses.push('\uD83D\uDD34 <b>Drink attach is low</b> at ' + ((latest.drink_attach||0)*100).toFixed(1) + '%. Greet with a cocktail suggestion before water.');
+        else focuses.push('\uD83D\uDFE2 <b>Drinks are flowing!</b> ' + ((latest.drink_attach||0)*100).toFixed(1) + '% attach. Nice work team.');
+        if((latest.ppa||0) < 33) focuses.push('\uD83D\uDD34 <b>PPA is below target</b> ($' + (latest.ppa||0).toFixed(2) + '). Focus on upsells — desserts, premium sides, add-ons.');
+        else focuses.push('\uD83D\uDFE2 <b>PPA is strong</b> at $' + (latest.ppa||0).toFixed(2) + '. Let\'s keep that check average climbing!');
+        var laborPct = latest.labor_pct || (latest.total_labor && latest.net_sales ? latest.total_labor/latest.net_sales : 0);
+        if(laborPct > 0.25) focuses.push('\u26A0\uFE0F <b>Labor is running hot</b> at ' + (laborPct*100).toFixed(1) + '%. Watch cuts closely today.');
+        else focuses.push('\uD83D\uDFE2 <b>Labor is in check</b> at ' + (laborPct*100).toFixed(1) + '%. Great scheduling!');
+        focusEl.innerHTML = focuses.join('<br style="margin:8px 0">');
+      }
+
+      // Talking points
+      var talkEl = document.getElementById('preshift-talking');
+      if(talkEl) {
+        var talks = [
+          '\uD83D\uDDE3 "Last week we did $' + Math.round(latest.net_sales||0).toLocaleString() + ' in sales — ' + (latest.net_sales > (prev.net_sales||0) ? 'up from the week before. Let\'s keep that energy!' : 'let\'s push to beat that this week!') + '"',
+          '\uD83C\uDFAF "Our PPA target is $33. We\'re at $' + (latest.ppa||0).toFixed(2) + '. ' + ((latest.ppa||0) >= 33 ? 'We\'re crushing it!' : 'One extra app or dessert per table gets us there.') + '"',
+          '\uD83D\uDCAA "Every table is a chance to create a great experience AND boost our numbers. Suggest, don\'t just take orders!"'
+        ];
+        talkEl.innerHTML = talks.join('<br style="margin:8px 0">');
+      }
+
+      // Menu push
+      var menuEl = document.getElementById('preshift-menu');
+      if(menuEl) {
+        menuEl.innerHTML = '\uD83C\uDF1F <b>Feature tonight:</b> Lead with seasonal specials and chef recommendations.<br>\uD83C\uDF78 <b>Cocktail push:</b> Mention the signature cocktail by name before taking drink orders.<br>\uD83C\uDF70 <b>Dessert play:</b> Don\'t ask \"do you want dessert?\" — say \"Let me tell you about our amazing [dessert name].\"';
+      }
+
+      // Quick wins
+      var winsEl = document.getElementById('preshift-wins');
+      if(winsEl) {
+        winsEl.innerHTML = '\u2705 Greet every table within 60 seconds<br>\u2705 Suggest a specific starter by name (\"Have you tried our...?\")<br>\u2705 Mention a premium drink before defaulting to water<br>\u2705 Pre-bus tables to flip faster during peak<br>\u2705 Check back within 2 minutes of food delivery';
+      }
+
+      // Motto
+      var mottoEl = document.getElementById('preshift-motto');
+      if(mottoEl) {
+        var mottos = ['Let\'s make every guest feel like a regular!','Sell the experience, not just the food.','Today\'s goal: beat yesterday. Let\'s go!','We\'re not just servers — we\'re the reason they come back.','Own your section. Own the night.'];
+        mottoEl.textContent = mottos[Math.floor(Math.random()*mottos.length)];
+      }
+
+      // CHARTS
+      renderPreshiftCharts(last8);
+    } catch(err) { console.error('PreShift page error:', err); }
+  };
+
+  window.renderPreshiftCharts = function(data) {
+    var labels = data.map(function(r){ return r.week_ending ? r.week_ending.substring(5) : ''; });
+
+    // Sales & Guest Trends (dual axis)
+    var ctx1 = document.getElementById('preshift-chart-sales');
+    if(ctx1 && typeof Chart !== 'undefined') {
+      if(psCharts.sales) psCharts.sales.destroy();
+      psCharts.sales = new Chart(ctx1, {
+        type:'line',
+        data:{
+          labels: labels,
+          datasets:[
+            {label:'Net Sales ($)',data:data.map(function(r){return Math.round(r.net_sales||0);}),borderColor:'#6c5ce7',backgroundColor:'rgba(108,92,231,0.1)',fill:true,tension:0.3,yAxisID:'y'},
+            {label:'Guests',data:data.map(function(r){return Math.round(r.guests||0);}),borderColor:'#00b894',backgroundColor:'rgba(0,184,148,0.1)',fill:true,tension:0.3,yAxisID:'y1'}
+          ]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},usePointStyle:true,padding:12}}},scales:{y:{position:'left',ticks:{callback:function(v){return '$'+v.toLocaleString()},font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},y1:{position:'right',ticks:{font:{size:10}},grid:{display:false}}}}
+      });
+    }
+
+    // Attach Rate Progress
+    var ctx2 = document.getElementById('preshift-chart-attach');
+    if(ctx2 && typeof Chart !== 'undefined') {
+      if(psCharts.attach) psCharts.attach.destroy();
+      psCharts.attach = new Chart(ctx2, {
+        type:'line',
+        data:{
+          labels: labels,
+          datasets:[
+            {label:'Starter %',data:data.map(function(r){return ((r.starter_attach||0)*100).toFixed(1);}),borderColor:'#fdcb6e',backgroundColor:'rgba(253,203,110,0.1)',fill:true,tension:0.3},
+            {label:'Drink %',data:data.map(function(r){return ((r.drink_attach||0)*100).toFixed(1);}),borderColor:'#e17055',backgroundColor:'rgba(225,112,85,0.1)',fill:true,tension:0.3}
+          ]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},usePointStyle:true,padding:12}}},scales:{y:{ticks:{callback:function(v){return v+'%'},font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}}}}
+      });
+    }
+  };
+})();
+
+
+// ============ COACHING DASHBOARD PAGE ============
+(function(){
+  var coachInit = false;
+  var coachCharts = {};
+
+  window.loadCoachingPage = async function() {
+    if(coachInit) return;
+    coachInit = true;
+    try {
+      var loc = (S.locFilter || 'warren').toLowerCase();
+      // Get weekly data with extended
+      var {data:wData} = await sb.from('weeks').select('*').eq('location', loc).order('week_ending',{ascending:true});
+      var {data:wExt} = await sb.from('weeks_extended').select('*').eq('location', loc).order('week_ending',{ascending:true});
+      // Get employee data
+      var {data:payroll} = await sb.from('payroll_entries').select('*').eq('location', loc);
+      var {data:toast} = await sb.from('toast_time_entries').select('*').eq('location', loc);
+
+      var extMap = {};
+      (wExt||[]).forEach(function(r){ extMap[r.week_ending] = r; });
+      var rows = (wData||[]).filter(function(r){ return r.net_sales > 0; }).map(function(r){
+        var e = extMap[r.week_ending] || {};
+        return Object.assign({}, r, e);
+      });
+
+      var last8 = rows.slice(-8);
+      var latest = rows[rows.length - 1] || {};
+
+      // Team KPIs
+      var avgSPLH = last8.reduce(function(s,r){return s+(r.splh||0);},0) / (last8.length||1);
+      var avgLabor = last8.reduce(function(s,r){
+        var lp = r.labor_pct || (r.total_labor && r.net_sales ? r.total_labor/r.net_sales : 0);
+        return s + lp;
+      },0) / (last8.length||1);
+      var avgPPA = last8.reduce(function(s,r){return s+(r.ppa||0);},0) / (last8.length||1);
+      var totalOT = last8.reduce(function(s,r){return s+(r.overtime_hrs||0);},0);
+
+      var kpiEl = document.getElementById('coaching-team-kpis');
+      if(kpiEl) {
+        var kpis = [
+          {label:'Avg SPLH (8wk)',val:'$'+avgSPLH.toFixed(0),icon:'\u23F1',color:avgSPLH>=70?'#00b894':'#d63031'},
+          {label:'Avg Labor %',val:(avgLabor*100).toFixed(1)+'%',icon:'\uD83D\uDCCA',color:avgLabor<=0.22?'#00b894':'#d63031'},
+          {label:'Avg PPA',val:'$'+avgPPA.toFixed(2),icon:'\uD83C\uDF7D',color:avgPPA>=33?'#00b894':'#d63031'},
+          {label:'OT Hours (8wk)',val:totalOT.toFixed(1),icon:'\u26A0\uFE0F',color:totalOT<20?'#00b894':'#d63031'},
+          {label:'Team Members',val:((payroll||[]).length || (toast||[]).length || 0),icon:'\uD83D\uDC65',color:'var(--accent)'}
+        ];
+        kpiEl.innerHTML = kpis.map(function(k){
+          return '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center"><div style="font-size:20px;margin-bottom:4px">'+k.icon+'</div><div style="font-size:18px;font-weight:800;color:'+k.color+'">'+k.val+'</div><div style="font-size:11px;color:var(--muted);margin:2px 0">'+k.label+'</div></div>';
+        }).join('');
+      }
+
+      // Individual Rankings - Hours
+      var rankHoursEl = document.getElementById('coaching-rank-hours');
+      if(rankHoursEl && toast && toast.length) {
+        var sorted = toast.slice().sort(function(a,b){return (b.total_hours||0)-(a.total_hours||0);});
+        var top10 = sorted.slice(0,10);
+        rankHoursEl.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">#</th><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">Name</th><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">Role</th><th style="text-align:right;padding:6px;font-size:11px;color:var(--muted)">Hours</th><th style="text-align:right;padding:6px;font-size:11px;color:var(--muted)">Days</th></tr></thead><tbody>' + top10.map(function(emp,i){
+          var medal = i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':'';
+          return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px;font-weight:700">'+(medal||(i+1))+'</td><td style="padding:6px;font-weight:600">'+emp.employee_name+'</td><td style="padding:6px;color:var(--muted);font-size:12px">'+(emp.job_title||emp.role||'-')+'</td><td style="padding:6px;text-align:right;font-weight:700">'+(emp.total_hours||0).toFixed(1)+'</td><td style="padding:6px;text-align:right">'+(emp.days_worked||'-')+'</td></tr>';
+        }).join('') + '</tbody></table>';
+      }
+
+      // Individual Rankings - Efficiency (by pay rate proxy from payroll)
+      var rankEffEl = document.getElementById('coaching-rank-efficiency');
+      if(rankEffEl && payroll && payroll.length) {
+        var withRate = payroll.filter(function(e){return e.regular_hours > 20;}).map(function(e){
+          return {name:e.employee_name, role:e.role||e.job_title||'-', hours:e.regular_hours||0, pay:e.total_pay||0, rate: e.total_pay && e.regular_hours ? (e.total_pay/e.regular_hours).toFixed(2) : '0'};
+        }).sort(function(a,b){return b.hours-a.hours;}).slice(0,10);
+        rankEffEl.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">#</th><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">Name</th><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">Role</th><th style="text-align:right;padding:6px;font-size:11px;color:var(--muted)">Reg Hrs</th><th style="text-align:right;padding:6px;font-size:11px;color:var(--muted)">$/Hr</th></tr></thead><tbody>' + withRate.map(function(emp,i){
+          var medal = i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':'';
+          return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px;font-weight:700">'+(medal||(i+1))+'</td><td style="padding:6px;font-weight:600">'+emp.name+'</td><td style="padding:6px;color:var(--muted);font-size:12px">'+emp.role+'</td><td style="padding:6px;text-align:right;font-weight:700">'+emp.hours.toFixed(1)+'</td><td style="padding:6px;text-align:right;color:var(--accent)">$'+emp.rate+'</td></tr>';
+        }).join('') + '</tbody></table>';
+      }
+
+      // Action Plans
+      var actEl = document.getElementById('coaching-actions');
+      if(actEl) {
+        var plans = [];
+        if(avgLabor > 0.22) plans.push({title:'\uD83D\uDEA8 Labor Above Target',desc:'8-week avg labor is ' + (avgLabor*100).toFixed(1) + '% (target: 22%). Review schedules for overstaffing on slower days. Consider cutting shifts 30 min earlier when sales dip.',color:'#d63031'});
+        if(avgPPA < 33) plans.push({title:'\uD83C\uDF7D PPA Needs Attention',desc:'Avg PPA is $' + avgPPA.toFixed(2) + ' (target: $33). Coach servers on suggestive selling — every table should hear about a starter and a premium drink.',color:'#e17055'});
+        if(totalOT > 15) plans.push({title:'\u26A0\uFE0F Overtime Watch',desc:totalOT.toFixed(1) + ' OT hours in last 8 weeks. Identify repeat offenders and adjust scheduling to avoid 40+ hour weeks.',color:'#fdcb6e'});
+        if(avgSPLH < 70) plans.push({title:'\u23F1 SPLH Below Target',desc:'Avg SPLH is $' + avgSPLH.toFixed(0) + ' (target: $70). Focus on driving sales during staffed hours rather than cutting labor.',color:'#e17055'});
+        if(plans.length === 0) plans.push({title:'\uD83C\uDF1F Great Job, Coach!',desc:'All key metrics are hitting targets. Focus on maintaining consistency and developing your top performers into trainers.',color:'#00b894'});
+
+        actEl.innerHTML = plans.map(function(p){
+          return '<div style="background:var(--card);border-left:4px solid '+p.color+';border-radius:0 12px 12px 0;padding:16px"><div style="font-size:14px;font-weight:700;margin-bottom:6px">'+p.title+'</div><div style="font-size:13px;color:var(--muted);line-height:1.6">'+p.desc+'</div></div>';
+        }).join('');
+      }
+
+      // Coaching tip
+      var tipEl = document.getElementById('coaching-tip');
+      if(tipEl) {
+        var tips = ['The best managers don\'t just tell — they show. Run a table-side demo this week.','Recognize one team member publicly each shift. Morale drives performance.','Data without action is just noise. Pick ONE metric to improve this week.','Great coaching is specific: "Nice upsell on table 12" beats "good job" every time.','Check in with your quiet performers — they often have the most room to grow.'];
+        tipEl.textContent = tips[Math.floor(Math.random()*tips.length)];
+      }
+
+      // CHARTS
+      renderCoachCharts(last8);
+    } catch(err) { console.error('Coaching page error:', err); }
+  };
+
+  window.coachPageUpdate = function() {
+    coachInit = false;
+    loadCoachingPage();
+  };
+
+  window.renderCoachCharts = function(data) {
+    var labels = data.map(function(r){ return r.week_ending ? r.week_ending.substring(5) : ''; });
+
+    // Labor Efficiency (SPLH + Labor %)
+    var ctx1 = document.getElementById('coach-chart-labor');
+    if(ctx1 && typeof Chart !== 'undefined') {
+      if(coachCharts.labor) coachCharts.labor.destroy();
+      coachCharts.labor = new Chart(ctx1, {
+        type:'line',
+        data:{
+          labels: labels,
+          datasets:[
+            {label:'SPLH ($)',data:data.map(function(r){return (r.splh||0).toFixed(0);}),borderColor:'#6c5ce7',backgroundColor:'rgba(108,92,231,0.1)',fill:true,tension:0.3,yAxisID:'y'},
+            {label:'Labor %',data:data.map(function(r){
+              var lp = r.labor_pct || (r.total_labor && r.net_sales ? r.total_labor/r.net_sales : 0);
+              return (lp*100).toFixed(1);
+            }),borderColor:'#d63031',backgroundColor:'rgba(214,48,49,0.1)',fill:true,tension:0.3,yAxisID:'y1'}
+          ]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},usePointStyle:true,padding:12}},annotation:{annotations:{splhTarget:{type:'line',yMin:70,yMax:70,borderColor:'rgba(108,92,231,0.4)',borderDash:[5,5],borderWidth:1,label:{display:true,content:'Target $70',font:{size:9}}}}}},scales:{y:{position:'left',ticks:{callback:function(v){return '$'+v},font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},y1:{position:'right',ticks:{callback:function(v){return v+'%'},font:{size:10}},grid:{display:false}}}}
+      });
+    }
+
+    // Schedule Accuracy
+    var ctx2 = document.getElementById('coach-chart-sched');
+    if(ctx2 && typeof Chart !== 'undefined') {
+      if(coachCharts.sched) coachCharts.sched.destroy();
+      var schedData = data.filter(function(r){return r.scheduled_hrs > 0;});
+      var schedLabels = schedData.map(function(r){return r.week_ending ? r.week_ending.substring(5) : '';});
+      coachCharts.sched = new Chart(ctx2, {
+        type:'bar',
+        data:{
+          labels: schedLabels,
+          datasets:[
+            {label:'Scheduled Hrs',data:schedData.map(function(r){return (r.scheduled_hrs||0).toFixed(1);}),backgroundColor:'rgba(108,92,231,0.6)',borderRadius:4},
+            {label:'Actual Hrs',data:schedData.map(function(r){return ((r.foh_labor_hrs||0)+(r.boh_labor_hrs||0)).toFixed(1);}),backgroundColor:'rgba(0,184,148,0.6)',borderRadius:4},
+            {label:'OT Hrs',data:schedData.map(function(r){return (r.overtime_hrs||0).toFixed(1);}),backgroundColor:'rgba(214,48,49,0.6)',borderRadius:4}
+          ]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},usePointStyle:true,padding:12}}},scales:{y:{ticks:{font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},x:{ticks:{font:{size:10}}}}}
+      });
+    }
+  };
+})();
+
 </script>
 <!-- Bottom Tab Bar (Mobile) -->
 <div class="bottom-tab-bar" id="bottom-tab-bar">
