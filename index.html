@@ -7000,19 +7000,37 @@ async function sendExpectToSlack(){
       // Individual Rankings - Hours
       var rankHoursEl = document.getElementById('coaching-rank-hours');
       if(rankHoursEl && toast && toast.length) {
-        var sorted = toast.slice().sort(function(a,b){return (b.total_hours||0)-(a.total_hours||0);});
+        // Aggregate by employee
+        var empMap = {};
+        toast.forEach(function(r){
+          var n = r.employee_name;
+          if(!empMap[n]) empMap[n] = {employee_name:n, job_title:r.job_title||'-', total_hours:0, overtime_hours:0, shifts:0};
+          empMap[n].total_hours += (r.total_hours||0);
+          empMap[n].overtime_hours += (r.overtime_hours||0);
+          empMap[n].shifts++;
+        });
+        var sorted = Object.values(empMap).sort(function(a,b){return b.total_hours-a.total_hours;});
         var top10 = sorted.slice(0,10);
-        rankHoursEl.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">#</th><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">Name</th><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">Role</th><th style="text-align:right;padding:6px;font-size:11px;color:var(--muted)">Hours</th><th style="text-align:right;padding:6px;font-size:11px;color:var(--muted)">Days</th></tr></thead><tbody>' + top10.map(function(emp,i){
+        rankHoursEl.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">#</th><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">Name</th><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">Role</th><th style="text-align:right;padding:6px;font-size:11px;color:var(--muted)">Hours</th><th style="text-align:right;padding:6px;font-size:11px;color:var(--muted)">OT Hrs</th></tr></thead><tbody>' + top10.map(function(emp,i){
           var medal = i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':'';
-          return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px;font-weight:700">'+(medal||(i+1))+'</td><td style="padding:6px;font-weight:600">'+emp.employee_name+'</td><td style="padding:6px;color:var(--muted);font-size:12px">'+(emp.job_title||emp.role||'-')+'</td><td style="padding:6px;text-align:right;font-weight:700">'+(emp.total_hours||0).toFixed(1)+'</td><td style="padding:6px;text-align:right">'+(emp.days_worked||'-')+'</td></tr>';
+          return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px;font-weight:700">'+(medal||(i+1))+'</td><td style="padding:6px;font-weight:600">'+emp.employee_name+'</td><td style="padding:6px;color:var(--muted);font-size:12px">'+(emp.job_title||'-')+'</td><td style="padding:6px;text-align:right;font-weight:700">'+(emp.total_hours||0).toFixed(1)+'</td><td style="padding:6px;text-align:right">'+(emp.overtime_hours||0).toFixed(1)+'</td></tr>';
         }).join('') + '</tbody></table>';
       }
 
       // Individual Rankings - Efficiency (by pay rate proxy from payroll)
       var rankEffEl = document.getElementById('coaching-rank-efficiency');
       if(rankEffEl && payroll && payroll.length) {
-        var withRate = payroll.filter(function(e){return e.regular_hours > 20;}).map(function(e){
-          return {name:e.employee_name, role:e.role||e.job_title||'-', hours:e.regular_hours||0, pay:e.total_pay||0, rate: e.total_pay && e.regular_hours ? (e.total_pay/e.regular_hours).toFixed(2) : '0'};
+        // Aggregate by employee
+        var pMap = {};
+        payroll.forEach(function(r){
+          var n = r.employee_name;
+          if(!pMap[n]) pMap[n] = {employee_name:n, job_title:r.job_title||'-', regular_hours:0, total_pay:0};
+          pMap[n].regular_hours += (r.regular_hours||0);
+          pMap[n].total_pay += (r.total_pay||0);
+        });
+        var payAgg = Object.values(pMap);
+        var withRate = payAgg.filter(function(e){return e.regular_hours > 10;}).map(function(e){
+          return {name:e.employee_name, role:e.job_title||'-', hours:e.regular_hours, pay:e.total_pay, rate: e.total_pay && e.regular_hours ? (e.total_pay/e.regular_hours).toFixed(2) : '0'};
         }).sort(function(a,b){return b.hours-a.hours;}).slice(0,10);
         rankEffEl.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">#</th><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">Name</th><th style="text-align:left;padding:6px;font-size:11px;color:var(--muted)">Role</th><th style="text-align:right;padding:6px;font-size:11px;color:var(--muted)">Reg Hrs</th><th style="text-align:right;padding:6px;font-size:11px;color:var(--muted)">$/Hr</th></tr></thead><tbody>' + withRate.map(function(emp,i){
           var medal = i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':'';
