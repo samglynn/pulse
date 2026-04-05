@@ -4049,7 +4049,7 @@ function laborTab(t) {
 }
 /* ── Predictive Schedule Tool: override laborTab to add sched tab ── */
 var _origLaborTab = laborTab;
-function laborTab(t){
+laborTab = function(t){
   var schedEl=document.getElementById('lab-sched');
   var schedBtn=document.getElementById('lab-tab-sched');
   if(schedEl)schedEl.style.display='none';
