@@ -684,6 +684,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
           <div style="display:flex;gap:2px;margin-bottom:20px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:4px">
             <button class="btn btn-sm btn-active" id="lab-tab-kpi" onclick="laborTab('kpi')" style="flex:1;justify-content:center">⚙️ Weekly KPIs</button>
             <button class="btn btn-sm" id="lab-tab-intel" onclick="laborTab('intel')" style="flex:1;justify-content:center">👥 BOH Intelligence</button>
+            <button class="btn btn-sm" id="lab-tab-sched" onclick="laborTab('sched')" style="flex:1;justify-content:center">📅 Schedule Tool</button>
           </div>
           <!-- Weekly KPIs sub-page -->
           <div id="lab-kpi">
@@ -767,6 +768,35 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
           <!-- Labor Intelligence sub-page -->
           <div id="lab-intel" style="display:none">
             <div id="laborhub-intel-content"></div>
+          <div id="lab-sched" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+              <div>
+                <h3 style="font-size:18px;font-weight:800;margin:0">📅 Predictive Schedule Tool</h3>
+                <p style="font-size:12px;color:var(--muted);margin:4px 0 0">AI-recommended staffing based on historical sales &amp; labor patterns</p>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select id="sched-week-select" onchange="schedUpdateWeek()" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px"></select>
+              </div>
+            </div>
+            <div id="sched-week-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px"></div>
+            <div style="display:flex;gap:6px;margin-bottom:14px">
+              <button class="btn btn-sm btn-active" id="sched-view-grid" onclick="schedToggleView('grid')" style="flex:0 1 auto">Weekly Grid</button>
+              <button class="btn btn-sm" id="sched-view-cards" onclick="schedToggleView('cards')" style="flex:0 1 auto">Daily Detail Cards</button>
+            </div>
+            <div id="sched-grid-view">
+              <div style="overflow-x:auto;border-radius:12px;border:1px solid var(--border)">
+                <table id="sched-weekly-table" style="width:100%;border-collapse:collapse;font-size:13px">
+                  <thead id="sched-table-head"></thead>
+                  <tbody id="sched-table-body"></tbody>
+                </table>
+              </div>
+              <p style="font-size:11px;color:var(--muted);margin-top:8px;text-align:right">* Recommendations based on historical avg sales &amp; target SPLH of $70</p>
+            </div>
+            <div id="sched-cards-view" style="display:none">
+              <div id="sched-day-selector" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap"></div>
+              <div id="sched-day-detail"></div>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -4017,6 +4047,257 @@ function laborTab(t) {
     initLaborPage();
   }
 }
+/* ── Predictive Schedule Tool: override laborTab to add sched tab ── */
+var _origLaborTab = laborTab;
+function laborTab(t){
+  var schedEl=document.getElementById('lab-sched');
+  var schedBtn=document.getElementById('lab-tab-sched');
+  if(schedEl)schedEl.style.display='none';
+  if(schedBtn)schedBtn.className=schedBtn.className.replace(' btn-active','');
+  if(t==='sched'){
+    var kpi=document.getElementById('lab-kpi');
+    var intel=document.getElementById('lab-intel');
+    if(kpi)kpi.style.display='none';
+    if(intel)intel.style.display='none';
+    var kBtn=document.getElementById('lab-tab-kpi');
+    var iBtn=document.getElementById('lab-tab-intel');
+    if(kBtn)kBtn.className=kBtn.className.replace(' btn-active','');
+    if(iBtn)iBtn.className=iBtn.className.replace(' btn-active','');
+    schedEl.style.display='block';
+    if(schedBtn)schedBtn.className+=' btn-active';
+    if(typeof schedInit==='function')schedInit();
+  } else {
+    _origLaborTab(t);
+  }
+}
+/* ── Schedule Tool Data & Algorithm ── */
+(function(){
+var SD={
+0:{day:'Sunday',s:12000,g:365,fh:61.5,bh:65.7,lp:0.06,dp:0.58,
+foh:{server:6,bartender:5.6,manager:1,host:1},
+boh:{line_cook:3,dish_washer:1.8,chef:1.4,expo:1.4,food_prep:1,sous:1}},
+3:{day:'Wednesday',s:5700,g:168,fh:40.4,bh:39.0,lp:0.10,dp:0.18,
+foh:{server:2,bartender:2,manager:1.4},
+boh:{chef:1.4,food_prep:1.5,sous:1,line_cook:1,dish_washer:1}},
+4:{day:'Thursday',s:9400,g:273,fh:44.4,bh:46.8,lp:0.12,dp:0.35,
+foh:{server:4,bartender:3.2,manager:1.3,admin:1},
+boh:{chef:1.8,sous:1,dish_washer:1,food_prep:1,line_cook:1,expo:1}},
+5:{day:'Friday',s:15000,g:457,fh:72.4,bh:80.8,lp:0.14,dp:0.45,
+foh:{server:6.7,bartender:6.7,manager:1.2,host:1},
+boh:{line_cook:2.7,expo:2.2,dish_washer:1.7,chef:1.4,food_prep:1,sous:1}},
+6:{day:'Saturday',s:12700,g:404,fh:83.2,bh:84.7,lp:0.04,dp:0.58,
+foh:{server:7,bartender:5.6,manager:1.2,host:1},
+boh:{line_cook:2.6,expo:2.4,dish_washer:1.6,chef:1.2,food_prep:1,sous:1}}
+};
+var AD=[3,4,5,6,0];
+var DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var DF=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var TSPLH=70,AFW=8.50,ABW=17.50;
+var RL={server:'Server',bartender:'Bartender',manager:'Manager',host:'Host',admin:'Admin',line_cook:'Line Cook',dish_washer:'Dishwasher',chef:'Chef',expo:'Expo',food_prep:'Food Prep',sous:'Sous Chef'};
+var RS={server:'split',bartender:'split',manager:'full',host:'pm',admin:'am',line_cook:'full',dish_washer:'full',chef:'full',expo:'pm',food_prep:'am',sous:'full'};
+function rec(dow){
+var p=SD[dow];if(!p)return null;
+var sales=p.s,guests=p.g,th=sales/TSPLH;
+var fr=p.fh/(p.fh+p.bh),fh=Math.round(th*fr),bh=Math.round(th*(1-fr));
+var fs=fh/p.fh,bs=bh/p.bh;
+var fR={},bR={},amF={},pmF={},amB={},pmB={};
+Object.keys(p.foh).forEach(function(k){
+fR[k]=Math.max(1,Math.round(p.foh[k]*fs));
+var sh=RS[k];
+if(sh==='am'){amF[k]=fR[k];pmF[k]=0;}
+else if(sh==='pm'){amF[k]=0;pmF[k]=fR[k];}
+else if(sh==='full'){amF[k]=fR[k];pmF[k]=fR[k];}
+else{amF[k]=Math.max(1,Math.round(fR[k]*0.35));pmF[k]=Math.max(1,Math.round(fR[k]*0.75));}
+});
+Object.keys(p.boh).forEach(function(k){
+bR[k]=Math.max(1,Math.round(p.boh[k]*bs));
+var sh=RS[k];
+if(sh==='am'){amB[k]=bR[k];pmB[k]=0;}
+else if(sh==='pm'){amB[k]=0;pmB[k]=bR[k];}
+else{amB[k]=bR[k];pmB[k]=bR[k];}
+});
+function sm(o){return Object.keys(o).reduce(function(s,k){return s+o[k]},0);}
+var tAF=sm(amF),tPF=sm(pmF),tAB=sm(amB),tPB=sm(pmB);
+var lc=fh*AFW+bh*ABW;
+return{dow:dow,day:p.day,sales:sales,guests:guests,fohHrs:fh,bohHrs:bh,totalHrs:fh+bh,
+totalFOH:sm(fR),totalBOH:sm(bR),fohRoles:fR,bohRoles:bR,
+amFOH:amF,pmFOH:pmF,amBOH:amB,pmBOH:pmB,
+totalAMFOH:tAF,totalPMFOH:tPF,totalAMBOH:tAB,totalPMBOH:tPB,
+laborCost:lc,laborPct:lc/sales*100,lp:p.lp,dp:p.dp,
+splh:Math.round(sales/(fh+bh)),gplh:(guests/(fh+bh)).toFixed(1)};
+}
+window.schedInit=function(){
+var sel=document.getElementById('sched-week-select');
+if(!sel)return;
+sel.innerHTML='';
+var today=new Date();
+for(var w=0;w<6;w++){
+var d=new Date(today);d.setDate(d.getDate()+(w*7));
+var dow=d.getDay(),toWed=dow<=3?3-dow:10-dow;
+d.setDate(d.getDate()+toWed);
+var sun=new Date(d);sun.setDate(d.getDate()+4);
+var label=(w===0?'This Week: ':w===1?'Next Week: ':'')+(d.getMonth()+1)+'/'+d.getDate()+' - '+(sun.getMonth()+1)+'/'+sun.getDate();
+var opt=document.createElement('option');
+opt.value=d.toISOString().split('T')[0];
+opt.textContent=label;
+sel.appendChild(opt);
+}
+schedUpdateWeek();
+};
+
+window.schedUpdateWeek=function(){
+var sel=document.getElementById('sched-week-select');
+var sv=sel.value,parts=sv.split('-');
+var wed=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+var dates=[];
+for(var i=0;i<5;i++){var nd=new Date(wed);nd.setDate(wed.getDate()+i);dates.push(nd);}
+var recs=[],tS=0,tG=0,tH=0,tL=0;
+AD.forEach(function(dow,i){
+var r=rec(dow);r.date=dates[i];recs.push(r);
+tS+=r.sales;tG+=r.guests;tH+=r.totalHrs;tL+=r.laborCost;
+});
+var sumEl=document.getElementById('sched-week-summary');
+sumEl.innerHTML=kT('Proj. Sales','$'+Math.round(tS).toLocaleString(),'var(--accent)')
++kT('Proj. Guests',tG.toLocaleString(),'#8b5cf6')
++kT('Total Labor Hrs',tH+' hrs','#f59e0b')
++kT('Est. Labor Cost','$'+Math.round(tL).toLocaleString(),'#ef4444')
++kT('Avg SPLH','$'+Math.round(tS/tH),'#10b981')
++kT('Labor %',(tL/tS*100).toFixed(1)+'%',tL/tS>0.22?'#ef4444':'#10b981');
+schedRenderGrid(recs);
+schedRenderDayCards(recs);
+window._schedRecs=recs;
+};
+function kT(l,v,c){return '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+l+'</div><div style="font-size:20px;font-weight:800;color:'+c+'">'+v+'</div></div>';}
+window.schedRenderGrid=function(recs){
+var head=document.getElementById('sched-table-head');
+var body=document.getElementById('sched-table-body');
+var ts='padding:10px 8px;text-align:center;font-size:12px;font-weight:700;background:var(--card);border-bottom:2px solid var(--border);color:var(--muted);white-space:nowrap';
+var th='<tr><th style="'+ts+';text-align:left;min-width:120px">Position</th>';
+recs.forEach(function(r){
+var ds=(r.date.getMonth()+1)+'/'+r.date.getDate();
+th+='<th style="'+ts+'" colspan="2">'+r.day.substring(0,3)+' '+ds+'<br><span style="font-weight:400;font-size:10px;color:var(--muted)">$'+Math.round(r.sales).toLocaleString()+' proj</span></th>';
+});
+th+='<th style="'+ts+'">Week Total</th></tr>';
+th+='<tr><th style="'+ts+';text-align:left"></th>';
+recs.forEach(function(){th+='<th style="'+ts+';font-size:10px">AM</th><th style="'+ts+';font-size:10px">PM</th>';});
+th+='<th style="'+ts+'"></th></tr>';
+head.innerHTML=th;
+var td='padding:8px 6px;text-align:center;font-size:13px;border-bottom:1px solid var(--border)';
+var rows='';
+var dash='<span style="color:var(--muted)">—</span>';
+rows+='<tr><td colspan="'+(recs.length*2+2)+'" style="padding:8px 10px;font-weight:800;font-size:12px;background:rgba(99,102,241,0.08);color:var(--accent);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">FOH — Front of House</td></tr>';
+var fRS={};recs.forEach(function(r){Object.keys(r.fohRoles).forEach(function(k){fRS[k]=1;});});
+Object.keys(fRS).forEach(function(role){
+var wt=0;
+rows+='<tr><td style="'+td+';text-align:left;font-weight:600">'+(RL[role]||role)+'</td>';
+recs.forEach(function(r){
+var am=(r.amFOH[role]||0),pm=(r.pmFOH[role]||0);wt+=am+pm;
+rows+='<td style="'+td+'">'+(am||dash)+'</td><td style="'+td+'">'+(pm||dash)+'</td>';
+});
+rows+='<td style="'+td+';font-weight:700">'+wt+'</td></tr>';
+});
+rows+='<tr style="background:rgba(99,102,241,0.04)"><td style="'+td+';text-align:left;font-weight:800">FOH Total</td>';
+var wF=0;
+recs.forEach(function(r){rows+='<td style="'+td+';font-weight:700">'+r.totalAMFOH+'</td><td style="'+td+';font-weight:700">'+r.totalPMFOH+'</td>';wF+=r.totalAMFOH+r.totalPMFOH;});
+rows+='<td style="'+td+';font-weight:800">'+wF+'</td></tr>';
+rows+='<tr><td colspan="'+(recs.length*2+2)+'" style="padding:8px 10px;font-weight:800;font-size:12px;background:rgba(245,158,11,0.08);color:#f59e0b;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">BOH — Back of House</td></tr>';
+var bRS={};recs.forEach(function(r){Object.keys(r.bohRoles).forEach(function(k){bRS[k]=1;});});
+Object.keys(bRS).forEach(function(role){
+var wt=0;
+rows+='<tr><td style="'+td+';text-align:left;font-weight:600">'+(RL[role]||role)+'</td>';
+recs.forEach(function(r){
+var am=(r.amBOH[role]||0),pm=(r.pmBOH[role]||0);wt+=am+pm;
+rows+='<td style="'+td+'">'+(am||dash)+'</td><td style="'+td+'">'+(pm||dash)+'</td>';
+});
+rows+='<td style="'+td+';font-weight:700">'+wt+'</td></tr>';
+});
+rows+='<tr style="background:rgba(245,158,11,0.04)"><td style="'+td+';text-align:left;font-weight:800">BOH Total</td>';
+var wB=0;
+recs.forEach(function(r){rows+='<td style="'+td+';font-weight:700">'+r.totalAMBOH+'</td><td style="'+td+';font-weight:700">'+r.totalPMBOH+'</td>';wB+=r.totalAMBOH+r.totalPMBOH;});
+rows+='<td style="'+td+';font-weight:800">'+wB+'</td></tr>';
+rows+='<tr style="background:var(--card);border-top:2px solid var(--border)"><td style="'+td+';text-align:left;font-weight:900;font-size:14px">TOTAL STAFF</td>';
+var wA=0;
+recs.forEach(function(r){
+var aA=r.totalAMFOH+r.totalAMBOH,pA=r.totalPMFOH+r.totalPMBOH;wA+=aA+pA;
+rows+='<td style="'+td+';font-weight:800;font-size:14px">'+aA+'</td><td style="'+td+';font-weight:800;font-size:14px">'+pA+'</td>';
+});
+rows+='<td style="'+td+';font-weight:900;font-size:14px;color:var(--accent)">'+wA+'</td></tr>';
+body.innerHTML=rows;
+};
+window.schedRenderDayCards=function(recs){
+var selEl=document.getElementById('sched-day-selector');
+selEl.innerHTML='';
+recs.forEach(function(r,i){
+var ds=(r.date.getMonth()+1)+'/'+r.date.getDate();
+var btn=document.createElement('button');
+btn.className='btn btn-sm'+(i===0?' btn-active':'');
+btn.textContent=r.day.substring(0,3)+' '+ds;
+btn.onclick=function(){schedShowDay(i);};
+btn.id='sched-day-btn-'+i;
+selEl.appendChild(btn);
+});
+schedShowDay(0);
+};
+
+function rR(role,count){
+return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid rgba(128,128,128,0.1)"><span>'+(RL[role]||role)+'</span><span style="font-weight:700">'+count+'</span></div>';
+}
+
+window.schedShowDay=function(idx){
+var recs=window._schedRecs;if(!recs)return;
+var r=recs[idx];
+for(var i=0;i<recs.length;i++){
+var b=document.getElementById('sched-day-btn-'+i);
+if(b)b.className='btn btn-sm'+(i===idx?' btn-active':'');
+}
+var ds=DF[r.dow]+', '+(r.date.getMonth()+1)+'/'+r.date.getDate()+'/'+r.date.getFullYear();
+var h='<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px">';
+h+='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">';
+h+='<h4 style="font-size:16px;font-weight:800;margin:0">'+ds+'</h4>';
+h+='<div style="display:flex;gap:12px;font-size:12px;color:var(--muted)">';
+h+='<span>Proj Sales: <strong style="color:var(--accent)">$'+Math.round(r.sales).toLocaleString()+'</strong></span>';
+h+='<span>Guests: <strong style="color:#8b5cf6">'+r.guests+'</strong></span>';
+h+='<span>SPLH: <strong style="color:#10b981">$'+r.splh+'</strong></span>';
+h+='<span>Labor: <strong style="color:'+(r.laborPct>22?'#ef4444':'#10b981')+'">'+r.laborPct.toFixed(1)+'%</strong></span>';
+h+='</div></div>';
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
+// AM Column
+h+='<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">';
+h+='<div style="background:rgba(251,191,36,0.1);padding:10px 14px;font-weight:800;font-size:13px;border-bottom:1px solid var(--border)">☀️ AM / Lunch Shift<span style="float:right;font-weight:400;font-size:11px;color:var(--muted)">~'+Math.round(r.lp*100)+'% of sales</span></div>';
+h+='<div style="padding:10px 14px">';
+h+='<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;margin-bottom:6px">FOH ('+r.totalAMFOH+' staff)</div>';
+Object.keys(r.amFOH).forEach(function(k){if(r.amFOH[k]>0)h+=rR(k,r.amFOH[k]);});
+h+='<div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;margin:10px 0 6px">BOH ('+r.totalAMBOH+' staff)</div>';
+Object.keys(r.amBOH).forEach(function(k){if(r.amBOH[k]>0)h+=rR(k,r.amBOH[k]);});
+h+='</div></div>';
+// PM Column
+h+='<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">';
+h+='<div style="background:rgba(99,102,241,0.1);padding:10px 14px;font-weight:800;font-size:13px;border-bottom:1px solid var(--border)">🌙 PM / Dinner Shift<span style="float:right;font-weight:400;font-size:11px;color:var(--muted)">~'+Math.round(r.dp*100)+'% of sales</span></div>';
+h+='<div style="padding:10px 14px">';
+h+='<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;margin-bottom:6px">FOH ('+r.totalPMFOH+' staff)</div>';
+Object.keys(r.pmFOH).forEach(function(k){if(r.pmFOH[k]>0)h+=rR(k,r.pmFOH[k]);});
+h+='<div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;margin:10px 0 6px">BOH ('+r.totalPMBOH+' staff)</div>';
+Object.keys(r.pmBOH).forEach(function(k){if(r.pmBOH[k]>0)h+=rR(k,r.pmBOH[k]);});
+h+='</div></div>';
+h+='</div>';
+// Labor hours summary
+h+='<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">';
+h+='<div style="flex:1;min-width:120px;background:rgba(99,102,241,0.06);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted)">FOH Hours</div><div style="font-size:18px;font-weight:800;color:var(--accent)">'+r.fohHrs+'</div></div>';
+h+='<div style="flex:1;min-width:120px;background:rgba(245,158,11,0.06);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted)">BOH Hours</div><div style="font-size:18px;font-weight:800;color:#f59e0b">'+r.bohHrs+'</div></div>';
+h+='<div style="flex:1;min-width:120px;background:rgba(16,185,129,0.06);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted)">Total Hours</div><div style="font-size:18px;font-weight:800;color:#10b981">'+r.totalHrs+'</div></div>';
+h+='<div style="flex:1;min-width:120px;background:rgba(239,68,68,0.06);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted)">Est. Labor $</div><div style="font-size:18px;font-weight:800;color:#ef4444">$'+Math.round(r.laborCost).toLocaleString()+'</div></div>';
+h+='</div></div>';
+document.getElementById('sched-day-detail').innerHTML=h;
+};
+
+window.schedToggleView=function(v){
+document.getElementById('sched-grid-view').style.display=v==='grid'?'block':'none';
+document.getElementById('sched-cards-view').style.display=v==='cards'?'block':'none';
+document.getElementById('sched-view-grid').className='btn btn-sm'+(v==='grid'?' btn-active':'');
+document.getElementById('sched-view-cards').className='btn btn-sm'+(v==='cards'?' btn-active':'');
+};
+})();
+
 
 function kitchenTab(t) {
   const opsWrap = document.getElementById('kit-ops-wrap');
