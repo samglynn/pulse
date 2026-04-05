@@ -4030,45 +4030,23 @@ function perfTab(t) {
 }
 
 function laborTab(t) {
-  ['kpi','intel'].forEach(s => {
-    const el = document.getElementById('lab-'+s);
-    const btn = document.getElementById('lab-tab-'+s);
-    if (el) el.style.display = s===t ? 'block':'none';
-    if (btn) btn.className = 'btn btn-sm'+(s===t?' btn-active':'');
+  var panels=['lab-kpi','lab-intel','lab-sched'];
+  var buttons=['lab-tab-kpi','lab-tab-intel','lab-tab-sched'];
+  var map={kpi:0,intel:1,sched:2};
+  var idx=map[t];
+  panels.forEach(function(id,i){
+    var el=document.getElementById(id);
+    if(el)el.style.display=i===idx?'block':'none';
   });
-  if (t==='intel') {
-    const slot = document.getElementById('laborhub-intel-content');
-    if (slot && !slot.dataset.hydrated) {
-      slot.dataset.hydrated = '1';
-      renderLaborIntelligenceInto(slot);
-    } else if (slot) {
-      window._laborContainer = slot; // update active container
-    }
-    initLaborPage();
+  buttons.forEach(function(id,i){
+    var el=document.getElementById(id);
+    if(el)el.className=el.className.replace(/ ?btn-active/g,'')+(i===idx?' btn-active':'');
+  });
+  if(t==='intel'){
+    var ic=document.getElementById('laborhub-intel-content');
+    if(ic&&!ic.innerHTML.trim()&&typeof loadLaborIntelligence==='function')loadLaborIntelligence();
   }
-}
-/* ── Predictive Schedule Tool: override laborTab to add sched tab ── */
-var _origLaborTab = laborTab;
-laborTab = function(t){
-  var schedEl=document.getElementById('lab-sched');
-  var schedBtn=document.getElementById('lab-tab-sched');
-  if(schedEl)schedEl.style.display='none';
-  if(schedBtn)schedBtn.className=schedBtn.className.replace(' btn-active','');
-  if(t==='sched'){
-    var kpi=document.getElementById('lab-kpi');
-    var intel=document.getElementById('lab-intel');
-    if(kpi)kpi.style.display='none';
-    if(intel)intel.style.display='none';
-    var kBtn=document.getElementById('lab-tab-kpi');
-    var iBtn=document.getElementById('lab-tab-intel');
-    if(kBtn)kBtn.className=kBtn.className.replace(' btn-active','');
-    if(iBtn)iBtn.className=iBtn.className.replace(' btn-active','');
-    schedEl.style.display='block';
-    if(schedBtn)schedBtn.className+=' btn-active';
-    if(typeof schedInit==='function')schedInit();
-  } else {
-    _origLaborTab(t);
-  }
+  if(t==='sched'&&typeof schedInit==='function')schedInit();
 }
 /* ── Schedule Tool Data & Algorithm ── */
 (function(){
