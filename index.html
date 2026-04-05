@@ -6814,6 +6814,7 @@ async function sendExpectToSlack(){
     if(psInit) return;
     psInit = true;
     try {
+      var loc = (S.locFilter && S.locFilter !== 'all') ? S.locFilter.toLowerCase() : 'warren';
       // Date badge
       var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
       var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -6822,7 +6823,6 @@ async function sendExpectToSlack(){
       if(dEl) dEl.textContent = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();
 
       // Get weekly data
-      var loc = (S.locFilter || 'warren').toLowerCase();
       var {data:wData} = await sb.from('weeks').select('*').eq('location', loc).order('week_ending',{ascending:true});
       var {data:wExt} = await sb.from('weeks_extended').select('*').eq('location', loc).order('week_ending',{ascending:true});
 
@@ -6956,7 +6956,7 @@ async function sendExpectToSlack(){
     if(coachInit) return;
     coachInit = true;
     try {
-      var loc = (S.locFilter || 'warren').toLowerCase();
+      var loc = (S.locFilter && S.locFilter !== 'all') ? S.locFilter.toLowerCase() : 'warren';
       // Get weekly data with extended
       var {data:wData} = await sb.from('weeks').select('*').eq('location', loc).order('week_ending',{ascending:true});
       var {data:wExt} = await sb.from('weeks_extended').select('*').eq('location', loc).order('week_ending',{ascending:true});
