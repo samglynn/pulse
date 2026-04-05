@@ -6823,14 +6823,14 @@ async function sendExpectToSlack(){
       if(dEl) dEl.textContent = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();
 
       // Get weekly data
-      var {data:wData} = await sb.from('weeks').select('*').eq('location', loc).order('week_ending',{ascending:true});
-      var {data:wExt} = await sb.from('weeks_extended').select('*').eq('location', loc).order('week_ending',{ascending:true});
+      var {data:wData} = await sb.from('weeks').select('*').eq('location', loc).order('date',{ascending:true});
+      var {data:wExt} = await sb.from('weeks_extended').select('*').eq('location', loc).order('date',{ascending:true});
 
       // Merge extended data
       var extMap = {};
-      (wExt||[]).forEach(function(r){ extMap[r.week_ending] = r; });
+      (wExt||[]).forEach(function(r){ extMap[r.date] = r; });
       var rows = (wData||[]).filter(function(r){ return r.net_sales > 0; }).map(function(r){
-        var e = extMap[r.week_ending] || {};
+        var e = extMap[r.date] || {};
         return Object.assign({}, r, e);
       });
 
@@ -6908,7 +6908,7 @@ async function sendExpectToSlack(){
   };
 
   window.renderPreshiftCharts = function(data) {
-    var labels = data.map(function(r){ return r.week_ending ? r.week_ending.substring(5) : ''; });
+    var labels = data.map(function(r){ return r.date ? r.date.substring(5) : ''; });
 
     // Sales & Guest Trends (dual axis)
     var ctx1 = document.getElementById('preshift-chart-sales');
@@ -6958,16 +6958,16 @@ async function sendExpectToSlack(){
     try {
       var loc = (S.locFilter && S.locFilter !== 'all') ? S.locFilter.toLowerCase() : 'warren';
       // Get weekly data with extended
-      var {data:wData} = await sb.from('weeks').select('*').eq('location', loc).order('week_ending',{ascending:true});
-      var {data:wExt} = await sb.from('weeks_extended').select('*').eq('location', loc).order('week_ending',{ascending:true});
+      var {data:wData} = await sb.from('weeks').select('*').eq('location', loc).order('date',{ascending:true});
+      var {data:wExt} = await sb.from('weeks_extended').select('*').eq('location', loc).order('date',{ascending:true});
       // Get employee data
       var {data:payroll} = await sb.from('payroll_entries').select('*').eq('location', loc);
       var {data:toast} = await sb.from('toast_time_entries').select('*').eq('location', loc);
 
       var extMap = {};
-      (wExt||[]).forEach(function(r){ extMap[r.week_ending] = r; });
+      (wExt||[]).forEach(function(r){ extMap[r.date] = r; });
       var rows = (wData||[]).filter(function(r){ return r.net_sales > 0; }).map(function(r){
-        var e = extMap[r.week_ending] || {};
+        var e = extMap[r.date] || {};
         return Object.assign({}, r, e);
       });
 
@@ -7071,7 +7071,7 @@ async function sendExpectToSlack(){
   };
 
   window.renderCoachCharts = function(data) {
-    var labels = data.map(function(r){ return r.week_ending ? r.week_ending.substring(5) : ''; });
+    var labels = data.map(function(r){ return r.date ? r.date.substring(5) : ''; });
 
     // Labor Efficiency (SPLH + Labor %)
     var ctx1 = document.getElementById('coach-chart-labor');
@@ -7098,7 +7098,7 @@ async function sendExpectToSlack(){
     if(ctx2 && typeof Chart !== 'undefined') {
       if(coachCharts.sched) coachCharts.sched.destroy();
       var schedData = data.filter(function(r){return r.scheduled_hrs > 0;});
-      var schedLabels = schedData.map(function(r){return r.week_ending ? r.week_ending.substring(5) : '';});
+      var schedLabels = schedData.map(function(r){return r.date ? r.date.substring(5) : '';});
       coachCharts.sched = new Chart(ctx2, {
         type:'bar',
         data:{
