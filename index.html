@@ -6846,8 +6846,8 @@ async function sendExpectToSlack(){
           {label:'PPA', val:'$'+(latest.ppa||0).toFixed(2), delta: prev.ppa ? Math.round((latest.ppa-prev.ppa)/prev.ppa*100) : 0, icon:'\uD83C\uDF7D'},
           {label:'Avg Guests', val:Math.round(latest.guests||0).toLocaleString(), delta: prev.guests ? Math.round((latest.guests-prev.guests)/prev.guests*100) : 0, icon:'\uD83D\uDC65'},
           {label:'SPLH', val:'$'+(latest.splh||0).toFixed(0), delta: prev.splh ? Math.round((latest.splh-prev.splh)/prev.splh*100) : 0, icon:'\u23F1'},
-          {label:'Starter Attach', val:((latest.starter_attach||0)*100).toFixed(1)+'%', delta: prev.starter_attach ? Math.round(((latest.starter_attach-prev.starter_attach)/prev.starter_attach)*100) : 0, icon:'\uD83E\uDD57'},
-          {label:'Drink Attach', val:((latest.drink_attach||0)*100).toFixed(1)+'%', delta: prev.drink_attach ? Math.round(((latest.drink_attach-prev.drink_attach)/prev.drink_attach)*100) : 0, icon:'\uD83C\uDF78'}
+          {label:'Starter Attach', val:(latest.starter_attach||0).toFixed(1)+'%', delta: prev.starter_attach ? Math.round(((latest.starter_attach-prev.starter_attach)/prev.starter_attach)*100) : 0, icon:'\uD83E\uDD57'},
+          {label:'Drink Attach', val:(latest.drink_attach||0).toFixed(1)+'%', delta: prev.drink_attach ? Math.round(((latest.drink_attach-prev.drink_attach)/prev.drink_attach)*100) : 0, icon:'\uD83C\uDF78'}
         ];
         kpiEl.innerHTML = kpis.map(function(k){
           var color = k.delta > 0 ? '#00b894' : k.delta < 0 ? '#d63031' : 'var(--muted)';
@@ -6860,14 +6860,14 @@ async function sendExpectToSlack(){
       var focusEl = document.getElementById('preshift-focus');
       if(focusEl) {
         var focuses = [];
-        if((latest.starter_attach||0) < 0.30) focuses.push('\uD83D\uDD34 <b>Starters need a push!</b> We\'re at ' + ((latest.starter_attach||0)*100).toFixed(1) + '% attach. Suggest an app to every table — lead with the top seller.');
-        else focuses.push('\uD83D\uDFE2 <b>Starters looking solid</b> at ' + ((latest.starter_attach||0)*100).toFixed(1) + '%. Keep the momentum!');
-        if((latest.drink_attach||0) < 0.50) focuses.push('\uD83D\uDD34 <b>Drink attach is low</b> at ' + ((latest.drink_attach||0)*100).toFixed(1) + '%. Greet with a cocktail suggestion before water.');
-        else focuses.push('\uD83D\uDFE2 <b>Drinks are flowing!</b> ' + ((latest.drink_attach||0)*100).toFixed(1) + '% attach. Nice work team.');
+        if((latest.starter_attach||0) < 30) focuses.push('\uD83D\uDD34 <b>Starters need a push!</b> We\'re at ' + (latest.starter_attach||0).toFixed(1) + '% attach. Suggest an app to every table — lead with the top seller.');
+        else focuses.push('\uD83D\uDFE2 <b>Starters looking solid</b> at ' + (latest.starter_attach||0).toFixed(1) + '%. Keep the momentum!');
+        if((latest.drink_attach||0) < 50) focuses.push('\uD83D\uDD34 <b>Drink attach is low</b> at ' + (latest.drink_attach||0).toFixed(1) + '%. Greet with a cocktail suggestion before water.');
+        else focuses.push('\uD83D\uDFE2 <b>Drinks are flowing!</b> ' + (latest.drink_attach||0).toFixed(1) + '% attach. Nice work team.');
         if((latest.ppa||0) < 33) focuses.push('\uD83D\uDD34 <b>PPA is below target</b> ($' + (latest.ppa||0).toFixed(2) + '). Focus on upsells — desserts, premium sides, add-ons.');
         else focuses.push('\uD83D\uDFE2 <b>PPA is strong</b> at $' + (latest.ppa||0).toFixed(2) + '. Let\'s keep that check average climbing!');
-        var laborPct = latest.labor_pct || (latest.total_labor && latest.net_sales ? latest.total_labor/latest.net_sales : 0);
-        if(laborPct > 0.25) focuses.push('\u26A0\uFE0F <b>Labor is running hot</b> at ' + (laborPct*100).toFixed(1) + '%. Watch cuts closely today.');
+        var laborPct = latest.labor_pct || 0;
+        if(laborPct > 25) focuses.push('\u26A0\uFE0F <b>Labor is running hot</b> at ' + laborPct.toFixed(1) + '%. Watch cuts closely today.');
         else focuses.push('\uD83D\uDFE2 <b>Labor is in check</b> at ' + (laborPct*100).toFixed(1) + '%. Great scheduling!');
         focusEl.innerHTML = focuses.join('<br style="margin:8px 0">');
       }
@@ -6936,8 +6936,8 @@ async function sendExpectToSlack(){
         data:{
           labels: labels,
           datasets:[
-            {label:'Starter %',data:data.map(function(r){return ((r.starter_attach||0)*100).toFixed(1);}),borderColor:'#fdcb6e',backgroundColor:'rgba(253,203,110,0.1)',fill:true,tension:0.3},
-            {label:'Drink %',data:data.map(function(r){return ((r.drink_attach||0)*100).toFixed(1);}),borderColor:'#e17055',backgroundColor:'rgba(225,112,85,0.1)',fill:true,tension:0.3}
+            {label:'Starter %',data:data.map(function(r){return (r.starter_attach||0).toFixed(1);}),borderColor:'#fdcb6e',backgroundColor:'rgba(253,203,110,0.1)',fill:true,tension:0.3},
+            {label:'Drink %',data:data.map(function(r){return (r.drink_attach||0).toFixed(1);}),borderColor:'#e17055',backgroundColor:'rgba(225,112,85,0.1)',fill:true,tension:0.3}
           ]
         },
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},usePointStyle:true,padding:12}}},scales:{y:{ticks:{callback:function(v){return v+'%'},font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}}}}
@@ -6977,8 +6977,7 @@ async function sendExpectToSlack(){
       // Team KPIs
       var avgSPLH = last8.reduce(function(s,r){return s+(r.splh||0);},0) / (last8.length||1);
       var avgLabor = last8.reduce(function(s,r){
-        var lp = r.labor_pct || (r.total_labor && r.net_sales ? r.total_labor/r.net_sales : 0);
-        return s + lp;
+        return s + (r.labor_pct||0);
       },0) / (last8.length||1);
       var avgPPA = last8.reduce(function(s,r){return s+(r.ppa||0);},0) / (last8.length||1);
       var totalOT = last8.reduce(function(s,r){return s+(r.overtime_hrs||0);},0);
@@ -6987,7 +6986,7 @@ async function sendExpectToSlack(){
       if(kpiEl) {
         var kpis = [
           {label:'Avg SPLH (8wk)',val:'$'+avgSPLH.toFixed(0),icon:'\u23F1',color:avgSPLH>=70?'#00b894':'#d63031'},
-          {label:'Avg Labor %',val:(avgLabor*100).toFixed(1)+'%',icon:'\uD83D\uDCCA',color:avgLabor<=0.22?'#00b894':'#d63031'},
+          {label:'Avg Labor %',val:avgLabor.toFixed(1)+'%',icon:'\uD83D\uDCCA',color:avgLabor<=22?'#00b894':'#d63031'},
           {label:'Avg PPA',val:'$'+avgPPA.toFixed(2),icon:'\uD83C\uDF7D',color:avgPPA>=33?'#00b894':'#d63031'},
           {label:'OT Hours (8wk)',val:totalOT.toFixed(1),icon:'\u26A0\uFE0F',color:totalOT<20?'#00b894':'#d63031'},
           {label:'Team Members',val:((payroll||[]).length || (toast||[]).length || 0),icon:'\uD83D\uDC65',color:'var(--accent)'}
@@ -7042,7 +7041,7 @@ async function sendExpectToSlack(){
       var actEl = document.getElementById('coaching-actions');
       if(actEl) {
         var plans = [];
-        if(avgLabor > 0.22) plans.push({title:'\uD83D\uDEA8 Labor Above Target',desc:'8-week avg labor is ' + (avgLabor*100).toFixed(1) + '% (target: 22%). Review schedules for overstaffing on slower days. Consider cutting shifts 30 min earlier when sales dip.',color:'#d63031'});
+        if(avgLabor > 22) plans.push({title:'\uD83D\uDEA8 Labor Above Target',desc:'8-week avg labor is ' + avgLabor.toFixed(1) + '% (target: 22%). Review schedules for overstaffing on slower days. Consider cutting shifts 30 min earlier when sales dip.',color:'#d63031'});
         if(avgPPA < 33) plans.push({title:'\uD83C\uDF7D PPA Needs Attention',desc:'Avg PPA is $' + avgPPA.toFixed(2) + ' (target: $33). Coach servers on suggestive selling — every table should hear about a starter and a premium drink.',color:'#e17055'});
         if(totalOT > 15) plans.push({title:'\u26A0\uFE0F Overtime Watch',desc:totalOT.toFixed(1) + ' OT hours in last 8 weeks. Identify repeat offenders and adjust scheduling to avoid 40+ hour weeks.',color:'#fdcb6e'});
         if(avgSPLH < 70) plans.push({title:'\u23F1 SPLH Below Target',desc:'Avg SPLH is $' + avgSPLH.toFixed(0) + ' (target: $70). Focus on driving sales during staffed hours rather than cutting labor.',color:'#e17055'});
@@ -7084,8 +7083,8 @@ async function sendExpectToSlack(){
           datasets:[
             {label:'SPLH ($)',data:data.map(function(r){return (r.splh||0).toFixed(0);}),borderColor:'#6c5ce7',backgroundColor:'rgba(108,92,231,0.1)',fill:true,tension:0.3,yAxisID:'y'},
             {label:'Labor %',data:data.map(function(r){
-              var lp = r.labor_pct || (r.total_labor && r.net_sales ? r.total_labor/r.net_sales : 0);
-              return (lp*100).toFixed(1);
+              var lp = r.labor_pct || 0;
+              return lp.toFixed(1);
             }),borderColor:'#d63031',backgroundColor:'rgba(214,48,49,0.1)',fill:true,tension:0.3,yAxisID:'y1'}
           ]
         },
