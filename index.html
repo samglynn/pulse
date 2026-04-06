@@ -3074,14 +3074,6 @@ function dpSelectPreset(presetId) {
   S.dpFallback = null;
   S.dpRequestedStart = start;
   S.dpRequestedEnd = end;
-  if (matches.length === 0) {
-    const singleDay = (presetId === 'today' || presetId === 'yesterday');
-    if (!singleDay && allDates.length) {
-      const closest = allDates.reduce((best, d) => { const diff = Math.abs(new Date(d)-new Date()); return diff < best.diff ? {date:d,diff} : best; }, {date:allDates[allDates.length-1],diff:Infinity});
-      S.selectedDays = [closest.date];
-      S.dpFallback = closest.date;
-    }
-  }
   dpCustomStart = start; dpCustomEnd = end;
   closeDatePicker();
   updateDpButton();
