@@ -7328,7 +7328,7 @@ function toggleSettingsSection(id) {
 
 function initSettingsTargets() {
   const grid = document.getElementById('settings-targets-grid');
-  if (!grid || !window.TARGETS) return;
+  if (!grid || typeof TARGETS === 'undefined') return;
   const groups = {};
   Object.entries(TARGETS).forEach(function(e) {
     var k = e[0], t = e[1];
@@ -7350,7 +7350,7 @@ function initSettingsTargets() {
 }
 
 function settingsSaveTargets() {
-  if (!window.TARGETS) return;
+  if (typeof TARGETS === 'undefined') return;
   Object.keys(TARGETS).forEach(function(k) {
     var el = document.getElementById('st-' + k);
     if (el) TARGETS[k].target = parseFloat(el.value) || 0;
