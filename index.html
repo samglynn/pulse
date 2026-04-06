@@ -4713,73 +4713,7 @@ function getKnowledgeContext() {
 // ══════════════════════════════════════════════
 let editingTargetLoc = null;
 
-function renderTargetsEditor() {
-  const locs = Object.keys(locationTargets);
-  if (!locs.length) {
-    document.getElementById('targets-form').innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px 0;text-align:center">No locations found. Upload data or pull from Supabase first.</div>';
-    return;
-  }
-
-  if (!editingTargetLoc || !locationTargets[editingTargetLoc]) editingTargetLoc = locs[0];
-
-  // Location tabs
-  let tabsHtml = '';
-  locs.forEach(slug => {
-    const name = locationTargets[slug]._name || slug;
-    tabsHtml += `<button class="btn btn-sm ${editingTargetLoc===slug?'btn-active':''}" onclick="editingTargetLoc='${slug}';renderTargetsEditor()" style="text-transform:capitalize">${name}</button>`;
-  });
-  document.getElementById('target-loc-tabs').innerHTML = tabsHtml;
-
-  // Targets form
-  const t = locationTargets[editingTargetLoc];
-  const isMgmt = k => MGMT_KPIS.includes(k);
-
-  let formHtml = `<div style="font-size:13px;font-weight:700;margin-bottom:14px;text-transform:capitalize">${t._name || editingTargetLoc} — KPI Targets</div>`;
-  formHtml += '<div style="display:grid;gap:12px" class="resp-grid">';
-
-  // Group by section
-  const groups = {};
-  Object.entries(TARGET_META).forEach(([k, meta]) => {
-    const g = meta.group || 'Other';
-    if (!groups[g]) groups[g] = [];
-    groups[g].push([k, meta]);
-  });
-
-  const groupColors = {
-    Sales: 'var(--green)', Attach: 'var(--cyan)', Labor: 'var(--accent)',
-    Cost: 'var(--yellow)', Kitchen: 'var(--red)', Other: 'var(--text-muted)'
-  };
-  const groupIcons = { Sales:'💰', Attach:'🍽', Labor:'⏱', Cost:'📉', Kitchen:'🔥', Other:'📊' };
-
-  Object.entries(groups).forEach(([groupName, fields]) => {
-    const gc = groupColors[groupName] || 'var(--text-2)';
-    formHtml += '<div style="margin-bottom:20px">';
-    formHtml += '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:'+gc+';margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">' + (groupIcons[groupName]||'') + ' ' + groupName + ' KPIs</div>';
-    formHtml += '<div style="display:grid;gap:10px" class="resp-grid">';
-    fields.forEach(([k, meta]) => {
-      const val = t[k] ?? DEFAULT_TARGETS[k] ?? 0;
-      const isKitchen = groupName === 'Kitchen';
-      formHtml += '<div style="background:var(--surface);border-radius:10px;padding:14px;border-left:3px solid '+gc+'">';
-      formHtml += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">';
-      formHtml += '<label style="font-size:12px;font-weight:700;color:var(--text)">'+meta.label+'</label>';
-      formHtml += '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:'+gc+'22;color:'+gc+'">'+groupName.toUpperCase()+'</span>';
-      formHtml += '</div>';
-      formHtml += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:7px">'+meta.desc+'</div>';
-      formHtml += '<div style="display:flex;align-items:center;gap:6px">';
-      if (meta.unit === '$') formHtml += '<span style="color:var(--text-muted);font-size:13px">$</span>';
-      formHtml += '<input type="number" step="any" id="target-'+k+'" value="'+val+'" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-weight:600;font-family:inherit;box-sizing:border-box" />';
-      if (meta.unit === '%') formHtml += '<span style="color:var(--text-muted);font-size:13px">%</span>';
-      if (meta.unit === 'min') formHtml += '<span style="color:var(--text-muted);font-size:13px">min</span>';
-      formHtml += '</div>';
-      if (meta.invert) formHtml += '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">⬇ Lower is better</div>';
-      formHtml += '</div>';
-    });
-    formHtml += '</div></div>';
-  });
-
-  formHtml += '</div>';
-  document.getElementById('targets-form').innerHTML = formHtml;
-}
+function renderTargetsEditor() { /* replaced by new settings page */ }
 
 async function saveCurrentTargets() {
   if (!editingTargetLoc) return;
@@ -7438,11 +7372,11 @@ function initSettingsTargets() {
   });
   let html = '';
   Object.entries(groups).forEach(([group, items]) => {
-    html += '<div style="background:rgba(20,184,166,.05);padding:14px;border-radius:var(--radius);border:1px solid rgba(20,184,166,.1)">';
-    html += '<div style="color:var(--accent);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">' + group + '</div>';
+    html += '<div style="background:rgba(20,184,166,.05);padding:14px;border-radius:8px;border:1px solid rgba(20,184,166,.1)">';
+    html += '<div style="color:#14B8A6;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">' + group + '</div>';
     items.forEach(t => {
-      html += '<div style="margin-bottom:10px"><label style="display:block;color:var(--text-muted);font-size:11px;margin-bottom:3px">' + t.label + ' (' + (t.unit||'#') + ')</label>';
-      html += '<input type="number" id="st-' + t.key + '" value="' + t.target + '" step="0.1" style="width:100%;padding:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);box-sizing:border-box;font-size:13px"></div>';
+      html += '<div style="margin-bottom:10px"><label style="display:block;color:#94A3B8;font-size:11px;margin-bottom:3px">' + t.label + ' (' + (t.unit||'#') + ')</label>';
+      html += '<input type="number" id="st-' + t.key + '" value="' + t.target + '" step="0.1" style="width:100%;padding:7px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;box-sizing:border-box;font-size:13px"></div>';
     });
     html += '</div>';
   });
