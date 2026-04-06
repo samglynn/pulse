@@ -2525,7 +2525,10 @@ function handleFile(f) { handleFiles([f]); }
 // ══════════════════════════════════════════════
 // AGGREGATION
 // ══════════════════════════════════════════════
-function getFiltered() { return S.rows.filter(r => (S.locFilter === 'all' || r.location === S.locFilter) && (!S.selectedDays || !S.selectedDays.length || S.selectedDays.indexOf(r.week_ending||r.date) >= 0)); }
+function getFiltered() {
+  if (S.dateRange && S.selectedDays && S.selectedDays.length === 0) return [];
+  return S.rows.filter(r => (S.locFilter === 'all' || r.location === S.locFilter) && (!S.selectedDays || !S.selectedDays.length || S.selectedDays.indexOf(r.week_ending||r.date) >= 0));
+}
 
 function getWeeklyBlended(rows) {
   const map = {};
