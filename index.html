@@ -7323,6 +7323,7 @@ function toggleSettingsSection(id) {
   const open = el.style.display === 'none';
   el.style.display = open ? 'block' : 'none';
   if (icon) icon.style.transform = open ? 'rotate(180deg)' : '';
+  if (open && id === 'sec-targets') initSettingsTargets();
 }
 
 function initSettingsTargets() {
