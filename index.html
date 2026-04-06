@@ -483,6 +483,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
         <button class="btn btn-sm" onclick="toggleNotifications()" id="notif-bell-mobile" style="position:relative;padding:4px 8px">🔔
           <span id="notif-badge-mobile" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:10px"></span>
         </button>
+        <button onclick="navTo('settings')" style="background:none;border:none;color:var(--text);cursor:pointer;font-size:18px;padding:4px 8px" title="Settings">⚙️</button>
       </div>
       <div id="mobile-filters" style="display:flex;gap:4px;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px"></div>
     </div>
@@ -1044,20 +1045,87 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
            <div style="font-size:24px;margin-bottom:8px">💡</div>
            <div id="coaching-tip" style="font-size:15px;font-weight:600"></div>
          </div>
-       </div>
-       <style>.coach-grid-2col{grid-template-columns:1fr 1fr}@media(max-width:700px){.coach-grid-2col{grid-template-columns:1fr!important}}</style>
-     </div>
+  <div id="tab-settings" class="tab-content" style="display:none">
+        <div style="padding:16px;max-width:900px;margin:0 auto">
+          <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:20px">Settings</div>
 
-<div id="tab-settings" style="display:none">
-          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:22px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <div style="font-size:15px;font-weight:800">Edit KPI Targets</div>
-              <div id="target-save-status" style="font-size:12px;color:var(--green);display:none">✓ Saved</div>
+          <!-- KPI TARGETS -->
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden">
+            <button onclick="toggleSettingsSection('sec-targets')" style="width:100%;padding:14px 16px;background:none;border:none;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--text);font-size:15px;font-weight:600">
+              <span>KPI Targets</span><span id="sec-targets-icon" style="transition:transform .2s">▼</span>
+            </button>
+            <div id="sec-targets" style="display:none;padding:16px">
+              <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px">Set targets per location. These drive green/red indicators and AI coaching.</p>
+              <div id="settings-targets-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:16px"></div>
+              <button onclick="settingsSaveTargets()" style="background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);cursor:pointer;font-weight:600;width:100%">Save Targets</button>
+              <div id="targets-status" style="margin-top:8px;font-size:13px"></div>
             </div>
-            <div style="font-size:12px;color:var(--text-2);margin-bottom:16px">Set targets per location. These drive the green/red indicators and AI coaching analysis.</div>
-            <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap" id="target-loc-tabs"></div>
-            <div id="targets-form"></div>
-            <div style="margin-top:18px"><button class="btn btn-primary" onclick="saveCurrentTargets()" id="btn-save-targets">Save Targets</button></div>
+          </div>
+
+          <!-- KNOWLEDGE BASE -->
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden">
+            <button onclick="toggleSettingsSection('sec-knowledge')" style="width:100%;padding:14px 16px;background:none;border:none;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--text);font-size:15px;font-weight:600">
+              <span>Knowledge Base</span><span id="sec-knowledge-icon" style="transition:transform .2s">▼</span>
+            </button>
+            <div id="sec-knowledge" style="display:none;padding:16px">
+              <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px">Add context that AI coaching and Ask HeyRai will reference — SOPs, brand standards, training notes, and more.</p>
+              <button onclick="navTo('knowledge')" style="background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);cursor:pointer;font-weight:600">Open Knowledge Base</button>
+            </div>
+          </div>
+
+          <!-- UPLOAD DATA -->
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden">
+            <button onclick="toggleSettingsSection('sec-upload')" style="width:100%;padding:14px 16px;background:none;border:none;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--text);font-size:15px;font-weight:600">
+              <span>Upload Data</span><span id="sec-upload-icon" style="transition:transform .2s">▼</span>
+            </button>
+            <div id="sec-upload" style="display:none;padding:16px">
+              <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px">Upload historical sales data via CSV. Columns should match the weeks table fields (date, location, net_sales, guests, etc).</p>
+              <div id="csv-drop-zone" ondrop="csvDrop(event)" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" onclick="document.getElementById('csv-file-pick').click()" style="border:2px dashed var(--border);border-radius:var(--radius);padding:32px 16px;text-align:center;cursor:pointer;margin-bottom:12px;transition:border-color .2s">
+                <div style="font-size:28px;margin-bottom:6px">📁</div>
+                <div style="color:var(--text-muted);font-size:13px">Drag & drop CSV or click to select</div>
+                <div id="csv-file-name" style="color:var(--accent);font-size:13px;font-weight:600;margin-top:6px"></div>
+              </div>
+              <input type="file" id="csv-file-pick" accept=".csv" style="display:none" onchange="csvPicked(event)">
+              <button id="csv-upload-btn" onclick="csvUpload()" disabled style="background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);cursor:pointer;font-weight:600;width:100%;opacity:.5">Upload CSV</button>
+              <div id="upload-status" style="margin-top:8px;font-size:13px"></div>
+            </div>
+          </div>
+
+          <!-- ADD LOCATION -->
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden">
+            <button onclick="toggleSettingsSection('sec-location')" style="width:100%;padding:14px 16px;background:none;border:none;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--text);font-size:15px;font-weight:600">
+              <span>Add Location</span><span id="sec-location-icon" style="transition:transform .2s">▼</span>
+            </button>
+            <div id="sec-location" style="display:none;padding:16px">
+              <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px">Add a new restaurant location with Toast POS credentials.</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+                <div>
+                  <label style="display:block;color:var(--text-muted);font-size:12px;margin-bottom:4px">Location Name</label>
+                  <input type="text" id="loc-name" placeholder="e.g. Warren" oninput="document.getElementById('loc-slug').value=this.value.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')" style="width:100%;padding:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);box-sizing:border-box">
+                </div>
+                <div>
+                  <label style="display:block;color:var(--text-muted);font-size:12px;margin-bottom:4px">Location Slug</label>
+                  <input type="text" id="loc-slug" placeholder="auto-generated" readonly style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);box-sizing:border-box">
+                </div>
+                <div style="grid-column:1/-1">
+                  <label style="display:block;color:var(--text-muted);font-size:12px;margin-bottom:4px">Toast Restaurant GUID</label>
+                  <input type="text" id="loc-guid" placeholder="e.g. a1b2c3d4-e5f6-7890-abcd-ef1234567890" style="width:100%;padding:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);box-sizing:border-box">
+                </div>
+                <div>
+                  <label style="display:block;color:var(--text-muted);font-size:12px;margin-bottom:4px">Toast Client ID</label>
+                  <input type="text" id="loc-client-id" placeholder="OAuth Client ID" style="width:100%;padding:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);box-sizing:border-box">
+                </div>
+                <div>
+                  <label style="display:block;color:var(--text-muted);font-size:12px;margin-bottom:4px">Toast Client Secret</label>
+                  <input type="password" id="loc-client-secret" placeholder="OAuth Client Secret" style="width:100%;padding:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);box-sizing:border-box">
+                </div>
+              </div>
+              <button onclick="addNewLocation()" style="background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius);cursor:pointer;font-weight:600;width:100%">Add Location</button>
+              <div id="location-status" style="margin-top:8px;font-size:13px"></div>
+            </div>
+          </div>
+        </div>
+      </div><div style="margin-top:18px"><button class="btn btn-primary" onclick="saveCurrentTargets()" id="btn-save-targets">Save Targets</button></div>
           </div>
         </div>
 
@@ -7348,6 +7416,136 @@ function loadBOHIntel() {
     }
   };
 })();
+
+
+// ─── Settings Page Functions ─────────────────────────────────────────
+function toggleSettingsSection(id) {
+  const el = document.getElementById(id);
+  const icon = document.getElementById(id + '-icon');
+  if (!el) return;
+  const open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  if (icon) icon.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function initSettingsTargets() {
+  const grid = document.getElementById('settings-targets-grid');
+  if (!grid || !window.TARGETS) return;
+  const groups = {};
+  Object.entries(TARGETS).forEach(([k, t]) => {
+    if (!groups[t.group]) groups[t.group] = [];
+    groups[t.group].push({ key: k, ...t });
+  });
+  let html = '';
+  Object.entries(groups).forEach(([group, items]) => {
+    html += '<div style="background:rgba(20,184,166,.05);padding:14px;border-radius:var(--radius);border:1px solid rgba(20,184,166,.1)">';
+    html += '<div style="color:var(--accent);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">' + group + '</div>';
+    items.forEach(t => {
+      html += '<div style="margin-bottom:10px"><label style="display:block;color:var(--text-muted);font-size:11px;margin-bottom:3px">' + t.label + ' (' + (t.unit||'#') + ')</label>';
+      html += '<input type="number" id="st-' + t.key + '" value="' + t.target + '" step="0.1" style="width:100%;padding:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);box-sizing:border-box;font-size:13px"></div>';
+    });
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+}
+
+function settingsSaveTargets() {
+  Object.keys(TARGETS).forEach(k => {
+    const input = document.getElementById('st-' + k);
+    if (input) TARGETS[k].target = parseFloat(input.value) || 0;
+  });
+  if (typeof saveTargets === 'function') saveTargets();
+  const el = document.getElementById('targets-status');
+  if (el) { el.style.color = '#10b981'; el.textContent = 'Targets saved!'; setTimeout(() => el.textContent = '', 2000); }
+}
+
+// CSV Upload
+let _csvFile = null;
+function csvDrop(e) { e.preventDefault(); _csvFile = e.dataTransfer.files[0]; _csvUI(); }
+function csvPicked(e) { _csvFile = e.target.files[0]; _csvUI(); }
+function _csvUI() {
+  if (!_csvFile) return;
+  document.getElementById('csv-file-name').textContent = _csvFile.name;
+  const btn = document.getElementById('csv-upload-btn');
+  btn.disabled = false; btn.style.opacity = '1';
+}
+async function csvUpload() {
+  if (!_csvFile) return;
+  const statusEl = document.getElementById('upload-status');
+  statusEl.style.color = 'var(--text-muted)'; statusEl.textContent = 'Parsing...';
+  try {
+    const text = await _csvFile.text();
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g,'_'));
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const vals = lines[i].split(',').map(v => v.trim());
+      const row = {};
+      headers.forEach((h, j) => { const v = vals[j]; row[h] = v === '' ? null : isNaN(v) ? v : parseFloat(v); });
+      rows.push(row);
+    }
+    statusEl.textContent = 'Uploading ' + rows.length + ' rows...';
+    const { error } = await sb.from('weeks').upsert(rows, { onConflict: 'date,location' });
+    if (error) throw error;
+    statusEl.style.color = '#10b981'; statusEl.textContent = 'Uploaded ' + rows.length + ' rows!';
+    _csvFile = null;
+    document.getElementById('csv-file-name').textContent = '';
+    document.getElementById('csv-upload-btn').disabled = true;
+    document.getElementById('csv-upload-btn').style.opacity = '.5';
+  } catch (err) {
+    statusEl.style.color = '#ef4444'; statusEl.textContent = 'Error: ' + err.message;
+  }
+}
+
+// Add Location
+async function addNewLocation() {
+  const name = document.getElementById('loc-name').value.trim();
+  const slug = document.getElementById('loc-slug').value.trim();
+  const guid = document.getElementById('loc-guid').value.trim();
+  const clientId = document.getElementById('loc-client-id').value.trim();
+  const clientSecret = document.getElementById('loc-client-secret').value.trim();
+  const statusEl = document.getElementById('location-status');
+
+  if (!name || !slug || !guid || !clientId || !clientSecret) {
+    statusEl.style.color = '#ef4444'; statusEl.textContent = 'All fields are required'; return;
+  }
+  statusEl.style.color = 'var(--text-muted)'; statusEl.textContent = 'Adding location...';
+
+  try {
+    // Insert into locations table
+    const { error: locErr } = await sb.from('locations').upsert([{ name, slug, toast_restaurant_guid: guid }], { onConflict: 'slug' });
+    if (locErr) throw locErr;
+
+    // Set edge function secrets via a management edge function
+    const { data, error: secErr } = await sb.functions.invoke('set-secrets', {
+      body: {
+        secrets: [
+          { name: 'TOAST_CLIENT_ID_' + slug.toUpperCase(), value: clientId },
+          { name: 'TOAST_CLIENT_SECRET_' + slug.toUpperCase(), value: clientSecret },
+          { name: 'TOAST_RESTAURANT_GUID_' + slug.toUpperCase(), value: guid }
+        ]
+      }
+    });
+
+    if (secErr) {
+      statusEl.style.color = '#f59e0b';
+      statusEl.textContent = 'Location saved! Secrets may need manual setup in Supabase dashboard.';
+    } else {
+      statusEl.style.color = '#10b981'; statusEl.textContent = 'Location added successfully!';
+    }
+    // Clear form
+    ['loc-name','loc-slug','loc-guid','loc-client-id','loc-client-secret'].forEach(id => document.getElementById(id).value = '');
+  } catch (err) {
+    statusEl.style.color = '#ef4444'; statusEl.textContent = 'Error: ' + err.message;
+  }
+}
+
+// Initialize settings targets on nav
+const _origNavTo = navTo;
+navTo = function(page) {
+  _origNavTo(page);
+  if (page === 'settings') initSettingsTargets();
+};
 
 </script>
 <!-- Bottom Tab Bar (Mobile) -->
