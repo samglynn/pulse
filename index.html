@@ -3069,10 +3069,15 @@ function dpSelectPreset(presetId) {
   S.dateRange = presetId;
   S.selectedDays = matches;
   S.dpFallback = null;
+  S.dpRequestedStart = start;
+  S.dpRequestedEnd = end;
   if (matches.length === 0) {
-    const closest = allDates.reduce((best, d) => { const diff = Math.abs(new Date(d)-new Date()); return diff < best.diff ? {date:d,diff} : best; }, {date:allDates[allDates.length-1],diff:Infinity});
-    S.selectedDays = [closest.date];
-    S.dpFallback = closest.date;
+    const singleDay = (presetId === 'today' || presetId === 'yesterday');
+    if (!singleDay && allDates.length) {
+      const closest = allDates.reduce((best, d) => { const diff = Math.abs(new Date(d)-new Date()); return diff < best.diff ? {date:d,diff} : best; }, {date:allDates[allDates.length-1],diff:Infinity});
+      S.selectedDays = [closest.date];
+      S.dpFallback = closest.date;
+    }
   }
   dpCustomStart = start; dpCustomEnd = end;
   closeDatePicker();
@@ -3112,14 +3117,18 @@ function updateDpButton() {
     const preset = DP_PRESETS.find(p=>p.id===S.dateRange);
     label.textContent = preset ? preset.label : S.dateRange;
     const days = S.selectedDays || [];
-    if (S.dpFallback && days.length >= 1) {
+    const rs = S.dpRequestedStart;
+    const re = S.dpRequestedEnd;
+    if (days.length === 0) {
+      summary.textContent = 'No data';
+    } else if (S.dpFallback) {
       summary.textContent = fmtShort(days[0]) + ' (nearest)';
+    } else if (rs && re && rs !== re) {
+      summary.textContent = fmtShort(rs) + ' – ' + fmtShort(re);
     } else if (days.length === 1) {
       summary.textContent = fmtShort(days[0]);
-    } else if (days.length > 1) {
-      summary.textContent = fmtShort(days[0]) + ' – ' + fmtShort(days[days.length-1]);
     } else {
-      summary.textContent = 'No data';
+      summary.textContent = fmtShort(days[0]) + ' – ' + fmtShort(days[days.length-1]);
     }
   } else if (S.dateRange === 'custom' && dpCustomStart && dpCustomEnd) {
     label.textContent = fmtShort(dpCustomStart) + ' – ' + fmtShort(dpCustomEnd);
