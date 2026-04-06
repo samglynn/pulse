@@ -3569,6 +3569,7 @@ function renderCharts(wb) {
 
   // Overview tab
   let ovHtml = '<div class="chart-card span-2"><div class="chart-title">Net Sales & Guest Count Trend</div><div class="chart-wrap"><canvas id="ch-sales"></canvas></div></div>';
+  ovHtml += '<div class="chart-card span-2"><div class="chart-title">Labor % vs Net Sales</div><div class="chart-wrap"><canvas id="ch-labor-vs-sales"></canvas></div></div>';
   if (hasMultiLoc) {
     ovHtml += '<div class="chart-card"><div class="chart-title">Location — Net Sales</div><div class="chart-wrap"><canvas id="ch-loc"></canvas></div></div>';
     ovHtml += '<div class="chart-card"><div class="chart-title">Location KPI Comparison</div><div style="overflow-x:auto"><table class="loc-table"><thead><tr><th>Location</th><th>PPA</th><th>SPLH</th><th>GPLH</th><th>Labor</th></tr></thead><tbody>' + locData.map(l=>'<tr><td style="font-weight:600">'+l.name+'</td><td style="color:'+(l.ppa>=TARGETS.ppa.target?'var(--green)':'var(--red)')+'">$'+l.ppa+'</td><td style="color:'+(l.splh>=TARGETS.splh.target?'var(--green)':'var(--red)')+'">$'+l.splh+'</td><td style="color:'+(l.gplh>=TARGETS.gplh.target?'var(--green)':'var(--red)')+'">'+l.gplh+'</td><td style="color:'+(l.labor<=TARGETS.labor_pct.target?'var(--green)':'var(--red)')+'">'+l.labor+'%</td></tr>').join('') + '</tbody></table></div></div>';
@@ -3593,6 +3594,18 @@ function renderCharts(wb) {
   const lineOpts = (yLeft,yRight) => ({...base,scales:{...base.scales,y:{...base.scales.y,position:'left',ticks:{...base.scales.y.ticks,callback:yLeft}},y1:{position:'right',ticks:{color:'#6B7085',font:{size:10}},grid:{display:false}}}});
 
   S.charts.sales = new Chart(document.getElementById('ch-sales'), { type:'line', data:{labels, datasets:[{label:'Net Sales',data:wb.map(w=>w.net_sales),borderColor:'#6366F1',backgroundColor:'#6366F120',fill:true,tension:.3,pointRadius:3,borderWidth:2.5,yAxisID:'y'},{label:'Guests',data:wb.map(w=>w.guests),borderColor:'#14B8A6',backgroundColor:'#14B8A620',fill:true,tension:.3,pointRadius:3,borderWidth:2,yAxisID:'y1'}]}, options:lineOpts(v=>v>=1000?(v/1000).toFixed(0)+'K':v) });
+  // Labor % vs Net Sales — dual axis bar+line
+  S.charts.laborVsSales = new Chart(document.getElementById('ch-labor-vs-sales'), {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'Net Sales',data:wb.map(w=>w.net_sales),backgroundColor:'#6366F140',borderColor:'#6366F1',borderWidth:2,borderRadius:6,yAxisID:'y',order:2},
+        {label:'Labor %',data:wb.map(w=>w.labor_pct),type:'line',borderColor:'#E8505B',backgroundColor:'#E8505B',pointBackgroundColor:wb.map(w=>w.labor_pct>30?'#EF4444':'#E8505B'),pointRadius:4,borderWidth:2.5,tension:.3,yAxisID:'y1',order:1}
+      ]
+    },
+    options:{...base,scales:{x:{...base.scales.x},y:{position:'left',ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#ffffff10'}},y1:{position:'right',min:0,max:50,ticks:{callback:v=>v+'%',color:'#E8505B'},grid:{drawOnChartArea:false}}}}
+  });
   if (hasMultiLoc) S.charts.loc = new Chart(document.getElementById('ch-loc'), { type:'bar', data:{labels:locData.map(l=>l.name), datasets:[{label:'Net Sales',data:locData.map(l=>l.sales),backgroundColor:locData.map((_,i)=>PALETTE[i%PALETTE.length]),borderRadius:6}]}, options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>'$'+(v>=1000?(v/1000).toFixed(0)+'K':v)}}}} });
   S.charts.sales2 = new Chart(document.getElementById('ch-sales2'), { type:'line', data:{labels, datasets:[{label:'Net Sales',data:wb.map(w=>w.net_sales),borderColor:'#6366F1',backgroundColor:'#6366F120',fill:true,tension:.3,pointRadius:3,borderWidth:2.5,yAxisID:'y'},{label:'Guests',data:wb.map(w=>w.guests),borderColor:'#14B8A6',backgroundColor:'#14B8A620',fill:true,tension:.3,pointRadius:3,borderWidth:2,yAxisID:'y1'}]}, options:lineOpts(v=>v>=1000?(v/1000).toFixed(0)+'K':v) });
   S.charts.ppa = new Chart(document.getElementById('ch-ppa'), { type:'bar', data:{labels, datasets:[{label:'PPA',data:wb.map(w=>w.ppa),backgroundColor:wb.map(w=>w.ppa>=TARGETS.ppa.target?'#14B8A6':'#E8505B'),borderRadius:5}]}, options:{...base,scales:{...base.scales,y:{...base.scales.y,min:30,max:38,ticks:{...base.scales.y.ticks,callback:v=>'$'+v}}}} });
