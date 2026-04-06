@@ -7475,9 +7475,9 @@ async function addNewLocation() {
 }
 
 // Initialize settings targets on nav
-const _origNavTo = navTo;
+const _settingsNavTo = navTo;
 navTo = function(page) {
-  _origNavTo(page);
+  _settingsNavTo(page);
   if (page === 'settings') initSettingsTargets();
 };
 
