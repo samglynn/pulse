@@ -3067,10 +3067,12 @@ function dpSelectPreset(presetId) {
   const allDates = [...new Set(S.rows.map(r=>r.week_ending||r.date).filter(Boolean))].sort();
   const matches = allDates.filter(d => d >= start && d <= end);
   S.dateRange = presetId;
-  S.selectedDays = matches.length > 0 ? matches : [];
+  S.selectedDays = matches;
+  S.dpFallback = null;
   if (matches.length === 0) {
     const closest = allDates.reduce((best, d) => { const diff = Math.abs(new Date(d)-new Date()); return diff < best.diff ? {date:d,diff} : best; }, {date:allDates[allDates.length-1],diff:Infinity});
     S.selectedDays = [closest.date];
+    S.dpFallback = closest.date;
   }
   dpCustomStart = start; dpCustomEnd = end;
   closeDatePicker();
@@ -3110,7 +3112,9 @@ function updateDpButton() {
     const preset = DP_PRESETS.find(p=>p.id===S.dateRange);
     label.textContent = preset ? preset.label : S.dateRange;
     const days = S.selectedDays || [];
-    if (days.length === 1) {
+    if (S.dpFallback && days.length >= 1) {
+      summary.textContent = fmtShort(days[0]) + ' (nearest)';
+    } else if (days.length === 1) {
       summary.textContent = fmtShort(days[0]);
     } else if (days.length > 1) {
       summary.textContent = fmtShort(days[0]) + ' – ' + fmtShort(days[days.length-1]);
@@ -3124,8 +3128,8 @@ function updateDpButton() {
   } else {
     const allDates = [...new Set(S.rows.map(r=>r.week_ending||r.date).filter(Boolean))].sort();
     const latest = allDates.length ? allDates[allDates.length-1] : null;
-    label.textContent = 'Latest Day';
-    summary.textContent = latest ? fmtShort(latest) : '';
+    label.textContent = 'Latest';
+    summary.textContent = latest ? fmtShort(latest) : 'No data';
   }
 }
 
