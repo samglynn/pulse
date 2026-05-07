@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rai — Six agents working your restaurant while you run the floor</title>
+<meta name="description" content="A council of specialist AI agents — built by an operator, for operators — that watch your POS, invoices, schedule, comp pad, and bar in real time. They surface what matters, frame it in operator voice, and stage a one-tap play in Slack. You commit it. The dollars are real.">
+<meta property="og:title" content="Rai — Six agents working your restaurant while you run the floor">
+<meta property="og:description" content="A council of specialist AI agents working overnight, all weekend, every shift. They flag the variance, frame the why, stage the play. You commit it in Slack.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0C0E14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0C0E14; --surface:#14161E; --surface-2:#1A1D27; --surface-3:#20232F;
+  --border:#252839; --border-2:#2E3244;
+  --text:#EFF1F5; --text-2:#B0B4C8; --text-muted:#6B7085; --text-dim:#3D4055;
+  --accent:#6366F1; --accent-2:#5558E3;
+  --green:#14B8A6; --red:#E8505B; --yellow:#F9A826; --purple:#A78BFA; --cyan:#22D3EE; --pink:#F472B6;
+  --slack:#4A154B;
+  --grad:linear-gradient(135deg,#6366F1 0%,#14B8A6 100%);
+  --grad-soft:linear-gradient(135deg,rgba(99,102,241,.18),rgba(20,184,166,.16));
+  --radius:14px; --radius-sm:8px; --radius-lg:20px;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'DM Sans',system-ui,-apple-system,sans-serif;
+  line-height:1.55; overflow-x:hidden;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+::selection{background:rgba(99,102,241,.35)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* ── Ambient background ── */
+.bg-grid{
+  position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(ellipse at 50% 0%, #000 0%, transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse at 50% 0%, #000 0%, transparent 70%);
+}
+.bg-glow{
+  position:fixed; z-index:-1; pointer-events:none;
+  top:-220px; left:50%; transform:translateX(-50%);
+  width:1100px; height:700px; filter:blur(120px); opacity:.32;
+  background:
+    radial-gradient(40% 50% at 30% 50%, rgba(99,102,241,.55), transparent 70%),
+    radial-gradient(40% 50% at 70% 40%, rgba(20,184,166,.45), transparent 70%);
+}
+
+/* ── Top nav ── */
+.nav{
+  position:sticky; top:0; z-index:40;
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  background:rgba(12,14,20,.72);
+  border-bottom:1px solid rgba(37,40,57,.6);
+}
+.nav-inner{
+  max-width:1180px; margin:0 auto; padding:14px 28px;
+  display:flex; align-items:center; justify-content:space-between; gap:24px;
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{
+  width:28px;height:28px;border-radius:8px;
+  background:var(--grad);
+  display:grid;place-items:center;
+  box-shadow:0 6px 20px rgba(99,102,241,.35);
+  position:relative;
+}
+.brand-mark::after{
+  content:""; position:absolute; inset:3px; border-radius:5px;
+  background:var(--bg);
+}
+.brand-mark svg{position:relative;z-index:1}
+.brand-word{
+  font-size:18px; font-weight:800; letter-spacing:-.02em;
+  background:linear-gradient(135deg,#EFF1F5 0%,#B0B4C8 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{font-size:13px;color:var(--text-2);font-weight:500;transition:color .15s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{
+  padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600;
+  background:var(--surface-2); color:var(--text); border:1px solid var(--border);
+  transition:all .15s;
+}
+.nav-cta:hover{border-color:var(--accent);background:rgba(99,102,241,.1)}
+@media (max-width:720px){.nav-links{display:none}}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:14px 22px; border-radius:12px;
+  font-size:14px; font-weight:700;
+  border:1px solid transparent; transition:all .18s var(--ease);
+  white-space:nowrap;
+}
+.btn-primary{
+  background:linear-gradient(135deg,#6366F1,#5558E3);
+  color:#fff;
+  box-shadow:0 8px 26px rgba(99,102,241,.35), inset 0 1px 0 rgba(255,255,255,.15);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(99,102,241,.45), inset 0 1px 0 rgba(255,255,255,.15)}
+.btn-ghost{
+  background:var(--surface-2); color:var(--text);
+  border-color:var(--border);
+}
+.btn-ghost:hover{border-color:var(--text-muted);background:var(--surface-3)}
+.btn svg{width:14px;height:14px}
+
+/* ── Section scaffold ── */
+section{max-width:1180px;margin:0 auto;padding:96px 28px;position:relative}
+.sec-eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent); margin-bottom:14px;
+}
+.sec-title{
+  font-size:clamp(28px,4vw,44px); font-weight:800; letter-spacing:-.025em;
+  line-height:1.15; margin-bottom:14px;
+}
+.sec-title em{
+  font-style:normal;
+  background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.sec-lede{font-size:17px; color:var(--text-2); max-width:700px; line-height:1.6}
+.sec-head-center{text-align:center; margin-bottom:48px}
+.sec-head-center .sec-lede{margin:0 auto}
+
+/* ── HERO ── */
+.hero{
+  max-width:1180px; margin:0 auto;
+  padding:80px 28px 40px;
+  text-align:center;
+}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 14px; border-radius:999px;
+  background:rgba(99,102,241,.08);
+  border:1px solid rgba(99,102,241,.22);
+  font-size:11px; font-weight:700; color:var(--accent);
+  text-transform:uppercase; letter-spacing:.12em;
+  margin-bottom:28px;
+  font-family:'JetBrains Mono',monospace;
+}
+.eyebrow::before{
+  content:""; width:6px;height:6px;border-radius:50%;
+  background:var(--green); box-shadow:0 0 10px var(--green);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+h1.hero-title{
+  font-size:clamp(40px,6.4vw,76px);
+  line-height:1.04; font-weight:800; letter-spacing:-.035em;
+  margin-bottom:22px;
+}
+.hero-title .gradient{
+  background:var(--grad);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.hero-sub{
+  font-size:clamp(15px,1.5vw,18px); color:var(--text-2);
+  max-width:720px; margin:0 auto 36px; line-height:1.7;
+}
+.hero-sub b{color:var(--text);font-weight:600}
+.cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hero-meta{
+  margin-top:28px; display:flex; gap:24px; justify-content:center; flex-wrap:wrap;
+  font-size:12px; color:var(--text-muted);
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:.04em;
+}
+.hero-meta span{display:inline-flex;align-items:center;gap:6px}
+.hero-meta .dot{width:4px;height:4px;border-radius:50%;background:var(--green)}
+
+/* ── Live console ── */
+.console-wrap{
+  max-width:1100px; margin:48px auto 0; padding:0 28px;
+  position:relative;
+}
+.console{
+  position:relative;
+  border-radius:var(--radius-lg);
+  background:var(--surface);
+  border:1px solid var(--border);
+  box-shadow:
+    0 40px 100px rgba(0,0,0,.65),
+    0 0 0 1px rgba(99,102,241,.06),
+    inset 0 1px 0 rgba(255,255,255,.04);
+  overflow:hidden;
+}
+.console::before{
+  content:""; position:absolute; top:-1px; left:20%; right:20%; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(99,102,241,.6), transparent);
+}
+.console-bar{
+  display:flex; align-items:center; gap:10px;
+  padding:12px 16px; border-bottom:1px solid var(--border);
+  background:var(--surface-2);
+}
+.console-dots{display:flex;gap:6px}
+.console-dots span{width:10px;height:10px;border-radius:50%;background:var(--border-2)}
+.console-dots span:nth-child(1){background:#E8505B}
+.console-dots span:nth-child(2){background:#F9A826}
+.console-dots span:nth-child(3){background:#14B8A6}
+.console-url{
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  color:var(--text-muted); margin-left:12px;
+}
+.console-status{
+  margin-left:auto;
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  display:inline-flex; align-items:center; gap:6px;
+  color:var(--green);
+  padding:3px 10px; border-radius:999px;
+  background:rgba(20,184,166,.1);
+  border:1px solid rgba(20,184,166,.25);
+}
+.console-status::before{
+  content:""; width:6px;height:6px;border-radius:50%;
+  background:var(--green); box-shadow:0 0 8px var(--green);
+  animation:pulse 1.6s ease-in-out infinite;
+}
+.console-body{
+  padding:18px 20px;
+  background:#0E1018;
+  font-family:'JetBrains Mono',monospace; font-size:12.5px;
+  line-height:1.85;
+  overflow-x:auto;
+}
+.log{display:grid; grid-template-columns:64px 130px 1fr auto; gap:14px; align-items:center; padding:3px 0}
+.log .stamp{color:var(--text-dim)}
+.log .agent{color:var(--text);font-weight:500;letter-spacing:.01em}
+.log .agent.t-watch{color:#A78BFA}
+.log .agent.t-cost{color:#F9A826}
+.log .agent.t-menu{color:#22D3EE}
+.log .agent.t-cv{color:#F472B6}
+.log .agent.t-pour{color:#34D399}
+.log .agent.t-sched{color:#60A5FA}
+.log .agent.t-analyst{color:#B0B4C8}
+.log .agent.t-coach{color:#6366F1}
+.log .agent.t-system{color:var(--text-muted)}
+.log .body{color:var(--text-2)}
+.log .body b{color:var(--text);font-weight:500}
+.log .body em{font-style:normal;color:var(--text)}
+.log .impact{
+  font-size:11.5px; color:var(--yellow);
+  background:rgba(249,168,38,.10); border:1px solid rgba(249,168,38,.22);
+  padding:1px 8px; border-radius:6px; letter-spacing:.02em;
+}
+.log .impact.warn{color:var(--red); background:rgba(232,80,91,.10); border-color:rgba(232,80,91,.22)}
+.log .impact.good{color:var(--green); background:rgba(20,184,166,.10); border-color:rgba(20,184,166,.22)}
+.log.is-system .body{color:var(--text-muted)}
+.log.is-divider{
+  display:flex; gap:10px; align-items:center;
+  padding:6px 0;
+  color:var(--text-dim); font-size:11px; letter-spacing:.04em;
+}
+.log.is-divider::before, .log.is-divider::after{
+  content:""; flex:1; height:1px; background:var(--border);
+}
+.console-foot{
+  display:flex; flex-wrap:wrap; gap:18px;
+  padding:14px 20px; background:var(--surface-2);
+  border-top:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  color:var(--text-muted); letter-spacing:.04em;
+}
+.console-foot .sep{color:var(--text-dim)}
+.console-foot b{color:var(--text-2);font-weight:600}
+@media (max-width:780px){
+  .log{grid-template-columns:54px 100px 1fr;}
+  .log .impact{grid-column:1 / -1; justify-self:start}
+}
+
+/* ── Council ── */
+.council-grid{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+}
+@media (max-width:980px){.council-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:620px){.council-grid{grid-template-columns:1fr}}
+.agent{
+  position:relative;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:22px 22px 20px;
+  display:flex; flex-direction:column; gap:14px;
+  overflow:hidden;
+  transition:border-color .15s, transform .15s;
+}
+.agent::before{
+  content:""; position:absolute; top:0; left:0; right:0; height:2px;
+  background:var(--grad); opacity:.55;
+}
+.agent:hover{transform:translateY(-2px); border-color:var(--border-2)}
+.agent.flagship{
+  border-color:rgba(244,114,182,.4);
+  box-shadow:0 0 0 1px rgba(244,114,182,.16) inset, 0 24px 48px rgba(244,114,182,.08);
+}
+.agent.flagship::before{background:linear-gradient(90deg,#F472B6,#A78BFA)}
+.agent-top{display:flex; align-items:center; gap:12px}
+.avatar{
+  width:42px; height:42px; border-radius:11px;
+  background:var(--grad);
+  display:grid; place-items:center;
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px;
+  color:#07091a;
+  box-shadow:0 6px 18px rgba(99,102,241,.28);
+  flex-shrink:0;
+}
+.avatar.cv{background:linear-gradient(135deg,#F472B6,#A78BFA)}
+.avatar.cost{background:linear-gradient(135deg,#F9A826,#F472B6)}
+.avatar.menu{background:linear-gradient(135deg,#22D3EE,#14B8A6)}
+.avatar.pour{background:linear-gradient(135deg,#34D399,#22D3EE)}
+.avatar.sched{background:linear-gradient(135deg,#60A5FA,#A78BFA)}
+.agent-id{flex:1; min-width:0}
+.agent-name{font-size:18px; font-weight:800; letter-spacing:-.015em; line-height:1.15}
+.agent-name .new-pill{
+  display:inline-block; vertical-align:middle;
+  margin-left:6px;
+  font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:800;
+  letter-spacing:.12em; text-transform:uppercase;
+  padding:2px 7px; border-radius:999px;
+  background:rgba(244,114,182,.15); color:var(--pink);
+  border:1px solid rgba(244,114,182,.32);
+}
+.agent-watch{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:600;
+  letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text-muted); margin-top:3px;
+}
+.agent-status{
+  flex-shrink:0;
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 9px; border-radius:999px;
+  font-family:'JetBrains Mono',monospace; font-size:9.5px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase;
+  background:rgba(20,184,166,.12); color:var(--green);
+  border:1px solid rgba(20,184,166,.25);
+}
+.agent-status::before{
+  content:""; width:5px; height:5px; border-radius:50%;
+  background:var(--green); box-shadow:0 0 6px var(--green);
+}
+.agent-blurb{
+  font-size:13.5px; color:var(--text-2); line-height:1.6;
+}
+.agent-blurb b{color:var(--text);font-weight:600}
+.agent-find{
+  margin-top:auto;
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:11px 14px;
+  display:flex; flex-direction:column; gap:5px;
+}
+.find-eyebrow{
+  font-family:'JetBrains Mono',monospace; font-size:9.5px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-muted);
+}
+.find-text{
+  font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.5;
+  color:var(--text);
+}
+.find-text b{color:var(--accent);font-weight:600}
+.find-text .red{color:var(--red);font-weight:600}
+.find-text .green{color:var(--green);font-weight:600}
+.find-text .yellow{color:var(--yellow);font-weight:600}
+.find-text .pink{color:var(--pink);font-weight:600}
+
+/* framing layer (Analyst + Coach) */
+.framers{
+  margin-top:18px;
+  display:grid; grid-template-columns:1fr 1fr; gap:14px;
+}
+@media (max-width:620px){.framers{grid-template-columns:1fr}}
+.framer{
+  background:linear-gradient(135deg, rgba(99,102,241,.07), rgba(20,184,166,.05));
+  border:1px solid rgba(99,102,241,.22);
+  border-radius:14px;
+  padding:18px 20px;
+  display:flex; gap:14px; align-items:center;
+}
+.framer-ic{
+  width:36px;height:36px; border-radius:10px; flex-shrink:0;
+  background:var(--grad-soft);
+  border:1px solid rgba(99,102,241,.32);
+  display:grid; place-items:center;
+  font-family:'JetBrains Mono',monospace; font-weight:700;
+  color:var(--accent);
+}
+.framer-name{font-size:14px; font-weight:700; letter-spacing:-.01em}
+.framer-job{font-size:12px; color:var(--text-2); margin-top:2px}
+
+/* ── Worked example (Comp/Void end-to-end) ── */
+.worked{
+  background:
+    radial-gradient(60% 80% at 50% 0%, rgba(244,114,182,.06), transparent 60%),
+    var(--bg);
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+}
+.flow{
+  display:grid; grid-template-columns:repeat(5, 1fr); gap:12px;
+  margin-top:36px;
+}
+@media (max-width:1080px){.flow{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:620px){.flow{grid-template-columns:1fr}}
+.stage{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px 18px 16px;
+  display:flex; flex-direction:column; gap:10px;
+  position:relative;
+  min-height:280px;
+}
+.stage::before{
+  content:""; position:absolute; top:0; left:0; right:0; height:2px;
+  border-radius:14px 14px 0 0;
+}
+.stage.detect::before{background:var(--red)}
+.stage.frame::before{background:var(--purple)}
+.stage.play::before{background:var(--accent)}
+.stage.slack::before{background:#A855F7}
+.stage.verdict::before{background:var(--green)}
+.stage-head{display:flex; align-items:center; gap:10px}
+.stage-num{
+  width:24px;height:24px;border-radius:7px;
+  background:var(--surface-2); border:1px solid var(--border);
+  display:grid; place-items:center;
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
+  color:var(--text-2); flex-shrink:0;
+}
+.stage-name{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-muted);
+}
+.stage.detect .stage-name{color:var(--red)}
+.stage.frame .stage-name{color:var(--purple)}
+.stage.play .stage-name{color:var(--accent)}
+.stage.slack .stage-name{color:#C084FC}
+.stage.verdict .stage-name{color:var(--green)}
+.stage-title{font-size:14px; font-weight:700; letter-spacing:-.01em; line-height:1.35}
+.stage-body{font-size:12.5px; color:var(--text-2); line-height:1.6}
+.stage-body b{color:var(--text);font-weight:600}
+.stage-data{
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:9px 11px;
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  color:var(--text-2); line-height:1.6;
+  margin-top:auto;
+}
+.stage-data b{color:var(--text);font-weight:600}
+.stage-data .red{color:var(--red)}
+.stage-data .green{color:var(--green)}
+.stage-data .accent{color:var(--accent)}
+/* Slack-styled stage */
+.slack-msg{
+  background:#1A1D27;
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 12px;
+  font-size:12px; line-height:1.5; color:var(--text-2);
+  margin-top:auto;
+}
+.slack-msg-head{
+  display:flex; align-items:baseline; gap:6px;
+  margin-bottom:6px;
+}
+.slack-bot-tag{
+  background:var(--surface-3); color:var(--text-muted);
+  font-family:'JetBrains Mono',monospace; font-size:8.5px; padding:1px 5px;
+  border-radius:3px; letter-spacing:.05em; text-transform:uppercase;
+  font-weight:700;
+}
+.slack-name{font-weight:700; color:var(--text); font-size:12px}
+.slack-time{color:var(--text-muted); font-size:10.5px}
+.slack-body{color:var(--text); font-weight:500; line-height:1.5}
+.slack-body strong{color:var(--text);font-weight:700}
+.slack-cta{
+  margin-top:8px; display:inline-block;
+  background:var(--accent); color:#fff;
+  padding:5px 11px; border-radius:5px;
+  font-size:11px; font-weight:700;
+}
+
+/* ── Daily loop timeline ── */
+.loop-section{
+  background:var(--surface);
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+}
+.loop-track{
+  margin-top:36px; padding:0 0 8px;
+  position:relative;
+  overflow-x:auto;
+}
+.loop-rail{
+  position:relative;
+  display:grid; grid-template-columns:repeat(8, minmax(132px, 1fr)); gap:0;
+  padding:32px 0 24px;
+}
+.loop-rail::before{
+  content:""; position:absolute; left:24px; right:24px; top:50%;
+  height:2px; background:linear-gradient(90deg,
+    var(--accent) 0%, var(--accent) 14%,
+    var(--green) 26%, var(--green) 40%,
+    var(--yellow) 52%, var(--yellow) 64%,
+    var(--yellow) 76%,
+    var(--text-dim) 88%, var(--text-dim) 100%);
+  border-radius:2px; opacity:.55;
+  transform:translateY(-1px);
+}
+.loop-event{
+  position:relative;
+  display:flex; flex-direction:column; align-items:center;
+  text-align:center;
+  padding:0 6px;
+}
+.loop-event:nth-child(odd){padding-top:0; padding-bottom:90px}
+.loop-event:nth-child(even){padding-top:90px; padding-bottom:0}
+.loop-dot{
+  width:14px; height:14px; border-radius:50%;
+  background:var(--accent); border:3px solid var(--bg);
+  box-shadow:0 0 0 2px var(--accent), 0 0 14px rgba(99,102,241,.55);
+  z-index:1;
+}
+.loop-event.brief .loop-dot{background:var(--green); box-shadow:0 0 0 2px var(--green), 0 0 14px rgba(20,184,166,.55)}
+.loop-event.alert .loop-dot{background:var(--yellow); box-shadow:0 0 0 2px var(--yellow), 0 0 14px rgba(249,168,38,.55)}
+.loop-event.hold .loop-dot{background:var(--text-dim); box-shadow:0 0 0 2px var(--text-dim)}
+.loop-time{
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
+  letter-spacing:.06em; color:var(--text-muted);
+  margin-top:8px;
+}
+.loop-event:nth-child(odd) .loop-time{margin-top:0; margin-bottom:8px; order:-2}
+.loop-event:nth-child(odd) .loop-dot{order:-1}
+.loop-label{
+  font-size:12.5px; font-weight:700; color:var(--text);
+  margin-top:4px; line-height:1.35;
+}
+.loop-sub{
+  font-size:11px; color:var(--text-2); line-height:1.5;
+  margin-top:2px; max-width:140px;
+}
+.loop-event:nth-child(odd) .loop-label,
+.loop-event:nth-child(odd) .loop-sub{order:-3}
+.loop-event:nth-child(odd) .loop-label{margin-top:0}
+.loop-event:nth-child(odd) .loop-sub{margin-bottom:4px}
+@media (max-width:880px){
+  .loop-rail{grid-template-columns:repeat(8, minmax(120px, 1fr))}
+}
+
+/* ── Trust strip ── */
+.trust-row{
+  margin-top:36px; padding:28px 32px;
+  background:
+    radial-gradient(ellipse at 0% 50%, rgba(99,102,241,.1), transparent 60%),
+    radial-gradient(ellipse at 100% 50%, rgba(20,184,166,.08), transparent 60%),
+    var(--surface);
+  border:1px solid var(--border); border-radius:16px;
+  display:grid; grid-template-columns:repeat(4,1fr); gap:24px;
+}
+@media (max-width:820px){.trust-row{grid-template-columns:repeat(2,1fr); gap:20px}}
+@media (max-width:480px){.trust-row{grid-template-columns:1fr}}
+.trust-cell{display:flex; flex-direction:column; gap:6px}
+.trust-num{
+  font-size:38px; font-weight:800; letter-spacing:-.025em; line-height:1;
+  background:var(--grad);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.trust-num small{font-size:18px; font-weight:700; margin-left:1px; -webkit-text-fill-color:initial}
+.trust-lbl{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-2); margin-top:4px;
+}
+.trust-prov{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-muted);
+  letter-spacing:.04em;
+}
+.trust-prov .dot{display:inline-block; width:3px;height:3px;border-radius:50%;background:var(--text-dim);margin:0 6px;vertical-align:middle}
+
+/* ── Integrations ── */
+.integrations{
+  margin:0 auto; max-width:1100px; padding:32px 28px;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  text-align:center;
+}
+.integrations-label{font-family:'JetBrains Mono',monospace; font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:20px}
+.integrations-row{display:flex;justify-content:center;align-items:center;gap:36px;flex-wrap:wrap}
+.int-logo{
+  display:flex;align-items:center;gap:10px;
+  font-size:15px; font-weight:700; color:var(--text-2);
+  padding:10px 16px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border);
+  transition:all .15s;
+}
+.int-logo:hover{border-color:var(--accent);color:var(--text)}
+.int-logo .int-icon{
+  width:22px;height:22px;border-radius:5px;
+  display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;
+}
+.int-icon.toast{background:#FF4A00}
+.int-icon.seven{background:#4A90E2}
+.int-icon.r365{background:#0F766E}
+.int-icon.slack{background:#4A154B}
+.int-icon.resend{background:linear-gradient(135deg,#6366F1,#14B8A6)}
+.int-icon.weather{background:#3B82F6}
+
+/* ── Differentiation (compressed) ── */
+.diff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:36px}
+@media (max-width:960px){.diff-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.diff-grid{grid-template-columns:1fr}}
+.diff-card{
+  padding:24px 22px;border-radius:14px;
+  background:var(--surface);border:1px solid var(--border);
+  display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;
+  transition:border-color .15s,transform .15s;
+}
+.diff-card:hover{border-color:var(--border-2);transform:translateY(-1px)}
+.diff-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--grad); opacity:.5;
+}
+.diff-card-eyebrow{
+  font-family:'JetBrains Mono',monospace; font-size:10px;font-weight:700;color:var(--text-muted);
+  letter-spacing:.12em;text-transform:uppercase;
+}
+.diff-card h4{font-size:16px;font-weight:700;letter-spacing:-.015em;line-height:1.3}
+.diff-card h4 em{font-style:normal;color:var(--accent)}
+.diff-card p{font-size:13px;color:var(--text-2);line-height:1.55}
+.diff-card .vs{
+  margin-top:auto;padding-top:12px;border-top:1px solid var(--border);
+  font-size:11.5px;color:var(--text-muted);line-height:1.5;
+}
+.diff-card .vs b{color:var(--text-2);font-weight:600}
+
+/* ── Pricing (preserved) ── */
+.pricing-sec{
+  padding:96px 28px;border-top:1px solid var(--border);
+  background:
+    radial-gradient(60% 80% at 50% 0%, rgba(244,114,182,.05), transparent 60%),
+    var(--bg);
+}
+.pricing-inner{max-width:1180px;margin:0 auto}
+.pricing-head{text-align:center;margin-bottom:48px}
+.pricing-eyebrow{
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+  color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;
+}
+.pricing-title{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.025em;line-height:1.15;margin-bottom:14px}
+.pricing-title em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pricing-lede{font-size:16px;color:var(--text-2);max-width:680px;margin:0 auto;line-height:1.6}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
+@media (max-width:880px){.pricing-grid{grid-template-columns:1fr}}
+.pricing-card{
+  position:relative;padding:28px 26px 24px;border-radius:16px;
+  background:var(--surface);border:1px solid var(--border);
+  display:flex;flex-direction:column;gap:12px;
+  transition:border-color .15s,transform .15s;overflow:hidden;
+}
+.pricing-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--border);
+}
+.pricing-card.floor::before{background:linear-gradient(90deg,#6B7085,#3D4055)}
+.pricing-card.floor .pricing-tag{color:var(--text-muted);background:var(--surface-2);border-color:var(--border)}
+.pricing-card.optimal{border-color:rgba(99,102,241,.45);box-shadow:0 0 0 1px rgba(99,102,241,.18) inset, 0 30px 60px rgba(99,102,241,.12)}
+.pricing-card.optimal::before{background:var(--grad)}
+.pricing-card.optimal .pricing-tag{color:var(--accent);background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.3)}
+.pricing-card.stretch::before{background:linear-gradient(90deg,#F472B6,#EC4899)}
+.pricing-card.stretch .pricing-tag{color:#F472B6;background:rgba(244,114,182,.12);border-color:rgba(244,114,182,.3)}
+.pricing-card:hover{transform:translateY(-2px)}
+.pricing-recommended{
+  position:absolute;top:14px;right:14px;
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  padding:3px 9px;border-radius:999px;
+  background:rgba(99,102,241,.14);color:var(--accent);border:1px solid rgba(99,102,241,.32);
+}
+.pricing-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:6px;border:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;align-self:flex-start;
+}
+.pricing-name{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.pricing-name em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pricing-card.stretch .pricing-name em{background:linear-gradient(135deg,#F472B6,#EC4899);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pricing-card.floor .pricing-name em{background:linear-gradient(135deg,#B0B4C8,#6B7085);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pricing-price{display:flex;align-items:baseline;gap:6px;margin-top:4px}
+.pricing-price .amt{
+  font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:800;letter-spacing:-.03em;color:var(--text);
+}
+.pricing-price .per{font-size:12px;color:var(--text-muted);font-weight:600}
+.pricing-sub{font-size:13px;color:var(--text-2);line-height:1.5}
+.pricing-list{display:flex;flex-direction:column;gap:10px;margin-top:6px;padding:0;list-style:none}
+.pricing-list li{
+  list-style:none; position:relative; padding-left:23px;
+  font-size:13px;color:var(--text-2);line-height:1.5; text-align:left;
+}
+.pricing-list li::before{
+  content:"";position:absolute;left:0;top:5px;
+  width:14px;height:14px;border-radius:50%;
+  background:rgba(20,184,166,.15);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%2314B8A6' d='M6.5 10.59 4.21 8.3l-1.42 1.42L6.5 13.43l8-8-1.42-1.42z'/></svg>");
+  background-size:10px;background-position:center;background-repeat:no-repeat;
+}
+.pricing-card.stretch .pricing-list li::before{background-color:rgba(244,114,182,.15);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23F472B6' d='M6.5 10.59 4.21 8.3l-1.42 1.42L6.5 13.43l8-8-1.42-1.42z'/></svg>")}
+.pricing-list li b{color:var(--text);font-weight:600}
+.pricing-cta{
+  margin-top:auto;padding:11px 16px;border-radius:10px;text-align:center;
+  font-size:13px;font-weight:700;letter-spacing:.01em;
+  border:1px solid var(--border);background:var(--surface-2);color:var(--text);
+  transition:all .15s;
+}
+.pricing-card.optimal .pricing-cta{
+  background:linear-gradient(135deg,#6366F1,#5558E3);color:#fff;border-color:transparent;
+  box-shadow:0 8px 22px rgba(99,102,241,.3),inset 0 1px 0 rgba(255,255,255,.15);
+}
+.pricing-card.optimal .pricing-cta:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(99,102,241,.4)}
+.pricing-card.floor .pricing-cta:hover,
+.pricing-card.stretch .pricing-cta:hover{border-color:var(--text-muted);background:var(--surface-3)}
+.pricing-foot{
+  margin-top:24px;text-align:center;
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--text-muted);
+  line-height:1.7;letter-spacing:.02em;
+}
+.pricing-foot b{color:var(--text-2);font-weight:700}
+.pricing-pact{
+  margin:36px auto 0;max-width:920px;
+  padding:26px 30px;
+  border:1px solid rgba(99,102,241,.35);
+  border-radius:14px;
+  background:
+    radial-gradient(80% 100% at 50% 0%, rgba(99,102,241,.10), transparent 70%),
+    rgba(99,102,241,.04);
+  text-align:center;position:relative;
+  box-shadow:0 0 0 1px rgba(99,102,241,.12) inset, 0 24px 48px rgba(99,102,241,.08);
+}
+.pricing-pact-tag{
+  display:inline-block;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);
+  padding:4px 10px;
+  border:1px solid rgba(99,102,241,.3);
+  border-radius:999px;
+  background:rgba(99,102,241,.10);
+  margin-bottom:14px;
+}
+.pricing-pact-title{
+  font-size:clamp(20px,2.6vw,26px);
+  font-weight:800;letter-spacing:-.02em;line-height:1.25;
+  margin:0 0 12px;color:var(--text);
+}
+.pricing-pact-title em{
+  font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.pricing-pact-body{
+  font-size:14.5px;color:var(--text-2);
+  max-width:680px;margin:0 auto;line-height:1.6;
+}
+.pricing-pact-body b{color:var(--text);font-weight:700}
+
+/* ── How it works ── */
+.how{background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border)}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1100px;margin:0 auto}
+@media (max-width:820px){.how-grid{grid-template-columns:1fr}}
+.step{
+  padding:28px; border-radius:var(--radius);
+  background:var(--surface-2); border:1px solid var(--border);
+  position:relative;
+}
+.step-num{
+  position:absolute; top:-14px; left:24px;
+  width:32px;height:32px;border-radius:10px;
+  background:var(--grad);
+  display:grid;place-items:center; font-size:13px;font-weight:800;color:#fff;
+  box-shadow:0 8px 20px rgba(99,102,241,.35);
+}
+.step h4{font-size:17px;font-weight:700;margin:8px 0 10px;letter-spacing:-.01em}
+.step p{font-size:14px;color:var(--text-2);line-height:1.6}
+.step-meta{margin-top:14px;font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
+
+/* ── Testimonial ── */
+.testimonial{
+  max-width:820px; margin:0 auto; text-align:center; padding:0 28px;
+}
+.testi-eyebrow{
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
+  color:var(--accent); letter-spacing:.14em; text-transform:uppercase; margin-bottom:18px;
+}
+.quote{
+  font-size:clamp(20px,2.4vw,26px); line-height:1.45; font-weight:500;
+  letter-spacing:-.01em; margin-bottom:24px;
+}
+.quote em{
+  background:var(--grad);
+  -webkit-background-clip:text;background-clip:text;color:transparent;font-style:normal;font-weight:700;
+}
+.quote-meta{font-size:13px;color:var(--text-muted)}
+.quote-meta b{color:var(--text-2);font-weight:600}
+
+/* ── Final CTA ── */
+.cta-card{
+  max-width:1100px; margin:0 auto; padding:56px 40px;
+  background:
+    radial-gradient(80% 100% at 50% 0%, rgba(99,102,241,.18), transparent 70%),
+    var(--surface);
+  border:1px solid var(--border); border-radius:var(--radius-lg);
+  text-align:center; position:relative; overflow:hidden;
+}
+.cta-card::before{
+  content:""; position:absolute; top:-1px; left:30%; right:30%; height:1px;
+  background:linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+.cta-card h2{font-size:clamp(28px,4vw,40px); font-weight:800; letter-spacing:-.025em; line-height:1.15; margin-bottom:14px}
+.cta-card h2 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cta-card p{font-size:16px; color:var(--text-2); max-width:560px; margin:0 auto 28px}
+
+/* ── Footer ── */
+footer{
+  border-top:1px solid var(--border); padding:40px 28px 60px;
+  max-width:1180px; margin:60px auto 0;
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;
+}
+footer .brand{gap:8px}
+footer .brand-word{font-size:15px}
+footer small{font-size:12px; color:var(--text-muted)}
+.foot-links{display:flex;gap:22px;font-size:13px;color:var(--text-2)}
+.foot-links a:hover{color:var(--text)}
+
+/* ── Reveal ── */
+.reveal{opacity:0; transform:translateY(16px); transition:all .7s var(--ease)}
+.reveal.in{opacity:1; transform:none}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- ── Nav ── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="brand">
+      <span class="brand-mark">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M2 10 L5 7 L8 9 L12 4 L14 6" stroke="url(#g1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="16" y2="16"><stop stop-color="#6366F1"/><stop offset="1" stop-color="#14B8A6"/></linearGradient></defs>
+        </svg>
+      </span>
+      <span class="brand-word">Rai</span>
+    </a>
+    <div class="nav-links">
+      <a href="#council">The council</a>
+      <a href="#worked">A flag in flight</a>
+      <a href="#loop">The daily loop</a>
+      <a href="#pricing">Pricing</a>
+      <a href="https://app.heyrai.io" target="_blank" rel="noopener">Sign in</a>
+    </div>
+    <a href="#book" class="nav-cta">Book a walkthrough</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="eyebrow">Six agents · One council · Always watching</div>
+  <h1 class="hero-title">
+    While you run the floor,<br>
+    <span class="gradient">six agents run your margin.</span>
+  </h1>
+  <p class="hero-sub">
+    The Watch reads your POS. Cost Sentinel reads your invoices. Menu Engineer reads your mix. Comp/Void Coach reads your void slips. Pour Coach watches the bar. Schedule Critic watches the draft. <b>The Analyst frames every find in operator voice. The Coach stages a one-tap play.</b> You commit it in Slack — or you don't.
+  </p>
+  <div class="cta-row">
+    <a href="#book" class="btn btn-primary">
+      Book a 15-min walkthrough
+      <svg viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <a href="#council" class="btn btn-ghost">Meet the council</a>
+  </div>
+  <div class="hero-meta">
+    <span><span class="dot"></span> All 6 running on real Toast + R365 + 7shifts data</span>
+    <span><span class="dot"></span> 71% batting avg · last 30d</span>
+    <span><span class="dot"></span> Built by an operator, for operators</span>
+  </div>
+</section>
+
+<!-- ── LIVE CONSOLE ── -->
+<div class="console-wrap reveal">
+  <div class="console">
+    <div class="console-bar">
+      <div class="console-dots"><span></span><span></span><span></span></div>
+      <span class="console-url">app.heyrai.io / agent-activity / live</span>
+      <span class="console-status">All 6 agents running</span>
+    </div>
+    <div class="console-body">
+      <div class="log"><span class="stamp">07:01</span><span class="agent t-system">brief sent</span><span class="body">morning brief delivered → <b>#warren-gm</b>, <b>#providence-gm</b>, <b>#newport-gm</b></span><span class="impact good">11 plays</span></div>
+      <div class="log"><span class="stamp">06:14</span><span class="agent t-cv">comp/void</span><span class="body">Warren · <b>J. Reyes 47% of void $</b> last 14d · 22 voids, last-90-min cluster, "wrong order" tag</span><span class="impact warn">$864</span></div>
+      <div class="log"><span class="stamp">06:12</span><span class="agent t-cost">cost sentinel</span><span class="body">Newport · beef short rib <b>+18% w/w</b> on 4/30 invoice · vendor: NE Provisions</span><span class="impact warn">−$340/wk</span></div>
+      <div class="log"><span class="stamp">06:08</span><span class="agent t-menu">menu engineer</span><span class="body">Providence · burrata salad mix <b>−22%</b> over 21d · margin holding · drift, not dog</span><span class="impact">menu drift</span></div>
+      <div class="log"><span class="stamp">06:02</span><span class="agent t-watch">the watch</span><span class="body">Warren · drink attach <b>31% vs 38% target</b> · 4 consecutive operating days · severity high</span><span class="impact warn">−$420</span></div>
+      <div class="log"><span class="stamp">05:58</span><span class="agent t-pour">pour coach</span><span class="body">Newport · house red → reserve flight conversion at <b>+$3.20/cover</b> on weekend dinners</span><span class="impact good">+$1,150/wk</span></div>
+      <div class="log"><span class="stamp">05:55</span><span class="agent t-sched">schedule critic</span><span class="body">Warren · Sun brunch labor <b>34% vs 26% target</b> on next week's draft (cut 1 host, shorten line cook)</span><span class="impact warn">−$420</span></div>
+      <div class="log is-divider"><span>04 detector pass · 4 flags raised</span></div>
+      <div class="log"><span class="stamp">05:45</span><span class="agent t-analyst">analyst</span><span class="body">framed 4 flags · pulled correlations: shift_window, reason_tags, peer_baseline, vendor_cohort</span><span class="impact">4 framed</span></div>
+      <div class="log"><span class="stamp">05:42</span><span class="agent t-coach">coach</span><span class="body">staged 11 plays · 7 GM-audience, 3 owner-audience, 1 escalation · all freshness-checked</span><span class="impact good">11 staged</span></div>
+      <div class="log is-divider"><span>02 overnight detector run · 14d window · 3 locations</span></div>
+      <div class="log"><span class="stamp">02:14</span><span class="agent t-system">orchestrator</span><span class="body">council pass complete · 6 detectors · 3 locations · total 1.9s · status ok</span><span class="impact good">healthy</span></div>
+    </div>
+    <div class="console-foot">
+      <span><b>6</b> agents</span><span class="sep">·</span>
+      <span><b>3</b> locations</span><span class="sep">·</span>
+      <span>last run <b>06:14 ET</b></span><span class="sep">·</span>
+      <span>grading <b>active</b></span><span class="sep">·</span>
+      <span>time-of-day hold <b>23:00 → 07:30 ET</b></span>
+    </div>
+  </div>
+</div>
+
+<!-- ── COUNCIL ── -->
+<section id="council" class="reveal">
+  <div class="sec-head-center">
+    <div class="sec-eyebrow">The council · Six specialists, two framers</div>
+    <h2 class="sec-title">Each agent <em>watches one thing</em> and watches it well.</h2>
+    <p class="sec-lede">No general-purpose AI. Every agent has a single job, a single data source, and a single output: a flag with receipts. The Analyst frames it. The Coach stages a play. Below: what each one is doing today on Chomp data.</p>
+  </div>
+
+  <div class="council-grid">
+
+    <!-- 1. The Watch -->
+    <div class="agent">
+      <div class="agent-top">
+        <div class="avatar">TW</div>
+        <div class="agent-id">
+          <div class="agent-name">The Watch</div>
+          <div class="agent-watch">Watches · POS variance</div>
+        </div>
+        <span class="agent-status">Running</span>
+      </div>
+      <div class="agent-blurb">Reads every check, every void, every comp out of Toast. Compares the day's drink attach, starter attach, PPA, avg check, and void rate to <b>your</b> targets — not an industry average. Severity grades by aging.</div>
+      <div class="agent-find">
+        <span class="find-eyebrow">Today's find · Warren</span>
+        <div class="find-text">drink attach <span class="red">31%</span> vs <b>38% target</b> · 4 days aged · severity <span class="red">high</span></div>
+      </div>
+    </div>
+
+    <!-- 2. Cost Sentinel -->
+    <div class="agent">
+      <div class="agent-top">
+        <div class="avatar cost">CS</div>
+        <div class="agent-id">
+          <div class="agent-name">Cost Sentinel</div>
+          <div class="agent-watch">Watches · Invoice spikes</div>
+        </div>
+        <span class="agent-status">Running</span>
+      </div>
+      <div class="agent-blurb">Ingests every R365 AP invoice the moment it lands. Detects price spikes per SKU per vendor, vendor-consolidation opportunities, and true food cost % drift — independent of POS, runs portfolio-wide.</div>
+      <div class="agent-find">
+        <span class="find-eyebrow">Today's find · Newport</span>
+        <div class="find-text">beef short rib <span class="yellow">+18% w/w</span> · vendor: <b>NE Provisions</b> · backup quote available</div>
+      </div>
+    </div>
+
+    <!-- 3. Menu Engineer -->
+    <div class="agent">
+      <div class="agent-top">
+        <div class="avatar menu">ME</div>
+        <div class="agent-id">
+          <div class="agent-name">Menu Engineer</div>
+          <div class="agent-watch">Watches · Mix &amp; margin</div>
+        </div>
+        <span class="agent-status">Running</span>
+      </div>
+      <div class="agent-blurb">Joins Toast item mix to R365 cost data. Surfaces menu drift (mix slipping but margin healthy), menu dogs (slipping with margin pressure), price-up candidates, and high-margin items losing share to low-margin ones.</div>
+      <div class="agent-find">
+        <span class="find-eyebrow">Today's find · Providence</span>
+        <div class="find-text">burrata salad mix <span class="yellow">−22%</span> over 21d · margin <b>holding</b> · drift, not dog</div>
+      </div>
+    </div>
+
+    <!-- 4. Comp/Void Coach (FLAGSHIP - new) -->
+    <div class="agent flagship">
+      <div class="agent-top">
+        <div class="avatar cv">CV</div>
+        <div class="agent-id">
+          <div class="agent-name">Comp/Void Coach <span class="new-pill">New</span></div>
+          <div class="agent-watch">Watches · Void slips &amp; comp pad</div>
+        </div>
+        <span class="agent-status">Running</span>
+      </div>
+      <div class="agent-blurb">The Watch flags the <em style="font-style:normal;color:var(--text)">rate</em>. The Coach attributes it — to a server, a manager-PIN, a daypart, a reason tag — and stages a 5-minute walk-through play the GM can run before the next shift.</div>
+      <div class="agent-find">
+        <span class="find-eyebrow">Today's find · Warren</span>
+        <div class="find-text"><span class="pink">J. Reyes 47%</span> of void $ ($864) · <b>14 of 22</b> in last 90min of shift · "wrong order" 8× peer rate</div>
+      </div>
+    </div>
+
+    <!-- 5. Pour Coach -->
+    <div class="agent">
+      <div class="agent-top">
+        <div class="avatar pour">PC</div>
+        <div class="agent-id">
+          <div class="agent-name">Pour Coach</div>
+          <div class="agent-watch">Watches · Beverage trade-up</div>
+        </div>
+        <span class="agent-status">Running</span>
+      </div>
+      <div class="agent-blurb">Reads pour-by-pour bar data. Identifies trade-up opportunities (house red → reserve flight, well vodka → premium) by daypart, server, and guest cohort. Quantifies the per-cover lift before staging.</div>
+      <div class="agent-find">
+        <span class="find-eyebrow">Today's find · Newport</span>
+        <div class="find-text">house red → reserve flight at <span class="green">+$3.20/cover</span> on weekend dinners · <b>+$1,150/wk</b></div>
+      </div>
+    </div>
+
+    <!-- 6. Schedule Critic -->
+    <div class="agent">
+      <div class="agent-top">
+        <div class="avatar sched">SC</div>
+        <div class="agent-id">
+          <div class="agent-name">Schedule Critic</div>
+          <div class="agent-watch">Watches · Labor drafts in 7shifts</div>
+        </div>
+        <span class="agent-status">Running</span>
+      </div>
+      <div class="agent-blurb">Grades next week's draft against forecast covers, role-mix history, your daily targets, and OT risk. Flags the daypart-shifts with the most $ at risk — before publish, not after the breach.</div>
+      <div class="agent-find">
+        <span class="find-eyebrow">Today's find · Warren</span>
+        <div class="find-text">Sun brunch labor <span class="yellow">34%</span> vs <b>26% target</b> on next draft · cut 1 host, shorten line cook 1.5h</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Framing layer -->
+  <div class="framers">
+    <div class="framer">
+      <div class="framer-ic">A</div>
+      <div>
+        <div class="framer-name">The Analyst</div>
+        <div class="framer-job">Reads every flag the council raises. Pulls correlations (shift window, reason tag, vendor cohort, peer baseline) and writes a one-paragraph frame in operator voice. No LLM hallucination — it's template-stitched from real data.</div>
+      </div>
+    </div>
+    <div class="framer">
+      <div class="framer-ic">C</div>
+      <div>
+        <div class="framer-name">The Coach</div>
+        <div class="framer-job">Reads framed flags. Pulls a play from the playbook (audience-routed: GM, owner, you), checks freshness (don't alert if KPI already recovered), and stages it as a one-tap commit in Slack — with a 14-day verdict baked in.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WORKED EXAMPLE ── -->
+<section id="worked" class="worked reveal" style="padding-top:96px;padding-bottom:96px">
+  <div class="sec-head-center">
+    <div class="sec-eyebrow">A flag in flight · Comp/Void Coach · Warren · this morning</div>
+    <h2 class="sec-title">One real flag, <em>five stages,</em> ninety seconds.</h2>
+    <p class="sec-lede">From overnight detection to a play in the GM's Slack to a 14-day verdict. This is what the council did at 6:14 a.m. on real Warren data.</p>
+  </div>
+
+  <div class="flow">
+
+    <div class="stage detect">
+      <div class="stage-head">
+        <div class="stage-num">1</div>
+        <div class="stage-name">Detect</div>
+      </div>
+      <div class="stage-title">Concentration crossed 40%</div>
+      <div class="stage-body">Comp/Void Coach pulls 14 days of voids by server. <b>One server is 47% of dollars</b> against a peer median of $86. Threshold tripped.</div>
+      <div class="stage-data">
+        voids · <b>22</b><br>
+        $ · <span class="red"><b>$864</b></span><br>
+        peer median · $86<br>
+        share · <span class="red"><b>47%</b></span>
+      </div>
+    </div>
+
+    <div class="stage frame">
+      <div class="stage-head">
+        <div class="stage-num">2</div>
+        <div class="stage-name">Frame</div>
+      </div>
+      <div class="stage-title">Why it matters, in your voice</div>
+      <div class="stage-body">"J. Reyes ran 22 of the 47 voids last 14 days — $864 against a peer median of $86. <b>14 of 22 cluster in the last 90 min</b> of his shift. Reasons skew 'wrong order' (8 vs peer 2)."</div>
+      <div class="stage-data">
+        correlations checked · <b>4</b><br>
+        hits · <span class="accent"><b>shift_window</b></span><br>
+        + <span class="accent"><b>reason_tags</b></span><br>
+        framed at · 05:45 ET
+      </div>
+    </div>
+
+    <div class="stage play">
+      <div class="stage-head">
+        <div class="stage-num">3</div>
+        <div class="stage-name">Stage</div>
+      </div>
+      <div class="stage-title">A 5-minute walk-through</div>
+      <div class="stage-body">Pull J. Reyes' last 14d void slips before his next shift. Walk the closing-rush procedure. Flag the "wrong order" tag specifically. <b>Set 7-day target: voids ≤ $40/shift.</b></div>
+      <div class="stage-data">
+        audience · <b>gm</b><br>
+        expected recovery · <span class="green"><b>$540</b></span><br>
+        window · <b>7 days</b><br>
+        alternates · <b>2</b>
+      </div>
+    </div>
+
+    <div class="stage slack">
+      <div class="stage-head">
+        <div class="stage-num">4</div>
+        <div class="stage-name">Slack</div>
+      </div>
+      <div class="stage-title">Lands in #warren-gm</div>
+      <div class="stage-body">Real-time commit. Freshness-checked, time-of-day held until 7:30 a.m. ET, deduplicated against open flags.</div>
+      <div class="slack-msg">
+        <div class="slack-msg-head">
+          <span class="slack-name">Rai</span>
+          <span class="slack-bot-tag">App</span>
+          <span class="slack-time">6:14 AM</span>
+        </div>
+        <div class="slack-body"><strong>Warren — voids 3.8× normal last 14d ($1,840).</strong> One server, J. Reyes, accounts for $864 across 22 voids — most in the last 90 min. Worth a 5-min walk before his next close.</div>
+        <span class="slack-cta">Commit play</span>
+      </div>
+    </div>
+
+    <div class="stage verdict">
+      <div class="stage-head">
+        <div class="stage-num">5</div>
+        <div class="stage-name">Verdict</div>
+      </div>
+      <div class="stage-title">Self-graded at 14 days</div>
+      <div class="stage-body">If the GM commits, the Coach watches the next 14 days. Did J. Reyes' voids/shift drop under $40? Did the location's total voids drop? <b>Hit, miss, or partial — recorded.</b></div>
+      <div class="stage-data">
+        outcome window · <b>14d</b><br>
+        target · <b>≤$40/shift</b><br>
+        last verdict · <span class="green"><b>hit</b></span><br>
+        $ saved · <span class="green"><b>$510</b></span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── DAILY LOOP ── -->
+<section id="loop" class="loop-section reveal" style="padding:96px 28px">
+  <div style="max-width:1180px;margin:0 auto">
+    <div class="sec-head-center">
+      <div class="sec-eyebrow">The 24-hour loop · A typical Warren weekday</div>
+      <h2 class="sec-title">Detection at 2 a.m. Brief at 7. <em>Plays through the day.</em></h2>
+      <p class="sec-lede">The council runs against your data overnight. Plays land in Slack and email by the time you walk in. Real-time alerts fire as variances appear during ops. The line goes quiet at 11 — no late-night pings.</p>
+    </div>
+
+    <div class="loop-track">
+      <div class="loop-rail">
+
+        <div class="loop-event">
+          <span class="loop-time">02:14</span>
+          <span class="loop-dot"></span>
+          <span class="loop-label">Detector pass</span>
+          <span class="loop-sub">6 specialists · 14d window · 1.9s total</span>
+        </div>
+
+        <div class="loop-event">
+          <span class="loop-time">05:45</span>
+          <span class="loop-dot"></span>
+          <span class="loop-label">Analyst frames</span>
+          <span class="loop-sub">4 flags · operator voice</span>
+        </div>
+
+        <div class="loop-event">
+          <span class="loop-time">05:55</span>
+          <span class="loop-dot"></span>
+          <span class="loop-label">Coach stages</span>
+          <span class="loop-sub">11 plays · audience-routed</span>
+        </div>
+
+        <div class="loop-event brief">
+          <span class="loop-time">07:00</span>
+          <span class="loop-dot"></span>
+          <span class="loop-label">Morning brief</span>
+          <span class="loop-sub">Slack + email · per-location card</span>
+        </div>
+
+        <div class="loop-event alert">
+          <span class="loop-time">11:32</span>
+          <span class="loop-dot"></span>
+          <span class="loop-label">Real-time alert</span>
+          <span class="loop-sub">lunch rush · prep variance</span>
+        </div>
+
+        <div class="loop-event alert">
+          <span class="loop-time">16:05</span>
+          <span class="loop-dot"></span>
+          <span class="loop-label">Real-time alert</span>
+          <span class="loop-sub">dinner setup · drink attach soft</span>
+        </div>
+
+        <div class="loop-event alert">
+          <span class="loop-time">20:18</span>
+          <span class="loop-dot"></span>
+          <span class="loop-label">Real-time alert</span>
+          <span class="loop-sub">comp pad spike · post-9pm</span>
+        </div>
+
+        <div class="loop-event hold">
+          <span class="loop-time">23:00</span>
+          <span class="loop-dot"></span>
+          <span class="loop-label">Hold begins</span>
+          <span class="loop-sub">no Slack until 07:30 ET</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TRUST ROW -->
+    <div class="trust-row">
+      <div class="trust-cell">
+        <div class="trust-num">71<small>%</small></div>
+        <div class="trust-lbl">Batting avg</div>
+        <div class="trust-prov">last 30d <span class="dot"></span> graded by agent_outcomes</div>
+      </div>
+      <div class="trust-cell">
+        <div class="trust-num">$14.2<small>k</small></div>
+        <div class="trust-lbl">Identified · 30d</div>
+        <div class="trust-prov">3 locations <span class="dot"></span> Toast + R365 + 7shifts</div>
+      </div>
+      <div class="trust-cell">
+        <div class="trust-num">47</div>
+        <div class="trust-lbl">Plays committed</div>
+        <div class="trust-prov">1-tap from Slack <span class="dot"></span> last 30d</div>
+      </div>
+      <div class="trust-cell">
+        <div class="trust-num">4<small>h 22m</small></div>
+        <div class="trust-lbl">Avg flag → action</div>
+        <div class="trust-prov">flag staged → GM commit <span class="dot"></span> last 30d</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── INTEGRATIONS ── -->
+<section style="padding-top:64px;padding-bottom:24px">
+  <div class="integrations reveal">
+    <div class="integrations-label">Already wired into the stack you run</div>
+    <div class="integrations-row">
+      <div class="int-logo"><span class="int-icon toast">T</span> Toast POS</div>
+      <div class="int-logo"><span class="int-icon r365">R</span> Restaurant365</div>
+      <div class="int-logo"><span class="int-icon seven">7</span> 7shifts</div>
+      <div class="int-logo"><span class="int-icon slack">S</span> Slack</div>
+      <div class="int-logo"><span class="int-icon resend">@</span> Email · Resend</div>
+      <div class="int-logo"><span class="int-icon weather">°</span> Weather</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── DIFFERENTIATION ── -->
+<section id="different" class="reveal" style="padding-top:48px">
+  <div class="sec-head-center">
+    <div class="sec-eyebrow">Why it works</div>
+    <h2 class="sec-title">Not another dashboard. <em>A council with receipts.</em></h2>
+    <p class="sec-lede">Every flag is graded. Every play is auditable. Every recommendation has provenance. We tell you when we miss.</p>
+  </div>
+
+  <div class="diff-grid">
+    <div class="diff-card">
+      <span class="diff-card-eyebrow">Specialists, not generalists</span>
+      <h4>One agent, <em>one job</em>, one data source.</h4>
+      <p>An agent that watches voids isn't also writing schedules. Specialists stay sharp. The council pattern means a new specialist (like Comp/Void Coach) plugs in without touching anything else.</p>
+      <div class="vs"><b>Vs. dashboards:</b> dashboards make you look. Agents stage the play.</div>
+    </div>
+    <div class="diff-card">
+      <span class="diff-card-eyebrow">Frames in operator voice</span>
+      <h4>Template-stitched. <em>No LLM hallucination.</em></h4>
+      <p>The Analyst pulls correlations from real data and stitches a frame in your voice — no model drift, no invented numbers. Every chip in the frame links back to the row that produced it.</p>
+      <div class="vs"><b>Vs. AI summaries:</b> summaries are vibes. Frames are receipts.</div>
+    </div>
+    <div class="diff-card">
+      <span class="diff-card-eyebrow">Self-grading</span>
+      <h4>14-day verdicts. <em>Hit, miss, or partial.</em></h4>
+      <p>Every committed play is checked at 14 days. Did the metric move? Did dollars come back? The batting average is published — you see what worked, what didn't, and why.</p>
+      <div class="vs"><b>Vs. "AI for restaurants":</b> we publish our miss rate.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICING ── -->
+<section id="pricing" class="pricing-sec reveal">
+  <div class="pricing-inner">
+    <div class="pricing-head">
+      <div class="pricing-eyebrow">Pricing · per location, per month</div>
+      <h2 class="pricing-title">Three tiers, <em>same nervous system.</em></h2>
+      <p class="pricing-lede">Three tiers that match how you want the loop to work for you — start with the generalists, layer in specialists, or co-build a custom council. Annual billing; quarterly is +15%. Setup, calibration, and POS / scheduling wiring are included in every tier.</p>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="pricing-card floor">
+        <div class="pricing-tag">01 · Floor</div>
+        <div class="pricing-name">The <em>Starter.</em></div>
+        <div class="pricing-price">
+          <span class="amt">$299</span>
+          <span class="per">/ location · month</span>
+        </div>
+        <div class="pricing-sub">The three generalists running on your real data. Best if you want to feel the loop on a single concept before wiring the specialists.</div>
+        <ul class="pricing-list">
+          <li><b>The Watch, Analyst, Coach</b> — the three generalists in the loop, daily.</li>
+          <li><b>POS + scheduling app</b> wired (live sync through ops hours, multi-month backfill).</li>
+          <li><b>Plan HQ</b> with target picker (Floor / Optimal / Stretch), trend pills, daily-target outcomes.</li>
+          <li><b>Loop Brief</b> emailed every morning · the 3-line headline of what changed.</li>
+          <li>Self-grading: every flag carries its receipts.</li>
+        </ul>
+        <a href="#book" class="pricing-cta">Start with the Floor →</a>
+      </div>
+
+      <div class="pricing-card optimal">
+        <span class="pricing-recommended">Recommended</span>
+        <div class="pricing-tag">02 · Optimal</div>
+        <div class="pricing-name">The <em>Operator.</em></div>
+        <div class="pricing-price">
+          <span class="amt">$599</span>
+          <span class="per">/ location · month</span>
+        </div>
+        <div class="pricing-sub">The full live loop. What we run in production today across multi-unit operators — every shipped specialist, accounting invoices, GM Slack routing.</div>
+        <ul class="pricing-list">
+          <li>Everything in Starter, plus the specialists below.</li>
+          <li><b>Pour Coach</b> — surfaces five-figure weekly trade-up opportunity in live runs.</li>
+          <li><b>Schedule Critic</b> — Saturday 11pm verdict with role · hours · shifts.</li>
+          <li><b>Cost Sentinel</b> trio — Price Spike, Vendor Consolidation, True Food Cost%.</li>
+          <li><b>Comp/Void Coach</b> — server-attributed void and comp coaching, with receipts.</li>
+          <li><b>Accounting invoices</b> ingested + plays auto-routed into your GM Slack channels.</li>
+          <li><b>New specialists added to the roster</b> as we ship them — no extra cost while you're a customer.</li>
+        </ul>
+        <a href="#book" class="pricing-cta">Talk to Sam →</a>
+      </div>
+
+      <div class="pricing-card stretch">
+        <div class="pricing-tag">03 · Custom</div>
+        <div class="pricing-name">The <em>Studio.</em></div>
+        <div class="pricing-price">
+          <span class="amt">$1,200</span>
+          <span class="per">/ location · month</span>
+        </div>
+        <div class="pricing-sub">Built for operators who want a co-builder, not a vendor. Custom specialists scoped to your concept. Limited to a handful of partners.</div>
+        <ul class="pricing-list">
+          <li>Everything in Operator.</li>
+          <li><b>Custom specialist agents</b> — 1 new agent built to your job-to-be-done per quarter.</li>
+          <li><b>Quarterly ops review</b> with the founder · numbers, agent batting avg, what to add.</li>
+          <li><b>Outside-system feeds</b> — reservations, reputation, vendor portals, beverage distributors.</li>
+          <li><b>Dedicated #loop-ops Slack</b> · same-day response during weekday ops hours.</li>
+          <li>Volume pricing past 5 locations.</li>
+        </ul>
+        <a href="#book" class="pricing-cta">Build with us →</a>
+      </div>
+    </div>
+
+    <div class="pricing-pact">
+      <div class="pricing-pact-tag">The 5× pact</div>
+      <h3 class="pricing-pact-title"><em>5×</em> your monthly fee in named recoverable cash within 30 days — or your next month is on us.</h3>
+      <p class="pricing-pact-body">If the council doesn't surface 5× the Optimal tier fee in named opportunity (item, dollar value, named owner) inside your first 30 days, your second month is free. We track <b>identified</b> and <b>captured</b> per location, with receipts on every flag — the Brief shows you both numbers daily.</p>
+    </div>
+
+    <p class="pricing-foot">
+      Setup and calibration included · cancel anytime · 30-day side-by-side trial against your current dashboards.<br>
+      <b>What we don't promise:</b> that captured equals identified. The agents surface the opportunities — the captured number depends on the GM committing the play and the team following it on the floor. We grade ourselves on both.
+    </p>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how" class="how">
+  <div class="sec-head-center">
+    <div class="sec-eyebrow">How Rai onboards</div>
+    <h2 class="sec-title">Loop live in a couple of weeks. <br><em>Roster keeps growing after.</em></h2>
+    <p class="sec-lede">No app to install, no IT project. We wire the loop into your stack, calibrate it to how you run, and ship new specialists into the loop as we build them — included while you're a customer.</p>
+  </div>
+  <div class="how-grid">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h4>Wire the senses</h4>
+      <p>Share read-only credentials for your POS, scheduling app, and accounting software. We handle the OAuth, the section mapping, and the multi-month backfill so the loop has baselines from day one.</p>
+      <div class="step-meta">week 1</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h4>Calibrate the loop</h4>
+      <p>We sit with you on operating days, section names, hard-floor targets, role mappings, and concept tells — so every agent grades against your normal, not an industry average. Stretch targets seeded from your trailing 56d.</p>
+      <div class="step-meta">week 1–2</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h4>Loop goes live + the roster grows</h4>
+      <p>The Watch, Analyst, and Coach start staging plays. Pour Coach, Schedule Critic, Cost Sentinel, and Comp/Void Coach switch on next. New specialists ship into the loop as we build them — often shaped by questions your team raises during ops review.</p>
+      <div class="step-meta">week 2 → ongoing</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TESTIMONIAL ── -->
+<section class="reveal">
+  <div class="testimonial">
+    <div class="testi-eyebrow">From the builder</div>
+    <div class="quote">
+      "We build small, accountable agents — one specialist, one job. Beverage trade-up. Schedule critic. Comp/Void Coach. The point isn't that any single agent is brilliant. It's that <em>operators can't watch everything</em>, and a loop of small accountable specialists can. Every commit, override, and outcome our team logs makes the next agent sharper than the last one we shipped."
+    </div>
+    <div class="quote-meta"><b>Sam Glynn</b> · Principal, Water Street Advisors · Founder, Rai</div>
+  </div>
+</section>
+
+<!-- ── FINAL CTA ── -->
+<section id="book" style="padding-bottom:40px">
+  <div class="cta-card reveal">
+    <h2>The agents flag it. <br>You commit it. <em>The dollars are real.</em></h2>
+    <p>Private beta, personally configured by an operator. 20 minutes on a screenshare is usually enough to know if a loop fits how you run. We'll show you a live Plan HQ on a working operator's data — the wins, the misses, and the batting average.</p>
+    <div class="cta-row">
+      <a href="mailto:samglynn3@gmail.com?subject=Rai%20demo%20request&body=Hey%20Sam%20%E2%80%94%20saw%20Rai%20and%20would%20like%20a%20walkthrough.%20We%20run%20%5Bconcept%2Funits%5D." class="btn btn-primary">
+        Email Sam to book a demo
+        <svg viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#pricing" class="btn btn-ghost">See pricing</a>
+    </div>
+    <div class="hero-meta" style="margin-top:26px">
+      <span><span class="dot"></span> 30-day side-by-side trial</span>
+      <span><span class="dot"></span> Setup included</span>
+      <span><span class="dot"></span> Cancel anytime</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="brand">
+    <span class="brand-mark">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 10 L5 7 L8 9 L12 4 L14 6" stroke="url(#g2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="g2" x1="0" y1="0" x2="16" y2="16"><stop stop-color="#6366F1"/><stop offset="1" stop-color="#14B8A6"/></linearGradient></defs></svg>
+    </span>
+    <span class="brand-word">Rai</span>
+  </div>
+  <div class="foot-links">
+    <a href="#council">The council</a>
+    <a href="#worked">A flag in flight</a>
+    <a href="#loop">The daily loop</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#how">How it works</a>
+    <a href="https://app.heyrai.io" target="_blank" rel="noopener">Sign in</a>
+    <a href="mailto:samglynn3@gmail.com">Contact</a>
+  </div>
+  <small>© 2026 Rai · built by an operator, for operators · proven in real restaurants today</small>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -60px 0px', threshold: .08 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>
